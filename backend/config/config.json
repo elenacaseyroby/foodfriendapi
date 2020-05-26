@@ -1,0 +1,11 @@
+{
+  "development": {
+    "use_env_variable": "LOCAL_DB"
+  },
+  "test": {
+    "use_env_variable": "TEST_DB"
+  },
+  "production": {
+    "use_env_variable": "PRODUCTION_DB"
+  }
+}
