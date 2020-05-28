@@ -1,5 +1,5 @@
-import React, { Component } from "react";
-import "./App.css";
+import React, { Component } from 'react';
+import './App.css';
 
 class App extends Component {
   state = {
@@ -7,12 +7,13 @@ class App extends Component {
   };
   componentDidMount() {
     this.callBackendAPI()
-      .then((res) => this.setState({ data: res.express }))
+      .then((res) => this.setState({ data: res }))
       .catch((err) => console.log(err));
   }
   callBackendAPI = async () => {
-    const response = await fetch("/express_backend");
+    const response = await fetch('/nutrients');
     const body = await response.json();
+    console.log(body);
 
     if (response.status !== 200) {
       throw Error(body.message);
@@ -22,7 +23,7 @@ class App extends Component {
   render() {
     return (
       <div className="App">
-        <p className="App-intro">{this.state.data}</p>
+        <p className="App-intro">hi</p>
       </div>
     );
   }
