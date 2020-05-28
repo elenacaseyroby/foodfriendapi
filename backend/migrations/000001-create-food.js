@@ -11,6 +11,7 @@ module.exports = {
       name: {
         allowNull: false,
         type: Sequelize.STRING,
+        unique: true,
       },
       serving_size_note: {
         type: Sequelize.STRING,

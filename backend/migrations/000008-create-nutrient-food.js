@@ -14,7 +14,7 @@ module.exports = {
       },
       percent_dv_per_serving: {
         allowNull: false,
-        type: Sequelize.DECIMAL(8, 5),
+        type: Sequelize.DECIMAL(5, 2),
       },
       created_at: {
         allowNull: false,

@@ -1,35 +1,27 @@
 import express from 'express';
-import Sequelize from 'sequelize';
 import dotenv from 'dotenv';
+import { db } from './models';
 
-const app = express();
-const port = process.env.PORT || 5000;
-const env = process.env.NODE_ENV || 'development';
-const config = require(__dirname + '/config/config.json')[env];
+// Config environment variables so they are
+// accessible through process.env
 dotenv.config();
 
-//make connection w db:
-if (config.use_env_variable) {
-  var sequelize = new Sequelize(process.env[config.use_env_variable]);
-} else {
-  var sequelize = new Sequelize(
-    config.database,
-    config.username,
-    config.password,
-    config
-  );
-}
-sequelize
-  .authenticate()
-  .then(() => {
-    console.log('Connection has been established successfully.');
-  })
-  .catch((err) => {
-    console.error('Unable to connect to the database:', err);
-  });
+// Start app.
+const app = express();
 
-app.listen(port, () => console.log(`Listening on port ${port}`));
+// Listen for api requests.
+const port = process.env.PORT || process.env.PORT;
+app.listen(port, () => console.log(`listening on port ${port}`));
 
-app.get('/express_backend', (req, res) => {
-  res.send({ express: 'YOUR BACKEND IS CONNECTED TO REACT!' });
-});
+// Define api endpoints.
+app.get('/nutrients', (req, res) =>
+  db.Nutrient.findAll({
+    include: [
+      {
+        model: db.Food,
+        through: {},
+        as: 'foods',
+      },
+    ],
+  }).then((result) => res.json(result))
+);

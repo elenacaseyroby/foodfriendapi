@@ -4,20 +4,16 @@ module.exports = (sequelize, DataTypes) => {
     'NutrientFood',
     {
       percent_dv_per_serving: {
-        type: DataTypes.DECIMAL(8, 5),
+        type: DataTypes.DECIMAL(5, 2),
         allowNull: false,
       },
       created_at: {
         allowNull: false,
         type: DataTypes.DATE,
-        defaultValue: DataTypes.literal('CURRENT_TIMESTAMP'),
       },
       updated_at: {
         allowNull: false,
         type: DataTypes.DATE,
-        defaultValue: DataTypes.literal(
-          'CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'
-        ),
       },
     },
     {

@@ -10,14 +10,10 @@ module.exports = (sequelize, DataTypes) => {
       created_at: {
         allowNull: false,
         type: DataTypes.DATE,
-        defaultValue: DataTypes.literal('CURRENT_TIMESTAMP'),
       },
       updated_at: {
         allowNull: false,
         type: DataTypes.DATE,
-        defaultValue: DataTypes.literal(
-          'CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'
-        ),
       },
     },
     {

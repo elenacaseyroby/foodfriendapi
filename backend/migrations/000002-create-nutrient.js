@@ -11,12 +11,14 @@ module.exports = {
       name: {
         allowNull: false,
         type: Sequelize.STRING,
+        unique: true,
       },
       dv_in_mg: {
         allowNull: false,
         type: Sequelize.DECIMAL(12, 6),
       },
       dv_source: {
+        allowNull: false,
         type: Sequelize.STRING,
       },
       description: {
