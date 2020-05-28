@@ -16,6 +16,10 @@ module.exports = {
         allowNull: false,
         type: Sequelize.DECIMAL(5, 2),
       },
+      source: {
+        allowNull: false,
+        type: Sequelize.STRING,
+      },
       created_at: {
         allowNull: false,
         type: Sequelize.DATE,

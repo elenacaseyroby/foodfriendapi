@@ -7,6 +7,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DECIMAL(5, 2),
         allowNull: false,
       },
+      source: {
+        allowNull: false,
+        type: DataTypes.STRING,
+      },
       created_at: {
         allowNull: false,
         type: DataTypes.DATE,
