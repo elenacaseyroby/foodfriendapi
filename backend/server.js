@@ -1,6 +1,8 @@
-import express from 'express';
+import express, { Router } from 'express';
 import dotenv from 'dotenv';
 import { db } from './models';
+import multer from 'multer';
+import { uploadNutrients } from './csv_upload_scripts/nutrients';
 
 // Config environment variables so they are
 // accessible through process.env
@@ -8,10 +10,16 @@ dotenv.config();
 
 // Start app.
 const app = express();
-
-// Listen for api requests.
 const port = process.env.PORT || process.env.PORT;
-app.listen(port, () => console.log(`listening on port ${port}`));
+
+// Make endpoints to upload csvs to update database.
+// TODO: add password protection on these pages.
+const upload = multer({ dest: 'tmp/csv/' });
+
+app.post('/upload-cvs/nutrients', upload.single('uploadfile'), (req, res) => {
+  uploadNutrients(req.file);
+  res.send('request successful!');
+});
 
 // Define api endpoints.
 app.get('/nutrients', (req, res) =>
@@ -25,3 +33,6 @@ app.get('/nutrients', (req, res) =>
     ],
   }).then((result) => res.json(result))
 );
+
+// Start server & listen for api requests.
+app.listen(port, () => console.log(`listening on port ${port}`));
