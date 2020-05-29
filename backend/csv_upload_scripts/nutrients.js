@@ -9,8 +9,11 @@ function updateNutrients(nutrientsToUpdate) {
   return 'success';
 }
 
-function createNewNutrients(nutrientsToCreate) {
+function createNewNutrients(nutrientsList) {
   // Bulk create nutrients.
+  db.Nutrient.bulkCreate(nutrientsList).then(() => {
+    return 'success';
+  });
   return 'success';
 }
 
