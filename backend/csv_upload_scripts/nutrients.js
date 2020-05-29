@@ -1,5 +1,5 @@
 import { db } from '../models';
-import { cleanString } from './common';
+import { cleanString } from '../utils/common';
 import { updateNutrients, createNewNutrients } from '../queries/nutrients';
 const fs = require('fs');
 const csv = require('csv-parser');
@@ -73,7 +73,7 @@ export async function uploadNutrients(file) {
       if (nutrientsToUpdate.length > 0)
         return updateNutrients(nutrientsToUpdate);
       // Create nutrientsToCreate list.
-      if (nutrientsToUpdate.length > 0)
+      if (nutrientsToCreate.length > 0)
         return createNewNutrients(nutrientsToCreate);
 
       // TODO: return nutrient rows that could not be created/updated
