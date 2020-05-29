@@ -1,4 +1,3 @@
-// import { downloadCSV } from common;
 import { db } from '../models';
 import { cleanString } from './common';
 import { updateNutrients, createNewNutrients } from '../queries/nutrients';
@@ -27,16 +26,10 @@ export async function uploadNutrients(file) {
   // csv optional columns:
   // description, description_sources, warnings, warings_sources, source_note
 
+  // TODO: check document headers and return error if not up to specs.
+
   // Get all nutrients from db.
-  let nutrients = await db.Nutrient.findAll({
-    include: [
-      {
-        model: db.Food,
-        through: {},
-        as: 'foods',
-      },
-    ],
-  });
+  let nutrients = await db.Nutrient.findAll({});
 
   // Sort existing nutrients by name.
   var nutrientsByName = nutrients.reduce(function (map, nutrient) {
@@ -77,9 +70,11 @@ export async function uploadNutrients(file) {
       console.log('file deleted');
 
       // Update nutrientsToUpdate list.
-      updateNutrients(nutrientsToUpdate);
+      if (nutrientsToUpdate.length > 0)
+        return updateNutrients(nutrientsToUpdate);
       // Create nutrientsToCreate list.
-      createNewNutrients(nutrientsToCreate);
+      if (nutrientsToUpdate.length > 0)
+        return createNewNutrients(nutrientsToCreate);
 
       // TODO: return nutrient rows that could not be created/updated
       // because of bad or missing data.

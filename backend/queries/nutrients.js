@@ -8,7 +8,6 @@ export function updateNutrients(nutrientsList) {
   // Individually update nutrients.
   // Doesn't appear to be a way to bulk update
   // distinct values.
-  if (nutrientsList.length === 0) return;
   nutrientsList.map((nutrient) => {
     db.Nutrient.update(nutrient, {
       returning: true,
@@ -30,7 +29,6 @@ export function createNewNutrients(nutrientsList) {
   // should be updated.
 
   // Bulk create nutrients.
-  if (nutrientsList.length === 0) return;
   db.Nutrient.bulkCreate(nutrientsList).then((nutrients) => {
     console.log(
       `Nutrient records created: ${nutrientsList.map((nutrient) => {

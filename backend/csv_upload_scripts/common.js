@@ -1,4 +1,3 @@
-export function downloadCSV(data) {}
 export function cleanString(string) {
   // Make lowercase & trim whitespace.
   let cleanString = string.toLowerCase().trim();
