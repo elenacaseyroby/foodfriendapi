@@ -4,17 +4,37 @@ import { cleanString } from './common';
 const fs = require('fs');
 const csv = require('csv-parser');
 
-function updateNutrients(nutrientsToUpdate) {
-  // Bulk update nutrients.
-  return 'success';
+function updateNutrients(nutrientsList) {
+  // Individually update nutrients.
+  // Doesn't appear to be a way to bulk update
+  // distinct values.
+  if (nutrientsList.length === 0) return;
+  nutrientsList.map((nutrient) => {
+    db.Nutrient.update(nutrient, {
+      returning: true,
+      where: { id: nutrient.id },
+    }).then((nutrients) => {
+      console.log(
+        `Nutrient records updated: ${nutrientsList.map((nutrient) => {
+          return nutrient.name;
+        })}`
+      );
+      return nutrients;
+    });
+  });
 }
 
 function createNewNutrients(nutrientsList) {
   // Bulk create nutrients.
-  db.Nutrient.bulkCreate(nutrientsList).then(() => {
-    return 'success';
+  if (nutrientsList.length === 0) return;
+  db.Nutrient.bulkCreate(nutrientsList).then((nutrients) => {
+    console.log(
+      `Nutrient records created: ${nutrientsList.map((nutrient) => {
+        return nutrient.name;
+      })}`
+    );
+    return nutrients;
   });
-  return 'success';
 }
 
 export async function uploadNutrients(file) {
@@ -33,28 +53,37 @@ export async function uploadNutrients(file) {
   }, {});
   const nutrientsToUpdate = [];
   const nutrientsToCreate = [];
-  // const nutrientsWithInvalidDate = [];
   fs.createReadStream(file.path)
     .pipe(csv())
     .on('data', (nutrient) => {
       const savedNutrient = nutrientsByName[cleanString(nutrient.name)];
+      // TODO: add code to validate columns against bad or missing data for each field.
       // Check if nutrient exists. If exists, update, else create new.
       if (savedNutrient) {
         // Only update if a record has changed.
         if (
-          savedNutrient.name === nutrient.name &&
-          savedNutrient.dv_in_mg === nutrient.dv_in_mg &&
-          savedNutrient.dv_source === nutrient.dv_source &&
-          savedNutrient.description === nutrient.description &&
-          savedNutrient.description_sources === nutrient.description_sources &&
-          savedNutrient.warnings === nutrient.warnings &&
-          savedNutrient.warnings_sources === nutrient.warnings_sources &&
-          savedNutrient.source_note === nutrient.source_note
-        )
-          return;
-        let nutrientWithUpdates = nutrient;
-        nutrientWithUpdates.id = savedNutrient.id;
-        nutrientsToUpdate.push(nutrientWithUpdates);
+          !(
+            savedNutrient.name === nutrient.name &&
+            // Removing trailing 0's:
+            parseFloat(savedNutrient.dv_in_mg) ===
+              parseFloat(nutrient.dv_in_mg) &&
+            savedNutrient.dv_source === nutrient.dv_source &&
+            savedNutrient.description === nutrient.description &&
+            savedNutrient.description_sources ===
+              nutrient.description_sources &&
+            savedNutrient.warnings === nutrient.warnings &&
+            savedNutrient.warnings_sources === nutrient.warnings_sources &&
+            savedNutrient.source_note === nutrient.source_note
+          )
+        ) {
+          let nutrientWithUpdates = nutrient;
+          nutrientWithUpdates.id = savedNutrient.id;
+          nutrientWithUpdates.dv_in_mg = parseFloat(
+            nutrientWithUpdates.dv_in_mg
+          );
+          // TODO: fix edge case: breaks when csv has two new nutrients with same name.
+          nutrientsToUpdate.push(nutrientWithUpdates);
+        }
       } else {
         nutrientsToCreate.push(nutrient);
       }
@@ -68,5 +97,7 @@ export async function uploadNutrients(file) {
       console.log('file deleted');
       updateNutrients(nutrientsToUpdate);
       createNewNutrients(nutrientsToCreate);
+      // TODO: return nutrient rows that could not be created/updated
+      // because of bad or missing data.
     });
 }
