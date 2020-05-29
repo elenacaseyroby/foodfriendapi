@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import { db } from './models';
 import multer from 'multer';
 import { uploadNutrients } from './csv_upload_scripts/nutrients';
+import { uploadNutrientBenefits } from './csv_upload_scripts/nutrient_benefits';
 
 // Config environment variables so they are
 // accessible through process.env
@@ -16,10 +17,19 @@ const port = process.env.PORT || process.env.PORT;
 // TODO: add password protection on these pages.
 const upload = multer({ dest: 'tmp/csv/' });
 
-app.post('/upload-cvs/nutrients', upload.single('uploadfile'), (req, res) => {
+app.post('/upload-csv/nutrients', upload.single('uploadfile'), (req, res) => {
   uploadNutrients(req.file);
   res.send('request successful!');
 });
+
+app.post(
+  '/upload-csv/nutrient_benefits',
+  upload.single('uploadfile'),
+  (req, res) => {
+    uploadNutrientBenefits(req.file);
+    res.send('request successful!');
+  }
+);
 
 // Define api endpoints.
 app.get('/nutrients', (req, res) =>
