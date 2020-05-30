@@ -54,6 +54,7 @@ export async function uploadNutrientBenefits(file) {
             })
             .filter((nutrientId) => !!nutrientId);
         }
+        // Bug: Alzheimer's isn't getting it's nutrients synced.
         benefitNutrientsToUpdate.push({
           benefitName: benefit.benefit_name,
           nutrientIds: benefitNutrientIdsList,

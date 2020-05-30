@@ -36,7 +36,6 @@ export function updateBenefits(benefitsList) {
 }
 
 export async function updateBenefitNutrients(benefitId, nutrientIdsList) {
-  // BUG: add duplicate nutrient_benefits records
   const savedNutrientIds = await db.NutrientBenefit.findAll({
     where: {
       benefit_id: benefitId,
@@ -75,6 +74,6 @@ export async function updateBenefitNutrients(benefitId, nutrientIdsList) {
     });
   }
   console.log(
-    `benefit id: ${benefitId}; added nutrients ids: ${idsToCreate}; deleted nutrients: ${idsToCreate}`
+    `benefit id: ${benefitId}; added nutrients ids: ${idsToCreate}; deleted nutrients: ${idsToDelete}`
   );
 }
