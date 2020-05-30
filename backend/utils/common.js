@@ -12,21 +12,15 @@ export function cleanString(string) {
 
 export function unionOfTwoArrays(a, b) {
   // contains the elements of both set a and set b.
-  const setA = new Set(a);
-  const setB = new Set(b);
-  return Array(new Set([...setA, ...setB]));
+  return Array.from(new Set([...a, ...b]));
 }
 
 export function intersectionOfTwoArrays(a, b) {
   // contains those elements of set a that are also in set b.
-  const setA = new Set(a);
-  const setB = new Set(b);
-  return Array(new Set([...setA].filter((x) => setB.has(x))));
+  return a.filter((x) => b.includes(x));
 }
 
 export function differenceOfTwoArrays(a, b) {
   // contains those elements of set a that are not in set b.
-  const setA = new Set(a);
-  const setB = new Set(b);
-  return Array(new Set([...setA].filter((x) => !setB.has(x))));
+  return a.filter((x) => !b.includes(x));
 }
