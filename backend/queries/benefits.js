@@ -37,28 +37,15 @@ export function updateBenefits(benefitsList) {
 
 export async function updateBenefitNutrients(benefitId, nutrientIdsList) {
   // BUG: add duplicate nutrient_benefits records
-  console.log(benefitId);
-  console.log(nutrientIdsList);
-  const savedNutrientIds =
-    (await db.Benefit.findAll({
-      include: [
-        {
-          model: db.Nutrient,
-          through: {},
-          as: 'nutrients',
-        },
-      ],
-      where: {
-        id: benefitId,
-      },
-    }).then((benefits) => {
-      let nutrientIds = benefits.map((benefit) => {
-        return nutrientIds ? nutrientIds.concat(benefit.nutrients) : [];
-      });
-    })) || [];
+  const savedNutrientIds = await db.NutrientBenefit.findAll({
+    where: {
+      benefit_id: benefitId,
+    },
+  }).map((nutrientBenefit) => {
+    return nutrientBenefit.nutrient_id;
+  });
   // Add nutrient to benefit if in nutrientIdsList and not already saved.
   const idsToCreate = differenceOfTwoArrays(nutrientIdsList, savedNutrientIds);
-  console.log(idsToCreate);
   if (idsToCreate.length > 0) {
     idsToCreate.map((nutrientId) => {
       try {
@@ -71,7 +58,6 @@ export async function updateBenefitNutrients(benefitId, nutrientIdsList) {
       }
     });
   }
-
   // Remove nutrient from benefit if saved but not in nutrientIdsList.
   const idsToDelete = differenceOfTwoArrays(savedNutrientIds, nutrientIdsList);
   if (idsToDelete.length > 0) {
@@ -88,4 +74,7 @@ export async function updateBenefitNutrients(benefitId, nutrientIdsList) {
       }
     });
   }
+  console.log(
+    `benefit id: ${benefitId}; added nutrients ids: ${idsToCreate}; deleted nutrients: ${idsToCreate}`
+  );
 }
