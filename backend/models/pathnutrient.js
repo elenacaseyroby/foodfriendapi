@@ -4,11 +4,9 @@ module.exports = (sequelize, DataTypes) => {
     'PathNutrient',
     {
       created_at: {
-        allowNull: false,
         type: DataTypes.DATE,
       },
       updated_at: {
-        allowNull: false,
         type: DataTypes.DATE,
       },
     },
