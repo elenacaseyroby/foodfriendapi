@@ -32,16 +32,27 @@ app.post(
 );
 
 // Define api endpoints.
-app.get('/nutrients', (req, res) =>
-  db.Nutrient.findAll({
-    include: [
-      {
-        model: db.Food,
-        through: {},
-        as: 'foods',
-      },
-    ],
-  }).then((result) => res.json(result))
+app.get(
+  '/nutrients',
+  (req, res) =>
+    db.Benefit.findAll({
+      include: [
+        {
+          model: db.Nutrient,
+          through: {},
+          as: 'nutrients',
+        },
+      ],
+    }).then((result) => res.json(result))
+  // db.Nutrient.findAll({
+  //   include: [
+  //     {
+  //       model: db.Food,
+  //       through: {},
+  //       as: 'foods',
+  //     },
+  //   ],
+  // }).then((result) => res.json(result))
 );
 
 // Start server & listen for api requests.
