@@ -46,6 +46,7 @@ export async function uploadNutrientBenefits(file) {
         let benefitNutrientIdsList = [];
         if (benefit.nutrients_list) {
           benefitNutrientIdsList = benefit.nutrients_list
+            .replace(/"/g, '')
             .split(',')
             .map((nutrient_name) => {
               const cleanName = cleanString(nutrient_name);
@@ -74,6 +75,7 @@ export async function uploadNutrientBenefits(file) {
         let benefitNutrientIdsList = [];
         if (benefit.nutrients_list) {
           benefitNutrientIdsList = benefit.nutrients_list
+            .replace(/"/g, '')
             .split(',')
             .map((nutrient_name) => {
               const cleanName = cleanString(nutrient_name);
