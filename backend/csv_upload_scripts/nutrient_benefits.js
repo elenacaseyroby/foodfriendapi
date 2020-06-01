@@ -52,6 +52,9 @@ export async function uploadNutrientBenefits(file) {
               const cleanName = cleanString(nutrient_name);
               if (nutrientsByName[cleanName])
                 return nutrientsByName[cleanName].id;
+              console.log(
+                `nutrient name ${nutrient_name} not synced with benefit ${benefit.benefit_name}`
+              );
             })
             .filter((nutrientId) => !!nutrientId);
         }
@@ -98,28 +101,38 @@ export async function uploadNutrientBenefits(file) {
       });
       console.log('file deleted');
 
-      // Update benefits.
-      if (benefitsToUpdate.length > 0) return updateBenefits(benefitsToUpdate);
-
-      // Create new benefits.
-      if (benefitsToCreate.length > 0)
-        return createNewBenefits(benefitsToCreate);
-
-      // Get all benefits by name from db.
-      let benefits = await db.Benefit.findAll({});
-
-      let benefitsByName = benefits.reduce(function (map, benefit) {
-        map[benefit.name] = benefit;
-        return map;
-      }, {});
-      benefitNutrientsToUpdate.map((benefitNutrients) => {
-        if (!benefitsByName[benefitNutrients.benefitName]) return;
-        const benefitId = benefitsByName[benefitNutrients.benefitName].id;
-        const nutrientIdsList = benefitNutrients.nutrientIds;
-        updateBenefitNutrients(benefitId, nutrientIdsList);
-      });
-
+      let updatedBenefits = null;
+      let newBenefits = null;
+      let updatedBenefitNutrients = null;
+      try {
+        // Update benefits.
+        if (benefitsToUpdate.length > 0) {
+          updatedBenefits = await updateBenefits(benefitsToUpdate);
+        }
+        // Create New Benefits
+        if (benefitsToCreate.length > 0) {
+          newBenefits = await createNewBenefits(benefitsToCreate);
+        }
+        // Sort existing and new benefits by name.
+        const benefits = await db.Benefit.findAll({});
+        const benefitsByName = benefits.reduce(function (map, benefit) {
+          map[benefit.name] = benefit;
+          return map;
+        }, {});
+        // Update NutrientBenefit records.
+        updatedBenefitNutrients = await benefitNutrientsToUpdate.map(
+          (benefitNutrients) => {
+            if (!benefitsByName[benefitNutrients.benefitName]) return;
+            const benefitId = benefitsByName[benefitNutrients.benefitName].id;
+            const nutrientIdsList = benefitNutrients.nutrientIds;
+            return updateBenefitNutrients(benefitId, nutrientIdsList);
+          }
+        );
+      } catch (err) {
+        console.log(err);
+      }
       // TODO: return nutrient rows that could not be created/updated
       // because of bad or missing data.
+      return updatedBenefits && newBenefits && updatedBenefitNutrients;
     });
 }

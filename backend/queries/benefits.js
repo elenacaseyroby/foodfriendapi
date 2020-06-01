@@ -2,14 +2,16 @@ import { db } from '../models';
 import { differenceOfTwoArrays } from '../utils/common';
 
 export function createNewBenefits(benefitsList) {
-  db.Benefit.bulkCreate(benefitsList).then((benefits) => {
-    console.log(
-      `Benefit records created: ${benefitsList.map((benefit) => {
-        return benefit.name;
-      })}`
-    );
-    return benefits;
-  });
+  return (
+    db.Benefit.bulkCreate(benefitsList).then((benefits) => {
+      console.log(
+        `Benefit records created: ${benefitsList.map((benefit) => {
+          return benefit.name;
+        })}`
+      );
+      return benefits;
+    }) || []
+  );
 }
 
 export function updateBenefits(benefitsList) {
@@ -20,19 +22,21 @@ export function updateBenefits(benefitsList) {
   // Individually update benefits.
   // Doesn't appear to be a way to bulk update
   // distinct values.
-  benefitsList.map((benefit) => {
-    db.Benefit.update(benefit, {
-      returning: true,
-      where: { id: benefit.id },
-    }).then((benefits) => {
-      console.log(
-        `Benefit records updated: ${benefitsList.map((benefit) => {
-          return benefit.name;
-        })}`
-      );
-      return benefits;
-    });
-  });
+  return (
+    benefitsList.map((benefit) => {
+      db.Benefit.update(benefit, {
+        returning: true,
+        where: { id: benefit.id },
+      }).then((benefits) => {
+        console.log(
+          `Benefit records updated: ${benefitsList.map((benefit) => {
+            return benefit.name;
+          })}`
+        );
+        return benefits;
+      });
+    }) || []
+  );
 }
 
 export async function updateBenefitNutrients(benefitId, nutrientIdsList) {
@@ -45,35 +49,39 @@ export async function updateBenefitNutrients(benefitId, nutrientIdsList) {
   });
   // Add nutrient to benefit if in nutrientIdsList and not already saved.
   const idsToCreate = differenceOfTwoArrays(nutrientIdsList, savedNutrientIds);
+  let newNutrientBenefits = [];
   if (idsToCreate.length > 0) {
-    idsToCreate.map((nutrientId) => {
-      try {
+    try {
+      newNutrientBenefits = idsToCreate.map((nutrientId) => {
         db.NutrientBenefit.create({
           benefit_id: benefitId,
           nutrient_id: nutrientId,
         });
-      } catch (err) {
-        console.log(err);
-      }
-    });
+      });
+    } catch (err) {
+      console.log(err);
+    }
   }
   // Remove nutrient from benefit if saved but not in nutrientIdsList.
   const idsToDelete = differenceOfTwoArrays(savedNutrientIds, nutrientIdsList);
   if (idsToDelete.length > 0) {
-    idsToDelete.map((nutrientId) => {
-      try {
+    try {
+      idsToDelete.map((nutrientId) => {
         db.NutrientBenefit.destroy({
           where: {
             benefit_id: benefitId,
             nutrient_id: nutrientId,
           },
         });
-      } catch (err) {
-        console.log(err);
-      }
-    });
+      });
+    } catch (err) {
+      console.log(err);
+    }
   }
-  console.log(
-    `benefit id: ${benefitId}; added nutrients ids: ${idsToCreate}; deleted nutrients: ${idsToDelete}`
-  );
+  if (idsToCreate.length + idsToDelete.length > 0) {
+    console.log(
+      `benefit id: ${benefitId}; added nutrients ids: ${idsToCreate}; deleted nutrients: ${idsToDelete}`
+    );
+  }
+  return newNutrientBenefits;
 }
