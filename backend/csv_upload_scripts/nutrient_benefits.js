@@ -101,38 +101,34 @@ export async function uploadNutrientBenefits(file) {
       });
       console.log('file deleted');
 
-      let updatedBenefits = null;
-      let newBenefits = null;
-      let updatedBenefitNutrients = null;
       try {
         // Update benefits.
+        let updatedBenefits;
         if (benefitsToUpdate.length > 0) {
           updatedBenefits = await updateBenefits(benefitsToUpdate);
         }
         // Create New Benefits
+        let newBenefits;
         if (benefitsToCreate.length > 0) {
           newBenefits = await createNewBenefits(benefitsToCreate);
         }
-        // Sort existing and new benefits by name.
-        const benefits = await db.Benefit.findAll({});
-        const benefitsByName = benefits.reduce(function (map, benefit) {
-          map[benefit.name] = benefit;
-          return map;
-        }, {});
-        // Update NutrientBenefit records.
-        updatedBenefitNutrients = await benefitNutrientsToUpdate.map(
-          (benefitNutrients) => {
-            if (!benefitsByName[benefitNutrients.benefitName]) return;
-            const benefitId = benefitsByName[benefitNutrients.benefitName].id;
-            const nutrientIdsList = benefitNutrients.nutrientIds;
-            return updateBenefitNutrients(benefitId, nutrientIdsList);
-          }
-        );
       } catch (err) {
         console.log(err);
       }
+      // Sort existing and new benefits by name.
+      const benefits = await db.Benefit.findAll({});
+      const benefitsByName = benefits.reduce(function (map, benefit) {
+        map[benefit.name] = benefit;
+        return map;
+      }, {});
+      // Update NutrientBenefit records.
+      benefitNutrientsToUpdate.map((benefitNutrients) => {
+        if (!benefitsByName[benefitNutrients.benefitName]) return;
+        const benefitId = benefitsByName[benefitNutrients.benefitName].id;
+        const nutrientIdsList = benefitNutrients.nutrientIds;
+        return updateBenefitNutrients(benefitId, nutrientIdsList);
+      });
       // TODO: return nutrient rows that could not be created/updated
       // because of bad or missing data.
-      return updatedBenefits && newBenefits && updatedBenefitNutrients;
     });
 }
