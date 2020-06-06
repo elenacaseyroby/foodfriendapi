@@ -17,7 +17,7 @@ module.exports = {
           allowNull: false,
           type: Sequelize.DECIMAL(5, 2),
         },
-        source: {
+        dv_source: {
           allowNull: false,
           type: Sequelize.STRING,
         },
