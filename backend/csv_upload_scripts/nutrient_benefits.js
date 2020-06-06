@@ -9,15 +9,14 @@ const fs = require('fs');
 const csv = require('csv-parser');
 
 export async function uploadNutrientBenefits(file) {
+  // WARNING: must upload nutrients before uploading nutrientBenefits.
+
   // csv required columns:
   // benefit_name, nutrients_list
   // nutrients_list should be comma separated list of nutrient names.
 
   // Get all benefits by name from db.
-  let benefits = await db.Benefit.findAll({}).catch((err) => {
-    console.log(err);
-    throw error;
-  });
+  let benefits = await db.Benefit.findAll({});
   let benefitsByName = benefits.reduce(function (map, benefit) {
     map[cleanString(benefit.name)] = benefit;
     return map;
