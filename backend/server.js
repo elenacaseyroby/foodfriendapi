@@ -4,6 +4,7 @@ import { db } from './models';
 import multer from 'multer';
 import { uploadNutrients } from './csv_upload_scripts/nutrients';
 import { uploadNutrientBenefits } from './csv_upload_scripts/nutrient_benefits';
+import { uploadNutrientFoods } from './csv_upload_scripts/nutrient_foods';
 
 // Config environment variables so they are
 // accessible through process.env
@@ -31,28 +32,26 @@ app.post(
   }
 );
 
+app.post(
+  '/upload-csv/nutrient_foods',
+  upload.single('uploadfile'),
+  (req, res) => {
+    uploadNutrientFoods(req.file);
+    res.send('request successful!');
+  }
+);
+
 // Define api endpoints.
-app.get(
-  '/nutrients',
-  (req, res) =>
-    db.Benefit.findAll({
-      include: [
-        {
-          model: db.Nutrient,
-          through: {},
-          as: 'nutrients',
-        },
-      ],
-    }).then((result) => res.json(result))
-  // db.Nutrient.findAll({
-  //   include: [
-  //     {
-  //       model: db.Food,
-  //       through: {},
-  //       as: 'foods',
-  //     },
-  //   ],
-  // }).then((result) => res.json(result))
+app.get('/nutrients', (req, res) =>
+  db.Nutrient.findAll({
+    include: [
+      {
+        model: db.Food,
+        through: {},
+        as: 'foods',
+      },
+    ],
+  }).then((result) => res.json(result))
 );
 
 // Start server & listen for api requests.
