@@ -6,7 +6,7 @@ import { uploadNutrients } from './csv_upload_scripts/nutrients';
 import { uploadNutrientBenefits } from './csv_upload_scripts/nutrient_benefits';
 import { uploadNutrientFoods } from './csv_upload_scripts/nutrient_foods';
 import { uploadNutrientRecipes } from './csv_upload_scripts/nutrient_recipes';
-import { uploadNutrientPaths } from './csv_upload_scripts/nutrient_paths';
+import { uploadPathNutrients } from './csv_upload_scripts/path_nutrients';
 
 // Config environment variables so they are
 // accessible through process.env
@@ -53,10 +53,10 @@ app.post(
 );
 
 app.post(
-  '/upload-csv/nutrient_paths',
+  '/upload-csv/path_nutrients',
   upload.single('uploadfile'),
   (req, res) => {
-    uploadNutrientPaths(req.file);
+    uploadPathNutrients(req.file);
     res.send('request successful!');
   }
 );

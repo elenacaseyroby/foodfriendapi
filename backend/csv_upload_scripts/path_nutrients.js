@@ -4,7 +4,7 @@ import { updatePathNutrients } from '../queries/paths';
 const fs = require('fs');
 const csv = require('csv-parser');
 
-export async function uploadNutrientPaths(file) {
+export async function uploadPathNutrients(file) {
   // WARNING: must upload nutrients before uploading nutrientBenefits.
 
   // Adds/Updates nutrient_paths and paths records.
@@ -43,6 +43,7 @@ export async function uploadNutrientPaths(file) {
     return map;
   }, {});
 
+  let pathNamesTouched = [];
   let pathNutrientsToUpdate = [];
   let pathsToCreate = [];
   let pathsToUpdate = [];
@@ -51,6 +52,12 @@ export async function uploadNutrientPaths(file) {
     .pipe(csv())
     .on('data', (path) => {
       // TODO: add code to validate columns against bad or missing data for each field.
+      if (pathNamesTouched.includes(cleanString(path.path_name))) {
+        console.log(
+          'Could not process duplicate path name.  Please revise csv.'
+        );
+        return;
+      }
 
       // Check if path exists. If exists, update, else create new.
       const savedPath = pathsByName[cleanString(path.path_name)];
@@ -109,6 +116,7 @@ export async function uploadNutrientPaths(file) {
           nutrientIds: pathNutrientIdsList,
         });
       }
+      pathNamesTouched.push(cleanString(path.path_name));
     })
     .on('end', async () => {
       console.log('CSV file successfully processed');
