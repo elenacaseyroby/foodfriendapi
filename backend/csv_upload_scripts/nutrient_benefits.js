@@ -1,15 +1,13 @@
 import { db } from '../models';
 import { cleanString } from './common';
-import {
-  createNewBenefits,
-  updateBenefits,
-  updateBenefitNutrients,
-} from '../queries/benefits';
+import { updateBenefitNutrients } from '../queries/benefits';
 const fs = require('fs');
 const csv = require('csv-parser');
 
 export async function uploadNutrientBenefits(file) {
   // WARNING: must upload nutrients before uploading nutrientBenefits.
+
+  // Adds/Updates nutrient_benefits and benefits records.
 
   // csv required columns:
   // benefit_name, nutrients_list
@@ -100,20 +98,20 @@ export async function uploadNutrientBenefits(file) {
       });
       console.log('file deleted');
 
-      try {
-        // Update benefits.
-        let updatedBenefits;
-        if (benefitsToUpdate.length > 0) {
-          updatedBenefits = await updateBenefits(benefitsToUpdate);
-        }
-        // Create New Benefits
-        let newBenefits;
-        if (benefitsToCreate.length > 0) {
-          newBenefits = await createNewBenefits(benefitsToCreate);
-        }
-      } catch (err) {
-        console.log(err);
-      }
+      // Update benefits.
+      const updatedBenefits = await benefitsToUpdate.map((benefit) => {
+        db.Benefit.update(benefit, {
+          returning: true,
+          where: { id: benefit.id },
+        });
+      });
+
+      // Create New Benefits
+      const newBenefits = await db.Benefit.bulkCreate(benefitsToCreate);
+
+      console.log(`${updatedBenefits.length} benefits updated.`);
+      console.log(`${newBenefits.length} benefits created.`);
+
       // Sort existing and new benefits by name.
       const benefits = await db.Benefit.findAll({});
       const benefitsByName = benefits.reduce(function (map, benefit) {

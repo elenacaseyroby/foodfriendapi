@@ -1,44 +1,6 @@
 import { db } from '../models';
 import { differenceOfTwoArrays } from '../utils/common';
 
-export function createNewBenefits(benefitsList) {
-  return (
-    db.Benefit.bulkCreate(benefitsList).then((benefits) => {
-      console.log(
-        `Benefit records created: ${benefitsList.map((benefit) => {
-          return benefit.name;
-        })}`
-      );
-      return benefits;
-    }) || []
-  );
-}
-
-export function updateBenefits(benefitsList) {
-  // benefitsList should be an array of objects.
-  // each object must include an id
-  // and a name.
-
-  // Individually update benefits.
-  // Doesn't appear to be a way to bulk update
-  // distinct values.
-  return (
-    benefitsList.map((benefit) => {
-      db.Benefit.update(benefit, {
-        returning: true,
-        where: { id: benefit.id },
-      }).then((benefits) => {
-        console.log(
-          `Benefit records updated: ${benefitsList.map((benefit) => {
-            return benefit.name;
-          })}`
-        );
-        return benefits;
-      });
-    }) || []
-  );
-}
-
 export async function updateBenefitNutrients(benefitId, nutrientIdsList) {
   const savedNutrientIds = await db.NutrientBenefit.findAll({
     where: {
