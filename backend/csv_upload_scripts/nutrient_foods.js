@@ -8,6 +8,9 @@ const csv = require('csv-parser');
 
 export async function uploadNutrientFoods(file) {
   // WARNING: must upload nutrients before uploading nutrientFoods.
+  // this will add/update/delete nutrient_food records.
+  // will fully sync all the records in the csv to the db: adding/updating
+  // what's included and deleting what's not.
 
   // csv required columns:
   // nutrient_name, food_name, percent_dv_per_serving, dv_source
