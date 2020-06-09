@@ -43,7 +43,6 @@ export async function uploadNutrientFoods(file) {
     .pipe(csv())
     .on('data', (nutrientFood) => {
       // TODO: add code to validate columns against bad or missing data for each field.
-      // console.log(cleanString(nutrientFood.nutrient_name));
 
       // Get existing nutrient record. Skip row if record not found.
       const nutrient =
@@ -105,13 +104,16 @@ export async function uploadNutrientFoods(file) {
       }, {});
 
       // Update existing Foods.
-      foodsToUpdate.map((food) => {
+      const updatedFoods = await foodsToUpdate.map((food) => {
         db.Food.update(food, {
           where: {
             id: food.id,
           },
         });
       });
+      if (newFoods) console.log(`${newFoods.length} new foods created.`);
+      if (updatedFoods)
+        console.log(`${updatedFoods.length} existing foods updated.`);
 
       // Update nutrientfood records.
       // Sort NutrientFoods into savedFoodNameByNutrientId.
@@ -150,6 +152,7 @@ export async function uploadNutrientFoods(file) {
           });
         });
         // Create nutrientfoods in csv but not saved.
+        let nutrientFoodIdPairsTouched = [];
         nutrientFoods.map((nutrientFood) => {
           if (savedFoodIds.includes(nutrientFood.food_id)) {
             // If nutrientfood in csv and saved, update nutrients in csv and saved.
@@ -181,10 +184,25 @@ export async function uploadNutrientFoods(file) {
             return;
           }
           // Else create new nutrientfood record. If new food record, get new food id.
+          let food_id = nutrientFood.food_id;
+          let food = null;
+          if (!food_id) {
+            food = newFoodsByName[nutrientFood.food_name];
+            if (!food) {
+              console.log(`food not found by name: ${nutrientFood.food_name}`);
+              return;
+            }
+            food_id = food.id;
+          }
+          const pair = food_id.toString() + ' - ' + nutrientFood.nutrient_id;
+          if (nutrientFoodIdPairsTouched.includes(pair)) {
+            console.log(`food_id - nutrient id pair already exists: ${pair}`);
+            return;
+          }
+          nutrientFoodIdPairsTouched.push(pair);
           db.NutrientFood.create({
             nutrient_id: nutrientFood.nutrient_id,
-            food_id:
-              nutrientFood.food_id || newFoodsByName[nutrientFood.food_name],
+            food_id: food_id,
             percent_dv_per_serving: nutrientFood.percent_dv_per_serving,
             dv_source: nutrientFood.dv_source,
           });
