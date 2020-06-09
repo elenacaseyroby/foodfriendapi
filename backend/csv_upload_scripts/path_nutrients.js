@@ -18,14 +18,14 @@ export async function uploadPathNutrients(file) {
   // Get or create ownerid for foodfriend. findOrCreate wasn't returning user like I needed.
   let admin = await db.User.findOne({
     where: {
-      email: 'elenacaseyroby@gmail.com',
+      email: 'admin@admin.admin',
     },
   });
   if (!admin) {
     admin = await db.User.Create({
-      email: 'elenacaseyroby@gmail.com',
-      first_name: 'Casey',
-      last_name: 'Roby',
+      email: 'admin@admin.admin',
+      first_name: 'Admin',
+      last_name: 'Admin',
     });
   }
 
