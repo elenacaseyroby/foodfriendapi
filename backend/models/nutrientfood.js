@@ -7,12 +7,14 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DECIMAL(5, 2),
         allowNull: false,
       },
-      created_at: {
+      dv_source: {
         allowNull: false,
+        type: DataTypes.STRING,
+      },
+      created_at: {
         type: DataTypes.DATE,
       },
       updated_at: {
-        allowNull: false,
         type: DataTypes.DATE,
       },
     },

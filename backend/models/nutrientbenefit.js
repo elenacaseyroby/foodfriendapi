@@ -4,11 +4,9 @@ module.exports = (sequelize, DataTypes) => {
     'NutrientBenefit',
     {
       created_at: {
-        allowNull: false,
         type: DataTypes.DATE,
       },
       updated_at: {
-        allowNull: false,
         type: DataTypes.DATE,
       },
     },

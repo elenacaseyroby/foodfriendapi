@@ -15,6 +15,7 @@ module.exports = {
       url: {
         allowNull: false,
         type: Sequelize.STRING,
+        unique: true,
       },
       source_note: {
         allowNull: false,
