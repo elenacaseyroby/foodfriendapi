@@ -8,6 +8,8 @@ export async function uploadNutrientRecipes(file) {
   // WARNING: must upload nutrients before uploading nutrientBenefits.
   // this will only add/update nutrient_recipes and recipes records.
 
+  // Adds/Updates nutrient_recipes and recipes records.
+
   // csv required columns:
   // recipe_name,	url,	image_path,	trackable_foods,	source_note
   // nutrients_list should be comma separated list of nutrient names.

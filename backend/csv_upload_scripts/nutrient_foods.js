@@ -12,6 +12,8 @@ export async function uploadNutrientFoods(file) {
   // will fully sync all the records in the csv to the db: adding/updating
   // what's included and deleting what's not.
 
+  // Adds/Updates nutrient_foods and foods records.
+
   // csv required columns:
   // nutrient_name, food_name, percent_dv_per_serving, dv_source
   // nutrients_list should be comma separated list of nutrient names.

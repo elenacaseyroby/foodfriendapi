@@ -26,6 +26,8 @@ export async function uploadNutrients(file) {
   // csv optional columns:
   // description, description_sources, warnings, warings_sources, source_note
 
+  // Add/Update nutrients records.
+
   // TODO: check document headers and return error if not up to specs.
 
   // Get all nutrients from db.
