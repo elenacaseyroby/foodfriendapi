@@ -22,7 +22,7 @@ export async function uploadPathNutrients(file) {
     },
   });
   if (!admin) {
-    admin = await db.User.Create({
+    admin = await db.User.create({
       email: 'admin@admin.admin',
       first_name: 'Admin',
       last_name: 'Admin',
