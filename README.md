@@ -28,7 +28,7 @@ more migrations info here: https://docs.google.com/document/d/13pcDmpL_4E9p8kg74
   - request: POST /upload-csv/nutrient_recipes
   - body: uploadfile: file.csv
     - csv fields **(required in bold)**: **nutrient_name,recipe_name,url,image_path,** trackable_foods, **source_note**
-- Upload Paths and NutrientPaths.  Will Add/Update Paths and Add/Update/delete NutrientPaths records:
-  - request: POST /upload-csv/nutrient_paths
+- Upload Paths and PathNutrients.  Will Add/Update Paths and Add/Update/delete PathNutrients records:
+  - request: POST /upload-csv/path_nutrients
   - body: uploadfile: file.csv
     - csv fields **(required in bold)**: **path_name,nutrients_list** ,notes,notes_sources,source_note,warnings,warnings_sources
