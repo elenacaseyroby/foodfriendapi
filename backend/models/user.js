@@ -17,7 +17,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         type: DataTypes.STRING,
       },
-      hash: {
+      password: {
         type: DataTypes.STRING,
       },
       salt: {
@@ -73,7 +73,7 @@ module.exports = (sequelize, DataTypes) => {
     return User.update(
       {
         salt: salt,
-        hash: hashedPassword,
+        password: hashedPassword,
       },
       {
         where: {
@@ -83,7 +83,7 @@ module.exports = (sequelize, DataTypes) => {
     );
   };
   User.prototype.validatePassword = function (password) {
-    return this.hash === hashPassword(password, this.salt);
+    return this.password === hashPassword(password, this.salt);
   };
   return User;
 };
