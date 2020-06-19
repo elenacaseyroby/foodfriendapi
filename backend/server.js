@@ -58,6 +58,44 @@ app.post('/login', async (req, res) => {
   });
 });
 
+app.post('register', async (req, res) => {
+  // Make sure form is filled out.
+  if (
+    !req.body.email ||
+    !req.body.password ||
+    !req.first_name ||
+    !req.last_name
+  ) {
+    return res.status(401).json({
+      message: 'You must fill out all of the fields to create your account.',
+    });
+  }
+  // Check for user with email.
+  const existingUser = db.User.findAll({
+    where: {
+      email: req.body.email,
+    },
+  });
+  if (existingUser.length > 0)
+    return res.status(400).json({
+      message: 'There is already an account under the email that you entered.',
+    });
+  // If not, create new user.
+  const user = await db.User.create({
+    email: req.body.email,
+    first_name: req.body.first_name,
+    last_name: req.body.last_name,
+  });
+  user.setPassword(req.body.password);
+  const token = generateJWT(user);
+  return res.status(200).json({
+    id: user.id,
+    email: user.email,
+    first_name: user.first_name,
+    access_token: token,
+  });
+});
+
 // DATA
 app.get('/nutrients', async (req, res) => {
   const loggedIn = await checkUserIsLoggedIn(req, res);
