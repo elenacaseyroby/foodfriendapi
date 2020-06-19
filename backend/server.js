@@ -98,6 +98,7 @@ app.post('register', async (req, res) => {
 
 // DATA
 app.get('/nutrients', async (req, res) => {
+  // could move this logic into a middleware function in router.
   const loggedIn = await checkUserIsLoggedIn(req, res);
   if (!loggedIn) {
     return res.status(401).json({

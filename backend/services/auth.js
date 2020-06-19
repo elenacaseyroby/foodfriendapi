@@ -10,7 +10,6 @@ export function generateJWT(user) {
   return jwt.sign({ user: tokenData }, process.env.JWT_SECRET);
 }
 
-// Could do this a different way too.
 export function checkUserIsLoggedIn(req) {
   // Must pass valid jwt token in headers as "authorization"
   // to be considered logged in.
@@ -20,6 +19,17 @@ export function checkUserIsLoggedIn(req) {
   const tokenData = decodeToken(req);
   if (!tokenData) return false;
   return true;
+}
+
+// could use as middleware function in router.
+export function requireLogin(req, res) {
+  const tokenData = decodeToken(req);
+  if (!tokenData) {
+    return res
+      .status('401')
+      .json('You must be logged in to complete this request.');
+  }
+  return tokenData;
 }
 
 export function decodeToken(req) {
