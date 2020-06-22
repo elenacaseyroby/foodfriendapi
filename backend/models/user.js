@@ -1,4 +1,6 @@
 'use strict';
+const crypto = require('crypto');
+
 module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define(
     'User',
@@ -13,6 +15,12 @@ module.exports = (sequelize, DataTypes) => {
       },
       email: {
         allowNull: false,
+        type: DataTypes.STRING,
+      },
+      password: {
+        type: DataTypes.STRING,
+      },
+      salt: {
         type: DataTypes.STRING,
       },
       birthday: {
@@ -57,5 +65,31 @@ module.exports = (sequelize, DataTypes) => {
       otherKey: 'recipe_id',
     });
   };
+  // methods:
+  User.prototype.setPassword = async function (password) {
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hashedPassword = hashPassword(password, salt);
+    console.log(`${this.id} - ${salt} - ${hashedPassword}`);
+    return User.update(
+      {
+        salt: salt,
+        password: hashedPassword,
+      },
+      {
+        where: {
+          id: this.id,
+        },
+      }
+    );
+  };
+  User.prototype.validatePassword = function (password) {
+    return this.password === hashPassword(password, this.salt);
+  };
   return User;
 };
+
+function hashPassword(password, salt) {
+  return crypto
+    .pbkdf2Sync(password, salt, 10000, 100, 'sha512')
+    .toString('hex');
+}

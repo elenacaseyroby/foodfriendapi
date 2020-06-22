@@ -2,6 +2,7 @@ import express, { Router } from 'express';
 import dotenv from 'dotenv';
 import { db } from './models';
 import multer from 'multer';
+import { generateJWT, checkUserIsLoggedIn } from './services/auth';
 import { uploadNutrients } from './csv_upload_scripts/nutrients';
 import { uploadNutrientBenefits } from './csv_upload_scripts/nutrient_benefits';
 import { uploadNutrientFoods } from './csv_upload_scripts/nutrient_foods';
@@ -16,7 +17,136 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || process.env.PORT;
 
-// Make endpoints to upload csvs to update database.
+const bodyParser = require('body-parser');
+// app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+// API ENDPOINTS BELOW
+
+// AUTHENTICATION
+app.post('/login', async (req, res) => {
+  console.log(req.body);
+  if (!req.body.email || !req.body.password) {
+    return res.status(401).json({
+      message: 'You must enter your email and your password to login.',
+    });
+  }
+  // Get user.
+  const user = await db.User.findOne({
+    where: {
+      email: req.body.email,
+    },
+  });
+  if (!user) {
+    return res.status(401).json({
+      message:
+        'We could not find an account associated with the email you provided.',
+    });
+  }
+  console.log(user);
+  const passwordValidated = user.validatePassword(req.body.password);
+  if (!passwordValidated) {
+    return res.status(401).json({
+      message: 'The password you have entered is incorrect.',
+    });
+  }
+  const token = generateJWT(user);
+  return res.status(200).json({
+    id: user.id,
+    email: user.email,
+    first_name: user.first_name,
+    access_token: token,
+  });
+});
+
+app.post('register', async (req, res) => {
+  // Make sure form is filled out.
+  if (
+    !req.body.email ||
+    !req.body.password ||
+    !req.first_name ||
+    !req.last_name
+  ) {
+    return res.status(401).json({
+      message: 'You must fill out all of the fields to create your account.',
+    });
+  }
+  // Check for user with email.
+  const existingUser = db.User.findAll({
+    where: {
+      email: req.body.email,
+    },
+  });
+  if (existingUser.length > 0)
+    return res.status(400).json({
+      message: 'There is already an account under the email that you entered.',
+    });
+  // If not, create new user.
+  const user = await db.User.create({
+    email: req.body.email,
+    first_name: req.body.first_name,
+    last_name: req.body.last_name,
+  });
+  user.setPassword(req.body.password);
+  const token = generateJWT(user);
+  return res.status(200).json({
+    id: user.id,
+    email: user.email,
+    first_name: user.first_name,
+    access_token: token,
+  });
+});
+
+// DATA
+app.get('/users/:user_id', async (req, res) => {
+  // could move this logic into a middleware function in router.
+  const loggedIn = await checkUserIsLoggedIn(req, res);
+  if (!loggedIn) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  if (!req.params.user_id)
+    return res.status(401).json({ message: 'Must pass user_id.' });
+  db.User.findOne({
+    where: {
+      id: req.params.user_id,
+    },
+  }).then((user) => {
+    if (!user) return es.status(401).json({ message: 'User not found.' });
+    return res.json({
+      id: user.id,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      birthday: user.birthday,
+      is_vegan: user.is_vegan,
+      mensruates: user.mensruates,
+      active_path_id: user.active_path_id,
+    });
+  });
+});
+
+app.get('/nutrients', async (req, res) => {
+  // could move this logic into a middleware function in router.
+  const loggedIn = await checkUserIsLoggedIn(req, res);
+  if (!loggedIn) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  db.Nutrient.findAll({
+    include: [
+      {
+        model: db.Food,
+        through: {},
+        as: 'foods',
+      },
+    ],
+  }).then((result) => res.json(result));
+});
+
+// CSV UPLOADS
 // TODO: add password protection on these pages.
 const upload = multer({ dest: 'tmp/csv/' });
 
@@ -59,19 +189,6 @@ app.post(
     uploadPathNutrients(req.file);
     res.send('request successful!');
   }
-);
-
-// Define api endpoints.
-app.get('/nutrients', (req, res) =>
-  db.Nutrient.findAll({
-    include: [
-      {
-        model: db.Food,
-        through: {},
-        as: 'foods',
-      },
-    ],
-  }).then((result) => res.json(result))
 );
 
 // Start server & listen for api requests.
