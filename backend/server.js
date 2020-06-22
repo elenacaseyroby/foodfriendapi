@@ -1,8 +1,11 @@
 import express, { Router } from 'express';
-import dotenv from 'dotenv';
 import { db } from './models';
 import multer from 'multer';
-import { generateJWT, checkUserIsLoggedIn } from './services/auth';
+import {
+  generateJWT,
+  checkUserIsLoggedIn,
+  checkIfAdmin,
+} from './services/auth';
 import { uploadNutrients } from './csv_upload_scripts/nutrients';
 import { uploadNutrientBenefits } from './csv_upload_scripts/nutrient_benefits';
 import { uploadNutrientFoods } from './csv_upload_scripts/nutrient_foods';
@@ -11,8 +14,8 @@ import { uploadPathNutrients } from './csv_upload_scripts/path_nutrients';
 
 // Config environment variables so they are
 // accessible through process.env
-dotenv.config();
-
+require('dotenv').config();
+console.log(process.env.NODE_ENV);
 // Start app.
 const app = express();
 const port = process.env.PORT || process.env.PORT;
@@ -144,6 +147,34 @@ app.get('/nutrients', async (req, res) => {
       },
     ],
   }).then((result) => res.json(result));
+});
+
+// ADMIN
+app.put('/users/changePassword', async (req, res) => {
+  // Must pass access token with request.
+  const isAdmin = await checkIfAdmin(req);
+  if (!isAdmin) {
+    console.log('not admin');
+    return res.status(401).json({
+      message: 'You do not have necessary permissions to perform this action.',
+    });
+  }
+  console.log('is admin');
+  if (!req.body.email || !req.body.password) {
+    return res
+      .status(400)
+      .json({ message: 'bad params: email or password not passed.' });
+  }
+  const user = await db.User.findOne({
+    where: { email: req.body.email },
+  });
+  try {
+    user.setPassword(req.body.password);
+    user.save();
+    return res.status(200).json({ message: 'password successfully updated.' });
+  } catch (e) {
+    return res.status(400).json({ message: 'failed to update password.' });
+  }
 });
 
 // CSV UPLOADS

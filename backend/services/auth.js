@@ -1,9 +1,7 @@
 import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
 
 // Config environment variables so they are
 // accessible through process.env
-dotenv.config();
 
 export function generateJWT(user) {
   const tokenData = { email: user.email, id: user.id };
@@ -18,6 +16,16 @@ export function checkUserIsLoggedIn(req) {
 
   const tokenData = decodeToken(req);
   if (!tokenData) return false;
+  return true;
+}
+
+export function checkIfAdmin(req) {
+  const adminToken =
+    req.headers.adminauthorization || req.headers['adminauthorization'];
+  console.log(process.env.ADMIN_ACCESS_TOKEN);
+  console.log(adminToken);
+  if (!adminToken) return;
+  if (adminToken !== process.env.ADMIN_ACCESS_TOKEN) return;
   return true;
 }
 
