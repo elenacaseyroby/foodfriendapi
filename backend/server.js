@@ -18,7 +18,8 @@ const app = express();
 const port = process.env.PORT || process.env.PORT;
 
 const bodyParser = require('body-parser');
-app.use(bodyParser.urlencoded({ extended: true }));
+// app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 
 // API ENDPOINTS BELOW
 
@@ -97,6 +98,35 @@ app.post('register', async (req, res) => {
 });
 
 // DATA
+app.get('/users/:user_id', async (req, res) => {
+  // could move this logic into a middleware function in router.
+  const loggedIn = await checkUserIsLoggedIn(req, res);
+  if (!loggedIn) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  if (!req.params.user_id)
+    return res.status(401).json({ message: 'Must pass user_id.' });
+  db.User.findOne({
+    where: {
+      id: req.params.user_id,
+    },
+  }).then((user) => {
+    if (!user) return es.status(401).json({ message: 'User not found.' });
+    return res.json({
+      id: user.id,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      birthday: user.birthday,
+      is_vegan: user.is_vegan,
+      mensruates: user.mensruates,
+      active_path_id: user.active_path_id,
+    });
+  });
+});
+
 app.get('/nutrients', async (req, res) => {
   // could move this logic into a middleware function in router.
   const loggedIn = await checkUserIsLoggedIn(req, res);
