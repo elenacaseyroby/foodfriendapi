@@ -37,7 +37,7 @@ app.post('/login', async (req, res) => {
   // Get user.
   const user = await db.User.findOne({
     where: {
-      email: req.body.email,
+      email: req.body.email.toLowerCase().trim(),
     },
   });
   if (!user) {
@@ -62,13 +62,13 @@ app.post('/login', async (req, res) => {
   });
 });
 
-app.post('register', async (req, res) => {
+app.post('/signup', async (req, res) => {
   // Make sure form is filled out.
   if (
     !req.body.email ||
     !req.body.password ||
-    !req.first_name ||
-    !req.last_name
+    !req.body.first_name ||
+    !req.body.last_name
   ) {
     return res.status(401).json({
       message: 'You must fill out all of the fields to create your account.',
@@ -86,9 +86,9 @@ app.post('register', async (req, res) => {
     });
   // If not, create new user.
   const user = await db.User.create({
-    email: req.body.email,
-    first_name: req.body.first_name,
-    last_name: req.body.last_name,
+    email: req.body.email.toLowerCase().trim(),
+    first_name: req.body.first_name.trim(),
+    last_name: req.body.last_name.trim(),
   });
   user.setPassword(req.body.password);
   const token = generateJWT(user);
