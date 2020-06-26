@@ -183,29 +183,35 @@ app.put('/users/changePassword', async (req, res) => {
 // TODO: add password protection on these pages.
 const upload = multer({ dest: 'tmp/csv/' });
 
-app.post('/upload-csv/nutrients', upload.single('uploadfile'), (req, res) => {
-  // Must pass headers.adminauthorization with request.
-  const isAdmin = await checkIfAdmin(req);
-  if (!isAdmin) {
-    console.log('not admin');
-    return res.status(401).json({
-      message: 'You do not have necessary permissions to perform this action.',
-    });
-  }
-  uploadNutrients(req.file);
-  res.send('request successful!');
-});
-
 app.post(
-  '/upload-csv/nutrient_benefits',
+  '/upload-csv/nutrients',
   upload.single('uploadfile'),
-  (req, res) => {
+  async (req, res) => {
     // Must pass headers.adminauthorization with request.
     const isAdmin = await checkIfAdmin(req);
     if (!isAdmin) {
       console.log('not admin');
       return res.status(401).json({
-        message: 'You do not have necessary permissions to perform this action.',
+        message:
+          'You do not have necessary permissions to perform this action.',
+      });
+    }
+    uploadNutrients(req.file);
+    res.send('request successful!');
+  }
+);
+
+app.post(
+  '/upload-csv/nutrient_benefits',
+  upload.single('uploadfile'),
+  async (req, res) => {
+    // Must pass headers.adminauthorization with request.
+    const isAdmin = await checkIfAdmin(req);
+    if (!isAdmin) {
+      console.log('not admin');
+      return res.status(401).json({
+        message:
+          'You do not have necessary permissions to perform this action.',
       });
     }
     uploadNutrientBenefits(req.file);
@@ -216,13 +222,14 @@ app.post(
 app.post(
   '/upload-csv/nutrient_foods',
   upload.single('uploadfile'),
-  (req, res) => {
+  async (req, res) => {
     // Must pass headers.adminauthorization with request.
     const isAdmin = await checkIfAdmin(req);
     if (!isAdmin) {
       console.log('not admin');
       return res.status(401).json({
-        message: 'You do not have necessary permissions to perform this action.',
+        message:
+          'You do not have necessary permissions to perform this action.',
       });
     }
     uploadNutrientFoods(req.file);
@@ -233,13 +240,14 @@ app.post(
 app.post(
   '/upload-csv/nutrient_recipes',
   upload.single('uploadfile'),
-  (req, res) => {
+  async (req, res) => {
     // Must pass headers.adminauthorization with request.
-  const isAdmin = await checkIfAdmin(req);
+    const isAdmin = await checkIfAdmin(req);
     if (!isAdmin) {
       console.log('not admin');
       return res.status(401).json({
-        message: 'You do not have necessary permissions to perform this action.',
+        message:
+          'You do not have necessary permissions to perform this action.',
       });
     }
     uploadNutrientRecipes(req.file);
@@ -250,13 +258,14 @@ app.post(
 app.post(
   '/upload-csv/path_nutrients',
   upload.single('uploadfile'),
-  (req, res) => {
+  async (req, res) => {
     // Must pass headers.adminauthorization with request.
     const isAdmin = await checkIfAdmin(req);
     if (!isAdmin) {
       console.log('not admin');
       return res.status(401).json({
-        message: 'You do not have necessary permissions to perform this action.',
+        message:
+          'You do not have necessary permissions to perform this action.',
       });
     }
     uploadPathNutrients(req.file);
