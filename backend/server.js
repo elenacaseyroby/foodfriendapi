@@ -103,6 +103,8 @@ app.post('/signup', async (req, res) => {
 // DATA
 app.get('/users/:user_id', async (req, res) => {
   // could move this logic into a middleware function in router.
+  console.log(`token:${req.headers.authorization}`);
+  console.log(`user id:${req.params.user_id}`);
   const loggedIn = await checkUserIsLoggedIn(req, res);
   if (!loggedIn) {
     return res.status(401).json({
@@ -151,7 +153,7 @@ app.get('/nutrients', async (req, res) => {
 
 // ADMIN
 app.put('/users/changePassword', async (req, res) => {
-  // Must pass access token with request.
+  // Must pass headers.adminauthorization with request.
   const isAdmin = await checkIfAdmin(req);
   if (!isAdmin) {
     console.log('not admin');
@@ -182,6 +184,14 @@ app.put('/users/changePassword', async (req, res) => {
 const upload = multer({ dest: 'tmp/csv/' });
 
 app.post('/upload-csv/nutrients', upload.single('uploadfile'), (req, res) => {
+  // Must pass headers.adminauthorization with request.
+  const isAdmin = await checkIfAdmin(req);
+  if (!isAdmin) {
+    console.log('not admin');
+    return res.status(401).json({
+      message: 'You do not have necessary permissions to perform this action.',
+    });
+  }
   uploadNutrients(req.file);
   res.send('request successful!');
 });
@@ -190,6 +200,14 @@ app.post(
   '/upload-csv/nutrient_benefits',
   upload.single('uploadfile'),
   (req, res) => {
+    // Must pass headers.adminauthorization with request.
+    const isAdmin = await checkIfAdmin(req);
+    if (!isAdmin) {
+      console.log('not admin');
+      return res.status(401).json({
+        message: 'You do not have necessary permissions to perform this action.',
+      });
+    }
     uploadNutrientBenefits(req.file);
     res.send('request successful!');
   }
@@ -199,6 +217,14 @@ app.post(
   '/upload-csv/nutrient_foods',
   upload.single('uploadfile'),
   (req, res) => {
+    // Must pass headers.adminauthorization with request.
+    const isAdmin = await checkIfAdmin(req);
+    if (!isAdmin) {
+      console.log('not admin');
+      return res.status(401).json({
+        message: 'You do not have necessary permissions to perform this action.',
+      });
+    }
     uploadNutrientFoods(req.file);
     res.send('request successful!');
   }
@@ -208,6 +234,14 @@ app.post(
   '/upload-csv/nutrient_recipes',
   upload.single('uploadfile'),
   (req, res) => {
+    // Must pass headers.adminauthorization with request.
+  const isAdmin = await checkIfAdmin(req);
+    if (!isAdmin) {
+      console.log('not admin');
+      return res.status(401).json({
+        message: 'You do not have necessary permissions to perform this action.',
+      });
+    }
     uploadNutrientRecipes(req.file);
     res.send('request successful!');
   }
@@ -217,6 +251,14 @@ app.post(
   '/upload-csv/path_nutrients',
   upload.single('uploadfile'),
   (req, res) => {
+    // Must pass headers.adminauthorization with request.
+    const isAdmin = await checkIfAdmin(req);
+    if (!isAdmin) {
+      console.log('not admin');
+      return res.status(401).json({
+        message: 'You do not have necessary permissions to perform this action.',
+      });
+    }
     uploadPathNutrients(req.file);
     res.send('request successful!');
   }
