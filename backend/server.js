@@ -116,7 +116,7 @@ app.get('/users/:user_id', async (req, res) => {
       id: req.params.user_id,
     },
   }).then((user) => {
-    if (!user) return es.status(401).json({ message: 'User not found.' });
+    if (!user) return res.status(401).json({ message: 'User not found.' });
     return res.json({
       id: user.id,
       email: user.email,
