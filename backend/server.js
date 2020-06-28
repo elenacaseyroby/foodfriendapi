@@ -1,4 +1,4 @@
-import express, { Router } from 'express';
+import express from 'express';
 import { db } from './models';
 import multer from 'multer';
 import {
@@ -16,19 +16,23 @@ import { uploadPathNutrients } from './csv_upload_scripts/path_nutrients';
 // accessible through process.env
 require('dotenv').config();
 console.log(process.env.NODE_ENV);
+
 // Start app.
 const app = express();
 const port = process.env.PORT || process.env.PORT;
 
+// Config sendGrid.
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+// Config bodyparser for handling api request data.
 const bodyParser = require('body-parser');
-// app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 // API ENDPOINTS BELOW
 
 // AUTHENTICATION
 app.post('/login', async (req, res) => {
-  console.log(req.body);
   if (!req.body.email || !req.body.password) {
     return res.status(401).json({
       message: 'You must enter your email and your password to login.',
@@ -56,8 +60,6 @@ app.post('/login', async (req, res) => {
   const token = generateJWT(user);
   return res.status(200).json({
     id: user.id,
-    email: user.email,
-    first_name: user.first_name,
     access_token: token,
   });
 });
@@ -74,10 +76,15 @@ app.post('/signup', async (req, res) => {
       message: 'You must fill out all of the fields to create your account.',
     });
   }
+  if (req.body.password.length < 8) {
+    return res.status(401).json({
+      message: 'Your password must be 8 or more characters long.',
+    });
+  }
   // Check for user with email.
-  const existingUser = db.User.findAll({
+  const existingUser = await db.User.findAll({
     where: {
-      email: req.body.email,
+      email: req.body.email.toLowerCase(),
     },
   });
   if (existingUser.length > 0)
@@ -94,28 +101,128 @@ app.post('/signup', async (req, res) => {
   const token = generateJWT(user);
   return res.status(200).json({
     id: user.id,
-    email: user.email,
-    first_name: user.first_name,
     access_token: token,
   });
 });
 
+app.post('/sendPasswordResetEmail', async (req, res) => {
+  // Make sure form is filled out.
+  console.log(JSON.stringify(req.body));
+  if (!req.body.email || (req.body.email && !req.body.email.includes('@'))) {
+    return res.status(401).json({
+      message:
+        'You must enter a valid email to request a password reset email.',
+    });
+  }
+  // Check for user with email.
+  const user = await db.User.findOne({
+    where: {
+      email: req.body.email.toLowerCase(),
+    },
+  });
+  // If no user return error
+  if (!user)
+    return res.status(400).json({
+      message:
+        'There is no account tied to the email you have entered. Please double check for typos.',
+    });
+  // Else generate email.
+  // Generate and set password reset token
+  const token = await user.generatePasswordResetToken();
+
+  // ERROR HERE
+  try {
+    // Send email with deep link to app UpdatePassword component.
+    const address = `foodfriend://updatepassword/${user.id}/${token}`;
+    // const link = `<a clicktracking="off" href="foodfriend://updatepassword/${user.id}/${token}">link</a>`;
+    const link = `<a href="foodfriend://updatepassword/2/aksljf">link</a>`;
+    const mailOptions = {
+      to: user.email,
+      from: process.env.PASSWORD_RESET_FROM_EMAIL,
+      subject: 'Password reset request',
+      text: `Hi ${user.first_name},
+      Please click here: ${address} to reset your FoodFriend password.
+      If you did not request this, please ignore this email and your password will remain unchanged.`,
+      html: `<p>Hi ${user.first_name}, <br><br> 
+      Please click on this ${address} to reset your FoodFriend password. <br>
+      If you did not request this, please ignore this email and your password will remain unchanged.`,
+    };
+    sgMail.send(mailOptions, (error, result) => {
+      if (error) return res.status(500).json({ message: error.message });
+      res.status(200).json({
+        message: 'A reset email has been sent to ' + user.email + '.',
+      });
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
+
+app.post('/resetPassword', async (req, res) => {
+  // Validate fields.
+  if (!req.body.userId || !req.body.passwordResetToken || !req.body.newPassword)
+    return res.status(401).json({
+      message:
+        'Could not complete your password reset request.  Please submit a new password reset request and try again.',
+    });
+  if (req.body.newPassword.length < 8) {
+    return res.status(401).json({
+      message: 'Your password must be 8 or more characters long.',
+    });
+  }
+  // Check for user with email.
+  const user = await db.User.findOne({
+    where: {
+      id: req.body.userId,
+    },
+  });
+  // If no user return error
+  if (!user)
+    return res.status(400).json({
+      message:
+        'There is no account tied to the email you have entered. Please double check for typos.',
+    });
+  // Check for valid password reset token.
+  const tokenIsValid = await user.validatePasswordResetToken(
+    req.body.passwordResetToken
+  );
+  if (!tokenIsValid)
+    return res.status(401).json({
+      message:
+        'Could not complete your password reset request.  Please submit a new password reset request and try again.',
+    });
+  // Update password.
+  try {
+    user.setPassword(req.body.newPassword);
+    user.save();
+    // return access token and user id
+    const token = generateJWT(user);
+    return res.status(200).json({
+      id: user.id,
+      accessToken: token,
+      message: 'Successfully updated password.',
+    });
+  } catch (error) {
+    return res.status(400).json({ message: 'failed to update password.' });
+  }
+});
+
 // DATA
-app.get('/users/:user_id', async (req, res) => {
+app.get('/users/:userId', async (req, res) => {
   // could move this logic into a middleware function in router.
   console.log(`token:${req.headers.authorization}`);
-  console.log(`user id:${req.params.user_id}`);
+  console.log(`user id:${req.params.userId}`);
   const loggedIn = await checkUserIsLoggedIn(req, res);
   if (!loggedIn) {
     return res.status(401).json({
       message: 'You must be logged in to complete this request.',
     });
   }
-  if (!req.params.user_id)
-    return res.status(401).json({ message: 'Must pass user_id.' });
+  if (!req.params.userId)
+    return res.status(401).json({ message: 'Must pass user id.' });
   db.User.findOne({
     where: {
-      id: req.params.user_id,
+      id: req.params.userId,
     },
   }).then((user) => {
     if (!user) return res.status(401).json({ message: 'User not found.' });
@@ -168,7 +275,7 @@ app.put('/users/changePassword', async (req, res) => {
       .json({ message: 'bad params: email or password not passed.' });
   }
   const user = await db.User.findOne({
-    where: { email: req.body.email },
+    where: { email: req.body.email.toLowerCase() },
   });
   try {
     user.setPassword(req.body.password);
