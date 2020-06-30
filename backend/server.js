@@ -132,19 +132,18 @@ app.post('/sendPasswordResetEmail', async (req, res) => {
 
   // ERROR HERE
   try {
-    // Send email with deep link to app UpdatePassword component.
-    const address = `foodfriend://updatepassword/${user.id}/${token}`;
-    // const link = `<a clicktracking="off" href="foodfriend://updatepassword/${user.id}/${token}">link</a>`;
-    const link = `<a href="foodfriend://updatepassword/2/aksljf">link</a>`;
+    // Send email with link to redirect to deep link to app UpdatePassword component.
+    const url = `${process.env.FOODFRIEND_URL}/passwordreset/${user.id}/${token}`;
+    const link = `<a href="${url}">link</a>`;
     const mailOptions = {
       to: user.email,
       from: process.env.PASSWORD_RESET_FROM_EMAIL,
       subject: 'Password reset request',
       text: `Hi ${user.first_name},
-      Please click here: ${address} to reset your FoodFriend password.
+      From your smartphone or iPad, please visit this url: ${url} to reset your FoodFriend password.
       If you did not request this, please ignore this email and your password will remain unchanged.`,
       html: `<p>Hi ${user.first_name}, <br><br> 
-      Please click on this ${address} to reset your FoodFriend password. <br>
+      Please click on this ${link} to reset your FoodFriend password. <br>
       If you did not request this, please ignore this email and your password will remain unchanged.`,
     };
     sgMail.send(mailOptions, (error, result) => {
