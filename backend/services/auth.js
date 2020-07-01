@@ -22,8 +22,6 @@ export function checkUserIsLoggedIn(req) {
 export function checkIfAdmin(req) {
   const adminToken =
     req.headers.adminauthorization || req.headers['adminauthorization'];
-  console.log(process.env.ADMIN_ACCESS_TOKEN);
-  console.log(adminToken);
   if (!adminToken) return;
   if (adminToken !== process.env.ADMIN_ACCESS_TOKEN) return;
   return true;

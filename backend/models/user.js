@@ -23,6 +23,12 @@ module.exports = (sequelize, DataTypes) => {
       salt: {
         type: DataTypes.STRING,
       },
+      password_reset_token: {
+        type: DataTypes.STRING,
+      },
+      password_reset_expiration_time: {
+        type: DataTypes.DATE,
+      },
       birthday: {
         type: DataTypes.DATE,
       },
@@ -69,7 +75,6 @@ module.exports = (sequelize, DataTypes) => {
   User.prototype.setPassword = async function (password) {
     const salt = crypto.randomBytes(16).toString('hex');
     const hashedPassword = hashPassword(password, salt);
-    console.log(`${this.id} - ${salt} - ${hashedPassword}`);
     return User.update(
       {
         salt: salt,
@@ -85,6 +90,20 @@ module.exports = (sequelize, DataTypes) => {
   User.prototype.validatePassword = function (password) {
     return this.password === hashPassword(password, this.salt);
   };
+  User.prototype.generatePasswordResetToken = function () {
+    this.password_reset_token = crypto.randomBytes(20).toString('hex');
+    this.password_reset_expiration_time = Date.now() + 3600000; //expires in an hour
+    // might break here if save() doesn't work
+    this.save();
+    return this.password_reset_token;
+  };
+  User.prototype.validatePasswordResetToken = function (token) {
+    return (
+      this.password_reset_token === token &&
+      Date.now() < this.password_reset_expiration_time
+    );
+  };
+
   return User;
 };
 
