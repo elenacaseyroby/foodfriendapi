@@ -140,10 +140,10 @@ app.post('/sendPasswordResetEmail', async (req, res) => {
       from: process.env.PASSWORD_RESET_FROM_EMAIL,
       subject: 'Password reset request',
       text: `Hi ${user.first_name},
-      From your smartphone or iPad, please visit this url: ${url} to reset your FoodFriend password.
+      From your smartphone or tablet, please visit this url: ${url} to reset your FoodFriend password.
       If you did not request this, please ignore this email and your password will remain unchanged.`,
-      html: `<p>Hi ${user.first_name}, <br><br> 
-      Please click on this ${link} to reset your FoodFriend password. <br>
+      html: `<p>Hi ${user.first_name}, <br><br>
+      From your smartphone or tablet, you can click on this ${link} to reset your FoodFriend password. <br>
       If you did not request this, please ignore this email and your password will remain unchanged.`,
     };
     sgMail.send(mailOptions, (error, result) => {
