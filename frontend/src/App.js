@@ -27,8 +27,10 @@ class App extends Component {
         <Route
           exact
           path="/passwordreset/:id/:token"
-          render={() => {
-            window.location = 'foodfriend://updatepassword/:id/:token';
+          render={({ match }) => {
+            let { id, token } = match.params;
+            window.location = `foodfriend://updatepassword/${id}/${token}`;
+            return;
           }}
         />
       </Router>

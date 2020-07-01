@@ -169,7 +169,7 @@ app.post('/resetPassword', async (req, res) => {
       message: 'Your password must be 8 or more characters long.',
     });
   }
-  // Check for user with email.
+  // Get user with id
   const user = await db.User.findOne({
     where: {
       id: req.body.userId,
@@ -179,7 +179,7 @@ app.post('/resetPassword', async (req, res) => {
   if (!user)
     return res.status(400).json({
       message:
-        'There is no account tied to the email you have entered. Please double check for typos.',
+        'An error has occurred. Please reach out to customer support using the email associated with your account to finalize the reset.',
     });
   // Check for valid password reset token.
   const tokenIsValid = await user.validatePasswordResetToken(
