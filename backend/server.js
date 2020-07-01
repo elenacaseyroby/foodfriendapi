@@ -133,7 +133,7 @@ app.post('/sendPasswordResetEmail', async (req, res) => {
   // ERROR HERE
   try {
     // Send email with link to redirect to deep link to app UpdatePassword component.
-    const url = `${process.env.FOODFRIEND_URL}/updatepassword/${user.id}/${token}`;
+    const url = `${process.env.FOODFRIEND_URL}/passwordreset/${user.id}/${token}`;
     const link = `<a href="${url}">link</a>`;
     const mailOptions = {
       to: user.email,
