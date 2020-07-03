@@ -45,7 +45,7 @@ app.post('/login', async (req, res) => {
     },
   });
   if (!user) {
-    return res.status(401).json({
+    return res.status(400).json({
       message:
         'We could not find an account associated with the email you provided.',
     });
@@ -175,7 +175,7 @@ app.post('/resetPassword', async (req, res) => {
       id: req.body.userId,
     },
   });
-  // If no user return error
+  // If no user return error. because this should never happen.
   if (!user)
     return res.status(400).json({
       message:
@@ -224,7 +224,7 @@ app.get('/users/:userId', async (req, res) => {
       id: req.params.userId,
     },
   }).then((user) => {
-    if (!user) return res.status(401).json({ message: 'User not found.' });
+    if (!user) return res.status(400).json({ message: 'User not found.' });
     return res.json({
       id: user.id,
       email: user.email,
