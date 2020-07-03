@@ -12,6 +12,10 @@ import { uploadNutrientFoods } from './csv_upload_scripts/nutrient_foods';
 import { uploadNutrientRecipes } from './csv_upload_scripts/nutrient_recipes';
 import { uploadPathNutrients } from './csv_upload_scripts/path_nutrients';
 
+// 400 incorrect info supplied
+// 401 unauthorized
+// 404 not found
+
 // Config environment variables so they are
 // accessible through process.env
 require('dotenv').config();
@@ -34,7 +38,7 @@ app.use(bodyParser.json());
 // AUTHENTICATION
 app.post('/login', async (req, res) => {
   if (!req.body.email || !req.body.password) {
-    return res.status(401).json({
+    return res.status(400).json({
       message: 'You must enter your email and your password to login.',
     });
   }
@@ -45,7 +49,7 @@ app.post('/login', async (req, res) => {
     },
   });
   if (!user) {
-    return res.status(400).json({
+    return res.status(404).json({
       message:
         'We could not find an account associated with the email you provided.',
     });
@@ -72,12 +76,12 @@ app.post('/signup', async (req, res) => {
     !req.body.first_name ||
     !req.body.last_name
   ) {
-    return res.status(401).json({
+    return res.status(400).json({
       message: 'You must fill out all of the fields to create your account.',
     });
   }
   if (req.body.password.length < 8) {
-    return res.status(401).json({
+    return res.status(400).json({
       message: 'Your password must be 8 or more characters long.',
     });
   }
@@ -109,7 +113,7 @@ app.post('/sendPasswordResetEmail', async (req, res) => {
   // Make sure form is filled out.
   console.log(JSON.stringify(req.body));
   if (!req.body.email || (req.body.email && !req.body.email.includes('@'))) {
-    return res.status(401).json({
+    return res.status(400).json({
       message:
         'You must enter a valid email to request a password reset email.',
     });
@@ -122,7 +126,7 @@ app.post('/sendPasswordResetEmail', async (req, res) => {
   });
   // If no user return error
   if (!user)
-    return res.status(400).json({
+    return res.status(404).json({
       message:
         'There is no account tied to the email you have entered. Please double check for typos.',
     });
@@ -159,14 +163,19 @@ app.post('/sendPasswordResetEmail', async (req, res) => {
 
 app.post('/resetPassword', async (req, res) => {
   // Validate fields.
-  if (!req.body.userId || !req.body.passwordResetToken || !req.body.newPassword)
+  if (!req.body.userId || !req.body.passwordResetToken)
     return res.status(401).json({
       message:
-        'Could not complete your password reset request.  Please submit a new password reset request and try again.',
+        'Could not update your password.  Please submit a new password reset request and try again.',
     });
+  if (!req.body.newPassword) {
+    return res.status(400).json({
+      message: 'Must include "newPassword" field in the body of this request.',
+    });
+  }
   if (req.body.newPassword.length < 8) {
-    return res.status(401).json({
-      message: 'Your password must be 8 or more characters long.',
+    return res.status(400).json({
+      message: 'newPassword must be 8 or more characters long.',
     });
   }
   // Get user with id
@@ -177,9 +186,9 @@ app.post('/resetPassword', async (req, res) => {
   });
   // If no user return error. because this should never happen.
   if (!user)
-    return res.status(400).json({
+    return res.status(404).json({
       message:
-        'An error has occurred. Please reach out to customer support using the email associated with your account to finalize the reset.',
+        'Could not update password. Please reach out to customer support using the email associated with your account to finalize the reset.',
     });
   // Check for valid password reset token.
   const tokenIsValid = await user.validatePasswordResetToken(
@@ -224,7 +233,7 @@ app.get('/users/:userId', async (req, res) => {
       id: req.params.userId,
     },
   }).then((user) => {
-    if (!user) return res.status(400).json({ message: 'User not found.' });
+    if (!user) return res.status(404).json({ message: 'User not found.' });
     return res.json({
       id: user.id,
       email: user.email,
