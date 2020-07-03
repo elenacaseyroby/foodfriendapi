@@ -92,7 +92,7 @@ app.post('/signup', async (req, res) => {
     },
   });
   if (existingUser.length > 0)
-    return res.status(400).json({
+    return res.status(401).json({
       message: 'There is already an account under the email that you entered.',
     });
   // If not, create new user.
