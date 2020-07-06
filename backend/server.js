@@ -1,10 +1,11 @@
-import express from 'express';
+import express, { response } from 'express';
 import { db } from './models';
 import multer from 'multer';
 import {
   generateJWT,
   checkUserIsLoggedIn,
   checkIfAdmin,
+  login,
 } from './services/auth';
 import { uploadNutrients } from './csv_upload_scripts/nutrients';
 import { uploadNutrientBenefits } from './csv_upload_scripts/nutrient_benefits';
@@ -42,29 +43,11 @@ app.post('/login', async (req, res) => {
       message: 'You must enter your email and your password to login.',
     });
   }
-  // Get user.
-  const user = await db.User.findOne({
-    where: {
-      email: req.body.email.toLowerCase().trim(),
-    },
-  });
-  if (!user) {
-    return res.status(404).json({
-      message:
-        'We could not find an account associated with the email you provided.',
-    });
-  }
-  console.log(user);
-  const passwordValidated = user.validatePassword(req.body.password);
-  if (!passwordValidated) {
-    return res.status(401).json({
-      message: 'The password you have entered is incorrect.',
-    });
-  }
-  const token = generateJWT(user);
-  return res.status(200).json({
-    id: user.id,
-    access_token: token,
+  const response = await login(req.body.email, req.body.password);
+  return res.status(response.status).json({
+    messsage: response.errorMessage,
+    id: response.userId,
+    access_token: response.accessToken,
   });
 });
 
@@ -101,7 +84,12 @@ app.post('/signup', async (req, res) => {
     first_name: req.body.first_name.trim(),
     last_name: req.body.last_name.trim(),
   });
-  user.setPassword(req.body.password);
+  const passwordSet = await user.setPassword(req.body.password);
+  if (!passwordSet) {
+    return res.status(500).json({
+      message: "Server error: couldn't save password.",
+    });
+  }
   const token = generateJWT(user);
   return res.status(200).json({
     id: user.id,
