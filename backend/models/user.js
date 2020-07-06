@@ -75,17 +75,11 @@ module.exports = (sequelize, DataTypes) => {
   User.prototype.setPassword = async function (password) {
     const salt = crypto.randomBytes(16).toString('hex');
     const hashedPassword = hashPassword(password, salt);
-    return User.update(
-      {
-        salt: salt,
-        password: hashedPassword,
-      },
-      {
-        where: {
-          id: this.id,
-        },
-      }
-    );
+    this.salt = salt;
+    this.password = hashedPassword;
+    const saved = await this.save();
+    if (saved) return 'success';
+    return;
   };
   User.prototype.validatePassword = function (password) {
     return this.password === hashPassword(password, this.salt);
