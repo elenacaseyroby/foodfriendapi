@@ -28,8 +28,8 @@
     "nodemon": "^2.0.4"
   },
   "scripts": {
-    "test": "mocha --require babel-register __tests__/*.js --exit",
-    "start": "nodemon server.js --exec babel-node --presets babel-preset-env"
+    "test": "export NODE_ENV=test && mocha --require babel-register __tests__/*.js --exit",
+    "start": "export NODE_ENV=development && nodemon server.js --exec babel-node --presets babel-preset-env"
   },
   "author": "",
   "license": "ISC"
