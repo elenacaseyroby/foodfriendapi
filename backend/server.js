@@ -57,8 +57,8 @@ app.post('/signup', async (req, res) => {
   if (
     !req.body.email ||
     !req.body.password ||
-    !req.body.first_name ||
-    !req.body.last_name
+    !req.body.firstName ||
+    !req.body.lastName
   ) {
     return res.status(400).json({
       message: 'You must fill out all of the fields to create your account.',
@@ -70,8 +70,8 @@ app.post('/signup', async (req, res) => {
     });
   }
   const response = await signUp(
-    req.body.first_name,
-    req.body.last_name,
+    req.body.firstName,
+    req.body.lastName,
     req.body.email,
     req.body.password
   );

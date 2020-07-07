@@ -24,8 +24,8 @@ export async function uploadPathNutrients(file) {
   if (!admin) {
     admin = await db.User.create({
       email: 'admin@admin.admin',
-      first_name: 'Admin',
-      last_name: 'Admin',
+      firstName: 'Admin',
+      lastName: 'Admin',
     });
   }
 
