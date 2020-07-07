@@ -6,10 +6,8 @@
   "dependencies": {
     "@babel/core": "^7.9.6",
     "@sendgrid/mail": "^7.2.1",
-    "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
     "babel-loader": "^8.1.0",
-    "babel-preset-env": "^1.7.0",
     "body-parser": "^1.19.0",
     "core-js": "^3.6.5",
     "csv-parser": "^2.3.2",
@@ -23,11 +21,15 @@
     "webpack": "^4.43.0"
   },
   "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "chai": "^4.2.0",
+    "mocha": "^8.0.1",
     "nodemon": "^2.0.4"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon server.js --exec babel-node --presets babel-preset-env"
+    "test": "export NODE_ENV=test && mocha --require babel-register __tests__/*.js --exit",
+    "start": "export NODE_ENV=development && nodemon server.js --exec babel-node --presets babel-preset-env"
   },
   "author": "",
   "license": "ISC"

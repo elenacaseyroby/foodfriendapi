@@ -6,13 +6,13 @@ const csv = require('csv-parser');
 
 export async function uploadNutrientRecipes(file) {
   // WARNING: must upload nutrients before uploading nutrientBenefits.
-  // this will only add/update nutrient_recipes and recipes records.
+  // this will only add/update nutrientRecipes and recipes records.
 
-  // Adds/Updates nutrient_recipes and recipes records.
+  // Adds/Updates nutrientRecipes and recipes records.
 
   // csv required columns:
-  // recipe_name,	url,	image_path,	trackable_foods,	source_note
-  // nutrients_list should be comma separated list of nutrient names.
+  // recipeName,	url,	imagePath,	trackableFoods,	sourceNote
+  // nutrientsList should be comma separated list of nutrient names.
 
   // Get all recipes by name from db.
   let recipes = await db.Recipe.findAll({});
@@ -37,40 +37,46 @@ export async function uploadNutrientRecipes(file) {
     .on('data', (nutrientRecipe) => {
       // TODO: add code to validate columns against bad or missing data for each field.
       const nutrient =
-        nutrientsByName[cleanString(nutrientRecipe.nutrient_name)];
+        nutrientsByName[cleanString(nutrientRecipe.nutrientName)];
       if (!nutrient) {
         return;
       }
+      // if nutrient id not yet in dict, add it
       if (!recipeUrlsByNutrientId[nutrient.id])
         recipeUrlsByNutrientId[nutrient.id] = [];
-      recipeUrlsByNutrientId[nutrient.id].push(nutrientRecipe.url.trim());
+      // if url not already in list for given nutrient id, add it.
+      if (
+        !recipeUrlsByNutrientId[nutrient.id].includes(nutrientRecipe.url.trim())
+      ) {
+        recipeUrlsByNutrientId[nutrient.id].push(nutrientRecipe.url.trim());
+      }
       const recipe = recipesByUrl[nutrientRecipe.url.trim()];
       if (urlsTouched.includes(nutrientRecipe.url.trim())) {
         return;
       }
       if (recipe) {
         if (
-          recipe.name !== nutrientRecipe.recipe_name ||
-          recipe.image_path !== nutrientRecipe.image_path ||
-          recipe.trackable_foods !== nutrientRecipe.trackable_foods ||
-          recipe.source_note !== nutrientRecipe.source_note
+          recipe.name !== nutrientRecipe.recipeName ||
+          recipe.imagePath !== nutrientRecipe.imagePath ||
+          recipe.trackableFoods !== nutrientRecipe.trackableFoods ||
+          recipe.sourceNote !== nutrientRecipe.sourceNote
         ) {
           recipesToUpdate.push({
             id: recipe.id,
-            name: nutrientRecipe.recipe_name,
+            name: nutrientRecipe.recipeName,
             url: nutrientRecipe.url.trim(),
-            image_path: nutrientRecipe.image_path,
-            trackable_foods: nutrientRecipe.trackable_foods,
-            source_note: nutrientRecipe.source_note,
+            imagePath: nutrientRecipe.imagePath,
+            trackableFoods: nutrientRecipe.trackableFoods,
+            sourceNote: nutrientRecipe.sourceNote,
           });
         }
       } else {
         recipesToCreate.push({
-          name: nutrientRecipe.recipe_name,
+          name: nutrientRecipe.recipeName,
           url: nutrientRecipe.url.trim(),
-          image_path: nutrientRecipe.image_path,
-          trackable_foods: nutrientRecipe.trackable_foods,
-          source_note: nutrientRecipe.source_note,
+          imagePath: nutrientRecipe.imagePath,
+          trackableFoods: nutrientRecipe.trackableFoods,
+          sourceNote: nutrientRecipe.sourceNote,
         });
       }
       urlsTouched.push(nutrientRecipe.url.trim());
@@ -92,9 +98,9 @@ export async function uploadNutrientRecipes(file) {
           {
             name: recipe.name,
             url: recipe.url,
-            image_path: recipe.image_path,
-            trackable_foods: recipe.trackable_foods,
-            source_note: recipe.source_note,
+            imagePath: recipe.imagePath,
+            trackableFoods: recipe.trackableFoods,
+            sourceNote: recipe.sourceNote,
           },
           {
             where: {
@@ -125,12 +131,12 @@ export async function uploadNutrientRecipes(file) {
           },
         ],
       });
-      const savedRecipeUrlsByNutrientID = {};
+      const savedRecipeUrlsByNutrientId = {};
       nutrientRecipes.map((nutrient) => {
-        if (!savedRecipeUrlsByNutrientID[nutrient.id])
-          savedRecipeUrlsByNutrientID[nutrient.id] = [];
+        if (!savedRecipeUrlsByNutrientId[nutrient.id])
+          savedRecipeUrlsByNutrientId[nutrient.id] = [];
         nutrient.recipes.map((recipe) => {
-          savedRecipeUrlsByNutrientID[nutrient.id].push(recipe.url.trim());
+          savedRecipeUrlsByNutrientId[nutrient.id].push(recipe.url.trim());
         });
       });
 
@@ -138,11 +144,11 @@ export async function uploadNutrientRecipes(file) {
       nutrients.forEach((nutrient) => {
         let nutrientRecipesToCreate = differenceOfTwoArrays(
           recipeUrlsByNutrientId[nutrient.id] || [],
-          savedRecipeUrlsByNutrientID[nutrient.id] || []
+          savedRecipeUrlsByNutrientId[nutrient.id] || []
         ).map((url) => {
           return {
-            recipe_id: recipesByUrl[url.trim()].id,
-            nutrient_id: nutrient.id,
+            recipeId: recipesByUrl[url.trim()].id,
+            nutrientId: nutrient.id,
           };
         });
         db.NutrientRecipe.bulkCreate(nutrientRecipesToCreate);

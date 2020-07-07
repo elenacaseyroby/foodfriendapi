@@ -7,13 +7,13 @@ const csv = require('csv-parser');
 export async function uploadPathNutrients(file) {
   // WARNING: must upload nutrients before uploading nutrientBenefits.
 
-  // Adds/Updates nutrient_paths and paths records.
+  // Adds/Updates nutrientPaths and paths records.
 
   // csv required columns:
-  // path_name, nutrients_list
-  // nutrients_list should be comma separated list of nutrient names.
+  // pathName, nutrientsList
+  // nutrientsList should be comma separated list of nutrient names.
   // csv optional columns:
-  // notes, notes_sources
+  // notes, notesSources
 
   // Get or create ownerid for foodfriend. findOrCreate wasn't returning user like I needed.
   let admin = await db.User.findOne({
@@ -24,13 +24,13 @@ export async function uploadPathNutrients(file) {
   if (!admin) {
     admin = await db.User.create({
       email: 'admin@admin.admin',
-      first_name: 'Admin',
-      last_name: 'Admin',
+      firstName: 'Admin',
+      lastName: 'Admin',
     });
   }
 
   // Get all benefits by name from db.
-  let paths = await db.Path.findAll({ where: { owner_id: admin.id } });
+  let paths = await db.Path.findAll({ where: { ownerId: admin.id } });
   let pathsByName = paths.reduce(function (map, path) {
     map[cleanString(path.name)] = path;
     return map;
@@ -52,7 +52,7 @@ export async function uploadPathNutrients(file) {
     .pipe(csv())
     .on('data', (path) => {
       // TODO: add code to validate columns against bad or missing data for each field.
-      if (pathNamesTouched.includes(cleanString(path.path_name))) {
+      if (pathNamesTouched.includes(cleanString(path.pathName))) {
         console.log(
           'Could not process duplicate path name.  Please revise csv.'
         );
@@ -60,52 +60,52 @@ export async function uploadPathNutrients(file) {
       }
 
       // Check if path exists. If exists, update, else create new.
-      const savedPath = pathsByName[cleanString(path.path_name)];
+      const savedPath = pathsByName[cleanString(path.pathName)];
       if (savedPath) {
         // Put path nutrients in list to be updated.
         let pathNutrientIdsList = [];
-        if (path.nutrients_list) {
-          pathNutrientIdsList = path.nutrients_list
+        if (path.nutrientsList) {
+          pathNutrientIdsList = path.nutrientsList
             .replace(/"/g, '')
             .split(',')
-            .map((nutrient_name) => {
-              const cleanName = cleanString(nutrient_name);
+            .map((nutrientName) => {
+              const cleanName = cleanString(nutrientName);
               if (nutrientsByName[cleanName])
                 return nutrientsByName[cleanName].id;
               console.log(
-                `nutrient name ${nutrient_name} not synced with benefit ${path.path_name}`
+                `nutrient name ${nutrientName} not synced with benefit ${path.pathName}`
               );
             })
             .filter((nutrientId) => !!nutrientId);
         }
         pathNutrientsToUpdate.push({
-          pathName: path.path_name,
+          pathName: path.pathName,
           nutrientIds: pathNutrientIdsList,
         });
         // Don't update benefit record if no changes have been made.
-        if (savedPath.name === path.path_name) return;
+        if (savedPath.name === path.pathName) return;
         // Add benefit to list to be updated.
         pathsToUpdate.push({
           id: savedPath.id,
-          name: path.path_name,
+          name: path.pathName,
         });
       } else {
         // If benefit doesn't exit, add to benefitsToCreate list.
         // TODO: fix edge case: breaks when csv has two new benefits with same name.
         const newPath = {
-          name: path.path_name,
-          owner_id: admin.id,
+          name: path.pathName,
+          ownerId: admin.id,
           notes: path.notes,
-          notes_sources: path.notes_sources,
+          notesSources: path.notesSources,
         };
         pathsToCreate.push(newPath);
         let pathNutrientIdsList = [];
-        if (path.nutrients_list) {
-          pathNutrientIdsList = path.nutrients_list
+        if (path.nutrientsList) {
+          pathNutrientIdsList = path.nutrientsList
             .replace(/"/g, '')
             .split(',')
-            .map((nutrient_name) => {
-              const cleanName = cleanString(nutrient_name);
+            .map((nutrientName) => {
+              const cleanName = cleanString(nutrientName);
               if (nutrientsByName[cleanName])
                 return nutrientsByName[cleanName].id;
             })
@@ -116,7 +116,7 @@ export async function uploadPathNutrients(file) {
           nutrientIds: pathNutrientIdsList,
         });
       }
-      pathNamesTouched.push(cleanString(path.path_name));
+      pathNamesTouched.push(cleanString(path.pathName));
     })
     .on('end', async () => {
       console.log('CSV file successfully processed');

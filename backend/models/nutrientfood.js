@@ -3,18 +3,18 @@ module.exports = (sequelize, DataTypes) => {
   const NutrientFood = sequelize.define(
     'NutrientFood',
     {
-      percent_dv_per_serving: {
+      percentDvPerServing: {
         type: DataTypes.DECIMAL(5, 2),
         allowNull: false,
       },
-      dv_source: {
+      dvSource: {
         allowNull: false,
         type: DataTypes.STRING,
       },
-      created_at: {
+      createdAt: {
         type: DataTypes.DATE,
       },
-      updated_at: {
+      updatedAt: {
         type: DataTypes.DATE,
       },
     },

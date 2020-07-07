@@ -5,11 +5,11 @@ module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define(
     'User',
     {
-      first_name: {
+      firstName: {
         allowNull: false,
         type: DataTypes.STRING,
       },
-      last_name: {
+      lastName: {
         allowNull: false,
         type: DataTypes.STRING,
       },
@@ -23,16 +23,16 @@ module.exports = (sequelize, DataTypes) => {
       salt: {
         type: DataTypes.STRING,
       },
-      password_reset_token: {
+      passwordResetToken: {
         type: DataTypes.STRING,
       },
-      password_reset_expiration_time: {
+      passwordResetExpirationTime: {
         type: DataTypes.DATE,
       },
       birthday: {
         type: DataTypes.DATE,
       },
-      is_vegan: {
+      isVegan: {
         defaultValue: 0,
         type: DataTypes.BOOLEAN,
       },
@@ -40,10 +40,10 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: 0,
         type: DataTypes.BOOLEAN,
       },
-      created_at: {
+      createdAt: {
         type: DataTypes.DATE,
       },
-      updated_at: {
+      updatedAt: {
         type: DataTypes.DATE,
       },
     },
@@ -55,52 +55,46 @@ module.exports = (sequelize, DataTypes) => {
   );
   User.associate = function (models) {
     User.belongsTo(models.Path, {
-      foreignKey: 'active_path_id',
+      foreignKey: 'activePathId',
       targetKey: 'id',
     });
     User.belongsToMany(models.Diet, {
       through: 'UserDiet',
       as: 'diets',
-      foreignKey: 'user_id',
-      otherKey: 'diet_id',
+      foreignKey: 'userId',
+      otherKey: 'dietId',
     });
     User.belongsToMany(models.Recipe, {
       through: 'UserRecipe',
       as: 'recipes',
-      foreignKey: 'user_id',
-      otherKey: 'recipe_id',
+      foreignKey: 'userId',
+      otherKey: 'recipeId',
     });
   };
   // methods:
   User.prototype.setPassword = async function (password) {
     const salt = crypto.randomBytes(16).toString('hex');
     const hashedPassword = hashPassword(password, salt);
-    return User.update(
-      {
-        salt: salt,
-        password: hashedPassword,
-      },
-      {
-        where: {
-          id: this.id,
-        },
-      }
-    );
+    this.salt = salt;
+    this.password = hashedPassword;
+    const saved = await this.save();
+    if (saved) return 'success';
+    return;
   };
   User.prototype.validatePassword = function (password) {
     return this.password === hashPassword(password, this.salt);
   };
   User.prototype.generatePasswordResetToken = function () {
-    this.password_reset_token = crypto.randomBytes(20).toString('hex');
-    this.password_reset_expiration_time = Date.now() + 3600000; //expires in an hour
+    this.passwordResetToken = crypto.randomBytes(20).toString('hex');
+    this.passwordResetExpirationTime = Date.now() + 3600000; //expires in an hour
     // might break here if save() doesn't work
     this.save();
-    return this.password_reset_token;
+    return this.passwordResetToken;
   };
   User.prototype.validatePasswordResetToken = function (token) {
     return (
-      this.password_reset_token === token &&
-      Date.now() < this.password_reset_expiration_time
+      this.passwordResetToken === token &&
+      Date.now() < this.passwordResetExpirationTime
     );
   };
 

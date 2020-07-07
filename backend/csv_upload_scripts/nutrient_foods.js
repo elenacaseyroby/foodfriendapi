@@ -1,22 +1,19 @@
 import { db } from '../models';
 import { cleanString } from './common';
-import { differenceOfTwoArrays, unionOfTwoArrays } from '../utils/common';
-import { deleteNutrientFoodsNotInList } from '../queries/nutrients';
-import e from 'express';
 const fs = require('fs');
 const csv = require('csv-parser');
 
 export async function uploadNutrientFoods(file) {
   // WARNING: must upload nutrients before uploading nutrientFoods.
-  // this will add/update/delete nutrient_food records.
+  // this will add/update/delete nutrientFood records.
   // will fully sync all the records in the csv to the db: adding/updating
   // what's included and deleting what's not.
 
-  // Adds/Updates nutrient_foods and foods records.
+  // Adds/Updates nutrientFood and Food records.
 
   // csv required columns:
-  // nutrient_name, food_name, percent_dv_per_serving, dv_source
-  // nutrients_list should be comma separated list of nutrient names.
+  // nutrientName, foodName, percentDvPerServing, dvSource
+  // nutrientsList should be comma separated list of nutrient names.
 
   // Get all benefits by name from db.
   const savedFoods = await db.Food.findAll({});
@@ -46,29 +43,29 @@ export async function uploadNutrientFoods(file) {
 
       // Get existing nutrient record. Skip row if record not found.
       const nutrient =
-        savedNutrientsByName[cleanString(nutrientFood.nutrient_name)];
+        savedNutrientsByName[cleanString(nutrientFood.nutrientName)];
       if (!nutrient) {
         console.log(
-          `nutrient under name: ${nutrientFood.nutrient_name} not found.`
+          `nutrient under name: ${nutrientFood.nutrientName} not found.`
         );
         return;
       }
 
       // Get existing food record.
-      const food = savedFoodsByName[cleanString(nutrientFood.food_name)];
+      const food = savedFoodsByName[cleanString(nutrientFood.foodName)];
 
       // If no food record, add food name to list to create later.
       if (
-        !listOfFoodNamesTouched.includes(cleanString(nutrientFood.food_name))
+        !listOfFoodNamesTouched.includes(cleanString(nutrientFood.foodName))
       ) {
-        listOfFoodNamesTouched.push(cleanString(nutrientFood.food_name));
+        listOfFoodNamesTouched.push(cleanString(nutrientFood.foodName));
         if (!food) {
-          foodsToCreate.push({ name: nutrientFood.food_name });
-        } else if (food.name.trim() !== nutrientFood.food_name.trim()) {
+          foodsToCreate.push({ name: nutrientFood.foodName });
+        } else if (food.name.trim() !== nutrientFood.foodName.trim()) {
           // If name updated, add to list to be updated later.
           foodsToUpdate.push({
             id: food.id,
-            name: nutrientFood.food_name,
+            name: nutrientFood.foodName,
           });
         }
       }
@@ -78,14 +75,14 @@ export async function uploadNutrientFoods(file) {
         nutrientFoodsByNutrientId[nutrient.id] = [];
       // Add food name to array under nutrientId key in dict.
       nutrientFoodsByNutrientId[nutrient.id].push({
-        nutrient_id:
-          savedNutrientsByName[cleanString(nutrientFood.nutrient_name)].id,
-        food_id: savedFoodsByName[cleanString(nutrientFood.food_name)]
-          ? savedFoodsByName[cleanString(nutrientFood.food_name)].id
+        nutrientId:
+          savedNutrientsByName[cleanString(nutrientFood.nutrientName)].id,
+        foodId: savedFoodsByName[cleanString(nutrientFood.foodName)]
+          ? savedFoodsByName[cleanString(nutrientFood.foodName)].id
           : null,
-        food_name: nutrientFood.food_name,
-        percent_dv_per_serving: nutrientFood.percent_dv_per_serving,
-        dv_source: nutrientFood.dv_source,
+        foodName: nutrientFood.foodName,
+        percentDvPerServing: nutrientFood.percentDvPerServing,
+        dvSource: nutrientFood.dvSource,
       });
     })
     .on('end', async () => {
@@ -119,9 +116,8 @@ export async function uploadNutrientFoods(file) {
       // Sort NutrientFoods into savedFoodNameByNutrientId.
       const savedNutrientFoodsByNutrientId = savedNutrientFoods.reduce(
         (map, nutrientFood) => {
-          if (!map[nutrientFood.nutrient_id])
-            map[nutrientFood.nutrient_id] = [];
-          map[nutrientFood.nutrient_id].push(nutrientFood);
+          if (!map[nutrientFood.nutrientId]) map[nutrientFood.nutrientId] = [];
+          map[nutrientFood.nutrientId].push(nutrientFood);
           return map;
         },
         {}
@@ -131,80 +127,80 @@ export async function uploadNutrientFoods(file) {
         const nutrientFoods = nutrientFoodsByNutrientId[nutrientId];
         // Delete nutrients not in csv.
         const csvFoodIds = nutrientFoods.map((nutrientFood) => {
-          return nutrientFood.food_id;
+          return nutrientFood.foodId;
         });
         if (!savedNutrientFoodsByNutrientId[nutrientId])
           savedNutrientFoodsByNutrientId[nutrientId] = [];
 
         const savedFoodIds =
           savedNutrientFoodsByNutrientId[nutrientId].map((nutrientFood) => {
-            return nutrientFood.food_id;
+            return nutrientFood.foodId;
           }) || [];
         if (!savedNutrientFoodsByNutrientId[nutrientId])
           savedNutrientFoodsByNutrientId[nutrientId] = [];
         savedNutrientFoodsByNutrientId[nutrientId].map((nutrientFood) => {
-          if (csvFoodIds.includes(nutrientFood.food_id)) return;
+          if (csvFoodIds.includes(nutrientFood.foodId)) return;
           db.NutrientFood.destroy({
             where: {
-              nutrient_id: nutrientId,
-              food_id: nutrientFood.food_id,
+              nutrientId: nutrientId,
+              foodId: nutrientFood.foodId,
             },
           });
         });
         // Create nutrientfoods in csv but not saved.
         let nutrientFoodIdPairsTouched = [];
         nutrientFoods.map((nutrientFood) => {
-          if (savedFoodIds.includes(nutrientFood.food_id)) {
+          if (savedFoodIds.includes(nutrientFood.foodId)) {
             // If nutrientfood in csv and saved, update nutrients in csv and saved.
             let savedRecord;
             savedNutrientFoodsByNutrientId[nutrientId].map(
               (savedNutrientFood) => {
-                if (savedNutrientFood.food_id !== nutrientFood.food_id) return;
+                if (savedNutrientFood.foodId !== nutrientFood.foodId) return;
                 savedRecord = savedNutrientFood;
               }
             );
             if (
-              savedRecord.percent_dv_per_serving ===
-                nutrientFood.percent_dv_per_serving &&
-              savedRecord.dv_source === nutrientFood.dv_source
+              savedRecord.percentDvPerServing ===
+                nutrientFood.percentDvPerServing &&
+              savedRecord.dvSource === nutrientFood.dvSource
             )
               return;
             db.NutrientFood.update(
               {
-                percent_dv_per_serving: nutrientFood.percent_dv_per_serving,
-                dv_source: nutrientFood.dv_source,
+                percentDvPerServing: nutrientFood.percentDvPerServing,
+                dvSource: nutrientFood.dvSource,
               },
               {
                 where: {
-                  nutrient_id: savedRecord.nutrient_id,
-                  food_id: savedRecord.food_id,
+                  nutrientId: savedRecord.nutrientId,
+                  foodId: savedRecord.foodId,
                 },
               }
             );
             return;
           }
           // Else create new nutrientfood record. If new food record, get new food id.
-          let food_id = nutrientFood.food_id;
+          let foodId = nutrientFood.foodId;
           let food = null;
-          if (!food_id) {
-            food = newFoodsByName[nutrientFood.food_name];
+          if (!foodId) {
+            food = newFoodsByName[nutrientFood.foodName];
             if (!food) {
-              console.log(`food not found by name: ${nutrientFood.food_name}`);
+              console.log(`food not found by name: ${nutrientFood.foodName}`);
               return;
             }
-            food_id = food.id;
+            foodId = food.id;
           }
-          const pair = food_id.toString() + ' - ' + nutrientFood.nutrient_id;
+          const pair = foodId.toString() + ' - ' + nutrientFood.nutrientId;
           if (nutrientFoodIdPairsTouched.includes(pair)) {
-            console.log(`food_id - nutrient id pair already exists: ${pair}`);
+            console.log(`foodId - nutrient id pair already exists: ${pair}`);
             return;
           }
           nutrientFoodIdPairsTouched.push(pair);
           db.NutrientFood.create({
-            nutrient_id: nutrientFood.nutrient_id,
-            food_id: food_id,
-            percent_dv_per_serving: nutrientFood.percent_dv_per_serving,
-            dv_source: nutrientFood.dv_source,
+            nutrientId: nutrientFood.nutrientId,
+            foodId: foodId,
+            percentDvPerServing: nutrientFood.percentDvPerServing,
+            dvSource: nutrientFood.dvSource,
           });
         });
       }

@@ -11,15 +11,15 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         type: DataTypes.STRING,
       },
-      source_note: {
+      sourceNote: {
         allowNull: false,
         type: DataTypes.STRING,
       },
-      image_path: {
+      imagePath: {
         allowNull: false,
         type: DataTypes.STRING,
       },
-      trackable_foods: {
+      trackableFoods: {
         allowNull: false,
         type: DataTypes.STRING,
       },
@@ -28,10 +28,10 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: 1,
         type: DataTypes.BOOLEAN,
       },
-      created_at: {
+      createdAt: {
         type: DataTypes.DATE,
       },
-      updated_at: {
+      updatedAt: {
         type: DataTypes.DATE,
       },
     },
@@ -45,14 +45,14 @@ module.exports = (sequelize, DataTypes) => {
     Recipe.belongsToMany(models.User, {
       through: 'UserRecipe',
       as: 'users',
-      foreignKey: 'recipe_id',
-      otherKey: 'user_id',
+      foreignKey: 'recipeId',
+      otherKey: 'userId',
     });
     Recipe.belongsToMany(models.Nutrient, {
       through: 'NutrientRecipe',
       as: 'nutrients',
-      foreignKey: 'recipe_id',
-      otherKey: 'nutrient_id',
+      foreignKey: 'recipeId',
+      otherKey: 'nutrientId',
     });
   };
   return Recipe;

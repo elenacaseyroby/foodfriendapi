@@ -2,22 +2,25 @@ import { db } from '../models';
 import { differenceOfTwoArrays } from '../utils/common';
 
 export async function updateBenefitNutrients(benefitId, nutrientIdsList) {
-  const savedNutrientIds = await db.NutrientBenefit.findAll({
+  const savedNutrientIdsList = await db.NutrientBenefit.findAll({
     where: {
-      benefit_id: benefitId,
+      benefitId: benefitId,
     },
   }).map((nutrientBenefit) => {
-    return nutrientBenefit.nutrient_id;
+    return nutrientBenefit.nutrientId;
   });
   // Add nutrient to benefit if in nutrientIdsList and not already saved.
-  const idsToCreate = differenceOfTwoArrays(nutrientIdsList, savedNutrientIds);
+  const idsToCreate = differenceOfTwoArrays(
+    nutrientIdsList,
+    savedNutrientIdsList
+  );
   let newNutrientBenefits = [];
   if (idsToCreate.length > 0) {
     try {
       newNutrientBenefits = idsToCreate.map((nutrientId) => {
         db.NutrientBenefit.create({
-          benefit_id: benefitId,
-          nutrient_id: nutrientId,
+          benefitId: benefitId,
+          nutrientId: nutrientId,
         });
       });
     } catch (err) {
@@ -25,14 +28,17 @@ export async function updateBenefitNutrients(benefitId, nutrientIdsList) {
     }
   }
   // Remove nutrient from benefit if saved but not in nutrientIdsList.
-  const idsToDelete = differenceOfTwoArrays(savedNutrientIds, nutrientIdsList);
+  const idsToDelete = differenceOfTwoArrays(
+    savedNutrientIdsList,
+    nutrientIdsList
+  );
   if (idsToDelete.length > 0) {
     try {
       idsToDelete.map((nutrientId) => {
         db.NutrientBenefit.destroy({
           where: {
-            benefit_id: benefitId,
-            nutrient_id: nutrientId,
+            benefitId: benefitId,
+            nutrientId: nutrientId,
           },
         });
       });

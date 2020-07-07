@@ -8,13 +8,13 @@ function nutrientPropertiesUpdated(oldNutrient, newNutrient) {
   if (
     oldNutrient.name === newNutrient.name &&
     // Removing trailing 0's:
-    parseFloat(oldNutrient.dv_in_mg) === parseFloat(newNutrient.dv_in_mg) &&
-    oldNutrient.dv_source === newNutrient.dv_source &&
+    parseFloat(oldNutrient.dvInMg) === parseFloat(newNutrient.dvInMg) &&
+    oldNutrient.dvSource === newNutrient.dvSource &&
     oldNutrient.description === newNutrient.description &&
-    oldNutrient.description_sources === newNutrient.description_sources &&
+    oldNutrient.descriptionSources === newNutrient.descriptionSources &&
     oldNutrient.warnings === newNutrient.warnings &&
-    oldNutrient.warnings_sources === newNutrient.warnings_sources &&
-    oldNutrient.source_note === newNutrient.source_note
+    oldNutrient.warningsSources === newNutrient.warningsSources &&
+    oldNutrient.sourceNote === newNutrient.sourceNote
   )
     return false;
   return true;
@@ -22,11 +22,11 @@ function nutrientPropertiesUpdated(oldNutrient, newNutrient) {
 
 export async function uploadNutrients(file) {
   // csv required columns:
-  // name, dv_in_mg, dv_source
+  // name, dvInMg (must be integer value w/ no ","), dvSource
   // csv optional columns:
-  // description, description_sources, warnings, warings_sources, source_note
+  // description, descriptionSources, warnings, waringsSources, sourceNote
 
-  // Add/Update nutrients records.
+  // Add/Update Nutrient records.
 
   // TODO: check document headers and return error if not up to specs.
 
@@ -55,7 +55,7 @@ export async function uploadNutrients(file) {
         // If nutrient exists and has udpdated properties, add to nutrientsToUpdate list.
         let nutrientWithUpdates = nutrient;
         nutrientWithUpdates.id = savedNutrient.id;
-        nutrientWithUpdates.dv_in_mg = parseFloat(nutrientWithUpdates.dv_in_mg);
+        nutrientWithUpdates.dvInMg = parseFloat(nutrientWithUpdates.dvInMg);
         nutrientsToUpdate.push(nutrientWithUpdates);
       } else {
         // If nutrient doesn't exit, add to nutrientsToCreate list.

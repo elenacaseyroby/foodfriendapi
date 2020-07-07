@@ -7,11 +7,12 @@ const csv = require('csv-parser');
 export async function uploadNutrientBenefits(file) {
   // WARNING: must upload nutrients before uploading nutrientBenefits.
 
-  // Adds/Updates nutrient_benefits and benefits records.
+  // Adds/Updates nutrientBenefits and benefits records.
 
   // csv required columns:
-  // benefit_name, nutrients_list
-  // nutrients_list should be comma separated list of nutrient names.
+  // benefitName, nutrientsList
+  // nutrientsList should be a string.  Within that string should be a
+  // comma separated list of nutrient names.
 
   // Get all benefits by name from db.
   let benefits = await db.Benefit.findAll({});
@@ -19,14 +20,12 @@ export async function uploadNutrientBenefits(file) {
     map[cleanString(benefit.name)] = benefit;
     return map;
   }, {});
-
   // Get all nutrients by name from db.
   let nutrients = await db.Nutrient.findAll({});
   let nutrientsByName = nutrients.reduce(function (map, nutrient) {
     map[cleanString(nutrient.name)] = nutrient;
     return map;
   }, {});
-
   let benefitNutrientsToUpdate = [];
   let benefitsToCreate = [];
   let benefitsToUpdate = [];
@@ -37,54 +36,54 @@ export async function uploadNutrientBenefits(file) {
       // TODO: add code to validate columns against bad or missing data for each field.
 
       // Check if benefit exists. If exists, update, else create new.
-      const savedBenefit = benefitsByName[cleanString(benefit.benefit_name)];
+      const savedBenefit = benefitsByName[cleanString(benefit.benefitName)];
       if (savedBenefit) {
         // Put benefit nutrients in list to be updated.
         let benefitNutrientIdsList = [];
-        if (benefit.nutrients_list) {
-          benefitNutrientIdsList = benefit.nutrients_list
+        if (benefit.nutrientsList) {
+          benefitNutrientIdsList = benefit.nutrientsList
             .replace(/"/g, '')
             .split(',')
-            .map((nutrient_name) => {
-              const cleanName = cleanString(nutrient_name);
+            .map((nutrientName) => {
+              const cleanName = cleanString(nutrientName);
               if (nutrientsByName[cleanName])
                 return nutrientsByName[cleanName].id;
               console.log(
-                `nutrient name ${nutrient_name} not synced with benefit ${benefit.benefit_name}`
+                `nutrient name ${nutrientName} not synced with benefit ${benefit.benefitName}`
               );
             })
             .filter((nutrientId) => !!nutrientId);
         }
         benefitNutrientsToUpdate.push({
-          benefitName: benefit.benefit_name,
+          benefitName: benefit.benefitName,
           nutrientIds: benefitNutrientIdsList,
         });
         // Don't update benefit record if no changes have been made.
-        if (savedBenefit.name === benefit.benefit_name) return;
+        if (savedBenefit.name === benefit.benefitName) return;
         // Add benefit to list to be updated.
         benefitsToUpdate.push({
           id: savedBenefit.id,
-          name: benefit.benefit_name,
+          name: benefit.benefitName,
         });
       } else {
         // If benefit doesn't exit, add to benefitsToCreate list.
         // TODO: fix edge case: breaks when csv has two new benefits with same name.
-        const newBenefit = { name: benefit.benefit_name };
+        const newBenefit = { name: benefit.benefitName };
         benefitsToCreate.push(newBenefit);
         let benefitNutrientIdsList = [];
-        if (benefit.nutrients_list) {
-          benefitNutrientIdsList = benefit.nutrients_list
+        if (benefit.nutrientsList) {
+          benefitNutrientIdsList = benefit.nutrientsList
             .replace(/"/g, '')
             .split(',')
-            .map((nutrient_name) => {
-              const cleanName = cleanString(nutrient_name);
+            .map((nutrientName) => {
+              const cleanName = cleanString(nutrientName);
               if (nutrientsByName[cleanName])
                 return nutrientsByName[cleanName].id;
             })
             .filter((nutrientId) => !!nutrientId);
         }
         benefitNutrientsToUpdate.push({
-          benefitName: benefit.benefit_name,
+          benefitName: benefit.benefitName,
           nutrientIds: benefitNutrientIdsList,
         });
       }
