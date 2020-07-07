@@ -2,7 +2,7 @@ import { db } from '../models';
 import { differenceOfTwoArrays } from '../utils/common';
 
 export async function updateBenefitNutrients(benefitId, nutrientIdsList) {
-  const savedNutrientIds = await db.NutrientBenefit.findAll({
+  const savedNutrientIdsList = await db.NutrientBenefit.findAll({
     where: {
       benefitId: benefitId,
     },
@@ -10,7 +10,10 @@ export async function updateBenefitNutrients(benefitId, nutrientIdsList) {
     return nutrientBenefit.nutrientId;
   });
   // Add nutrient to benefit if in nutrientIdsList and not already saved.
-  const idsToCreate = differenceOfTwoArrays(nutrientIdsList, savedNutrientIds);
+  const idsToCreate = differenceOfTwoArrays(
+    nutrientIdsList,
+    savedNutrientIdsList
+  );
   let newNutrientBenefits = [];
   if (idsToCreate.length > 0) {
     try {
@@ -25,7 +28,10 @@ export async function updateBenefitNutrients(benefitId, nutrientIdsList) {
     }
   }
   // Remove nutrient from benefit if saved but not in nutrientIdsList.
-  const idsToDelete = differenceOfTwoArrays(savedNutrientIds, nutrientIdsList);
+  const idsToDelete = differenceOfTwoArrays(
+    savedNutrientIdsList,
+    nutrientIdsList
+  );
   if (idsToDelete.length > 0) {
     try {
       idsToDelete.map((nutrientId) => {
