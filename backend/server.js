@@ -47,8 +47,8 @@ app.post('/login', async (req, res) => {
   const response = await login(req.body.email, req.body.password);
   return res.status(response.status).json({
     messsage: response.errorMessage,
-    id: response.userId,
-    access_token: response.accessToken,
+    userId: response.userId,
+    accessToken: response.accessToken,
   });
 });
 
@@ -77,8 +77,8 @@ app.post('/signup', async (req, res) => {
   );
   return res.status(response.status).json({
     message: response.errorMessage,
-    id: response.userId,
-    access_token: response.accessToken,
+    userId: response.userId,
+    accessToken: response.accessToken,
   });
 });
 
@@ -105,8 +105,6 @@ app.post('/sendPasswordResetEmail', async (req, res) => {
   // Else generate email.
   // Generate and set password reset token
   const token = await user.generatePasswordResetToken();
-
-  // ERROR HERE
   try {
     // Send email with link to redirect to deep link to app UpdatePassword component.
     const url = `${process.env.FOODFRIEND_URL}/passwordreset/${user.id}/${token}`;
@@ -174,11 +172,10 @@ app.post('/resetPassword', async (req, res) => {
   // Update password.
   try {
     user.setPassword(req.body.newPassword);
-    user.save();
     // return access token and user id
     const token = generateJWT(user);
     return res.status(200).json({
-      id: user.id,
+      userId: user.id,
       accessToken: token,
       message: 'Successfully updated password.',
     });
