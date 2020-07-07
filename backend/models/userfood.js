@@ -3,14 +3,14 @@ module.exports = (sequelize, DataTypes) => {
   const UserFood = sequelize.define(
     'UserFood',
     {
-      servings_count: {
+      servingsCount: {
         type: DataTypes.DECIMAL(4, 2),
         allowNull: false,
       },
-      created_at: {
+      createdAt: {
         type: DataTypes.DATE,
       },
-      updated_at: {
+      updatedAt: {
         type: DataTypes.DATE,
       },
     },

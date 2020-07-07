@@ -265,7 +265,7 @@ const upload = multer({ dest: 'tmp/csv/' });
 
 app.post(
   '/upload-csv/nutrients',
-  upload.single('uploadfile'),
+  upload.single('nutrientsCSV'),
   async (req, res) => {
     // Must pass headers.adminauthorization with request.
     const isAdmin = await checkIfAdmin(req);
@@ -281,8 +281,8 @@ app.post(
 );
 
 app.post(
-  '/upload-csv/nutrient_benefits',
-  upload.single('uploadfile'),
+  '/upload-csv/nutrient-benefits',
+  upload.single('nutrientBenefitsCSV'),
   async (req, res) => {
     // Must pass headers.adminauthorization with request.
     const isAdmin = await checkIfAdmin(req);
@@ -298,8 +298,8 @@ app.post(
 );
 
 app.post(
-  '/upload-csv/nutrient_foods',
-  upload.single('uploadfile'),
+  '/upload-csv/nutrient-foods',
+  upload.single('nutrientFoodsCSV'),
   async (req, res) => {
     // Must pass headers.adminauthorization with request.
     const isAdmin = await checkIfAdmin(req);
@@ -315,8 +315,8 @@ app.post(
 );
 
 app.post(
-  '/upload-csv/nutrient_recipes',
-  upload.single('uploadfile'),
+  '/upload-csv/nutrient-recipes',
+  upload.single('nutrientRecipesCSV'),
   async (req, res) => {
     // Must pass headers.adminauthorization with request.
     const isAdmin = await checkIfAdmin(req);
@@ -332,8 +332,8 @@ app.post(
 );
 
 app.post(
-  '/upload-csv/path_nutrients',
-  upload.single('uploadfile'),
+  '/upload-csv/path-nutrients',
+  upload.single('pathNutrientsCSV'),
   async (req, res) => {
     // Must pass headers.adminauthorization with request.
     const isAdmin = await checkIfAdmin(req);

@@ -13,33 +13,33 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         type: DataTypes.STRING,
       },
-      dv_in_mg: {
+      dvInMg: {
         allowNull: false,
         type: DataTypes.DECIMAL(12, 6),
       },
-      dv_source: {
+      dvSource: {
         type: DataTypes.STRING,
       },
       description: {
         type: DataTypes.TEXT,
       },
-      description_sources: {
+      descriptionSources: {
         type: DataTypes.STRING,
       },
       warnings: {
         type: DataTypes.TEXT,
       },
-      warnings_sources: {
+      warningsSources: {
         type: DataTypes.STRING,
       },
-      source_note: {
+      sourceNote: {
         type: DataTypes.STRING,
       },
-      created_at: {
+      createdAt: {
         allowNull: false,
         type: DataTypes.DATE,
       },
-      updated_at: {
+      createdAt: {
         allowNull: false,
         type: DataTypes.DATE,
       },
@@ -54,26 +54,26 @@ module.exports = (sequelize, DataTypes) => {
     Nutrient.belongsToMany(models.Food, {
       through: 'NutrientFood',
       as: 'foods',
-      foreignKey: 'nutrient_id',
-      otherKey: 'food_id',
+      foreignKey: 'nutrientId',
+      otherKey: 'foodId',
     });
     Nutrient.belongsToMany(models.Path, {
       through: 'PathNutrient',
       as: 'paths',
-      foreignKey: 'nutrient_id',
-      otherKey: 'path_id',
+      foreignKey: 'nutrientId',
+      otherKey: 'pathId',
     });
     Nutrient.belongsToMany(models.Recipe, {
       through: 'NutrientRecipe',
       as: 'recipes',
-      foreignKey: 'nutrient_id',
-      otherKey: 'recipe_id',
+      foreignKey: 'nutrientId',
+      otherKey: 'recipeId',
     });
     Nutrient.belongsToMany(models.Benefit, {
       through: 'NutrientBenefit',
       as: 'benefits',
-      foreignKey: 'nutrient_id',
-      otherKey: 'benefit_id',
+      foreignKey: 'nutrientId',
+      otherKey: 'benefitId',
     });
   };
   return Nutrient;

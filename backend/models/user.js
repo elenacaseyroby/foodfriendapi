@@ -55,20 +55,20 @@ module.exports = (sequelize, DataTypes) => {
   );
   User.associate = function (models) {
     User.belongsTo(models.Path, {
-      foreignKey: 'active_path_id',
+      foreignKey: 'activePathId',
       targetKey: 'id',
     });
     User.belongsToMany(models.Diet, {
       through: 'UserDiet',
       as: 'diets',
-      foreignKey: 'user_id',
-      otherKey: 'diet_id',
+      foreignKey: 'userId',
+      otherKey: 'dietId',
     });
     User.belongsToMany(models.Recipe, {
       through: 'UserRecipe',
       as: 'recipes',
-      foreignKey: 'user_id',
-      otherKey: 'recipe_id',
+      foreignKey: 'userId',
+      otherKey: 'recipeId',
     });
   };
   // methods:

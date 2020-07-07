@@ -3,10 +3,10 @@ module.exports = (sequelize, DataTypes) => {
   const NutrientBenefit = sequelize.define(
     'NutrientBenefit',
     {
-      created_at: {
+      createdAt: {
         type: DataTypes.DATE,
       },
-      updated_at: {
+      updatedAt: {
         type: DataTypes.DATE,
       },
     },

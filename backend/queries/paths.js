@@ -4,10 +4,10 @@ import { differenceOfTwoArrays } from '../utils/common';
 export async function updatePathNutrients(pathId, nutrientIdsList) {
   const savedNutrientIds = await db.PathNutrient.findAll({
     where: {
-      path_id: pathId,
+      pathId: pathId,
     },
   }).map((nutrientPath) => {
-    return nutrientPath.nutrient_id;
+    return nutrientPath.nutrientId;
   });
   // Add nutrient to benefit if in nutrientIdsList and not already saved.
   const idsToCreate = differenceOfTwoArrays(nutrientIdsList, savedNutrientIds);
@@ -16,8 +16,8 @@ export async function updatePathNutrients(pathId, nutrientIdsList) {
     try {
       newPathNutrients = idsToCreate.map((nutrientId) => {
         db.PathNutrient.create({
-          path_id: pathId,
-          nutrient_id: nutrientId,
+          pathId: pathId,
+          nutrientId: nutrientId,
         });
       });
     } catch (err) {
@@ -31,8 +31,8 @@ export async function updatePathNutrients(pathId, nutrientIdsList) {
       idsToDelete.map((nutrientId) => {
         db.PathNutrient.destroy({
           where: {
-            path_id: pathId,
-            nutrient_id: nutrientId,
+            pathId: pathId,
+            nutrientId: nutrientId,
           },
         });
       });

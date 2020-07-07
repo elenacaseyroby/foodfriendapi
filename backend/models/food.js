@@ -7,13 +7,13 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         type: DataTypes.STRING,
       },
-      serving_size_note: {
+      servingSizeNote: {
         type: DataTypes.STRING,
       },
-      created_at: {
+      createdAt: {
         type: DataTypes.DATE,
       },
-      updated_at: {
+      updatedAt: {
         type: DataTypes.DATE,
       },
     },
@@ -27,8 +27,8 @@ module.exports = (sequelize, DataTypes) => {
     Food.belongsToMany(models.Nutrient, {
       through: 'NutrientFood',
       as: 'nutrients',
-      foreignKey: 'food_id',
-      otherKey: 'nutrient_id',
+      foreignKey: 'foodId',
+      otherKey: 'nutrientId',
     });
   };
   return Food;

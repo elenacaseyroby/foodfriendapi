@@ -7,11 +7,11 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         type: DataTypes.STRING,
       },
-      created_at: {
+      createdAt: {
         allowNull: false,
         type: DataTypes.DATE,
       },
-      updated_at: {
+      updatedAt: {
         allowNull: false,
         type: DataTypes.DATE,
       },
@@ -26,8 +26,8 @@ module.exports = (sequelize, DataTypes) => {
     Benefit.belongsToMany(models.Nutrient, {
       through: 'NutrientBenefit',
       as: 'nutrients',
-      foreignKey: 'benefit_id',
-      otherKey: 'nutrient_id',
+      foreignKey: 'benefitId',
+      otherKey: 'nutrientId',
     });
   };
   return Benefit;

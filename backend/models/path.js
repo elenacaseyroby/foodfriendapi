@@ -16,13 +16,13 @@ module.exports = (sequelize, DataTypes) => {
       notes: {
         type: DataTypes.STRING,
       },
-      notes_sources: {
+      notesSources: {
         type: DataTypes.STRING,
       },
-      created_at: {
+      createdAt: {
         type: DataTypes.DATE,
       },
-      updated_at: {
+      updatedAt: {
         type: DataTypes.DATE,
       },
     },
@@ -33,12 +33,12 @@ module.exports = (sequelize, DataTypes) => {
     }
   );
   Path.associate = function (models) {
-    Path.belongsTo(models.User, { foreignKey: 'owner_id', targetKey: 'id' });
+    Path.belongsTo(models.User, { foreignKey: 'ownerId', targetKey: 'id' });
     Path.belongsToMany(models.Nutrient, {
       through: 'PathNutrient',
       as: 'nutrients',
-      foreignKey: 'path_id',
-      otherKey: 'nutrient_id',
+      foreignKey: 'pathId',
+      otherKey: 'nutrientId',
     });
   };
   return Path;

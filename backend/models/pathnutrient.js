@@ -3,10 +3,10 @@ module.exports = (sequelize, DataTypes) => {
   const PathNutrient = sequelize.define(
     'PathNutrient',
     {
-      created_at: {
+      createdAt: {
         type: DataTypes.DATE,
       },
-      updated_at: {
+      updatedAt: {
         type: DataTypes.DATE,
       },
     },
