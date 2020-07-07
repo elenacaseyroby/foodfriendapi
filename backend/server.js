@@ -6,6 +6,7 @@ import {
   checkUserIsLoggedIn,
   checkIfAdmin,
   login,
+  signUp,
 } from './services/auth';
 import { uploadNutrients } from './csv_upload_scripts/nutrients';
 import { uploadNutrientBenefits } from './csv_upload_scripts/nutrient_benefits';
@@ -68,38 +69,21 @@ app.post('/signup', async (req, res) => {
       message: 'Your password must be 8 or more characters long.',
     });
   }
-  // Check for user with email.
-  const existingUser = await db.User.findAll({
-    where: {
-      email: req.body.email.toLowerCase(),
-    },
-  });
-  if (existingUser.length > 0)
-    return res.status(401).json({
-      message: 'There is already an account under the email that you entered.',
-    });
-  // If not, create new user.
-  const user = await db.User.create({
-    email: req.body.email.toLowerCase().trim(),
-    first_name: req.body.first_name.trim(),
-    last_name: req.body.last_name.trim(),
-  });
-  const passwordSet = await user.setPassword(req.body.password);
-  if (!passwordSet) {
-    return res.status(500).json({
-      message: "Server error: couldn't save password.",
-    });
-  }
-  const token = generateJWT(user);
-  return res.status(200).json({
-    id: user.id,
-    access_token: token,
+  const response = await signUp(
+    req.body.first_name,
+    req.body.last_name,
+    req.body.email,
+    req.body.password
+  );
+  return res.status(response.status).json({
+    message: response.errorMessage,
+    id: response.userId,
+    access_token: response.accessToken,
   });
 });
 
 app.post('/sendPasswordResetEmail', async (req, res) => {
   // Make sure form is filled out.
-  console.log(JSON.stringify(req.body));
   if (!req.body.email || (req.body.email && !req.body.email.includes('@'))) {
     return res.status(400).json({
       message:
@@ -206,9 +190,7 @@ app.post('/resetPassword', async (req, res) => {
 // DATA
 app.get('/users/:userId', async (req, res) => {
   // could move this logic into a middleware function in router.
-  console.log(`token:${req.headers.authorization}`);
-  console.log(`user id:${req.params.userId}`);
-  const loggedIn = await checkUserIsLoggedIn(req, res);
+  const loggedIn = checkUserIsLoggedIn(req, res);
   if (!loggedIn) {
     return res.status(401).json({
       message: 'You must be logged in to complete this request.',
@@ -259,12 +241,10 @@ app.put('/users/changePassword', async (req, res) => {
   // Must pass headers.adminauthorization with request.
   const isAdmin = await checkIfAdmin(req);
   if (!isAdmin) {
-    console.log('not admin');
     return res.status(401).json({
       message: 'You do not have necessary permissions to perform this action.',
     });
   }
-  console.log('is admin');
   if (!req.body.email || !req.body.password) {
     return res
       .status(400)
@@ -293,7 +273,6 @@ app.post(
     // Must pass headers.adminauthorization with request.
     const isAdmin = await checkIfAdmin(req);
     if (!isAdmin) {
-      console.log('not admin');
       return res.status(401).json({
         message:
           'You do not have necessary permissions to perform this action.',
@@ -311,7 +290,6 @@ app.post(
     // Must pass headers.adminauthorization with request.
     const isAdmin = await checkIfAdmin(req);
     if (!isAdmin) {
-      console.log('not admin');
       return res.status(401).json({
         message:
           'You do not have necessary permissions to perform this action.',
@@ -329,7 +307,6 @@ app.post(
     // Must pass headers.adminauthorization with request.
     const isAdmin = await checkIfAdmin(req);
     if (!isAdmin) {
-      console.log('not admin');
       return res.status(401).json({
         message:
           'You do not have necessary permissions to perform this action.',
@@ -347,7 +324,6 @@ app.post(
     // Must pass headers.adminauthorization with request.
     const isAdmin = await checkIfAdmin(req);
     if (!isAdmin) {
-      console.log('not admin');
       return res.status(401).json({
         message:
           'You do not have necessary permissions to perform this action.',
@@ -365,7 +341,6 @@ app.post(
     // Must pass headers.adminauthorization with request.
     const isAdmin = await checkIfAdmin(req);
     if (!isAdmin) {
-      console.log('not admin');
       return res.status(401).json({
         message:
           'You do not have necessary permissions to perform this action.',
