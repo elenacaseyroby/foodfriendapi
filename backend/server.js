@@ -113,10 +113,10 @@ app.post('/sendPasswordResetEmail', async (req, res) => {
       to: user.email,
       from: process.env.PASSWORD_RESET_FROM_EMAIL,
       subject: 'Password reset request',
-      text: `Hi ${user.first_name},
+      text: `Hi ${user.firstName},
       From your smartphone or tablet, please visit this url: ${url} to reset your FoodFriend password.
       If you did not request this, please ignore this email and your password will remain unchanged.`,
-      html: `<p>Hi ${user.first_name}, <br><br>
+      html: `<p>Hi ${user.firstName}, <br><br>
       From your smartphone or tablet, you can click on this ${link} to reset your FoodFriend password. <br>
       If you did not request this, please ignore this email and your password will remain unchanged.`,
     };
@@ -204,12 +204,12 @@ app.get('/users/:userId', async (req, res) => {
     return res.json({
       id: user.id,
       email: user.email,
-      first_name: user.first_name,
-      last_name: user.last_name,
+      firstName: user.firstName,
+      lastName: user.lastName,
       birthday: user.birthday,
-      is_vegan: user.is_vegan,
-      mensruates: user.mensruates,
-      active_path_id: user.active_path_id,
+      isVegan: user.isVegan,
+      menstruates: user.menstruates,
+      activePathId: user.activePathId,
     });
   });
 });

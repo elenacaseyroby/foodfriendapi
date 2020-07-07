@@ -30,8 +30,8 @@ describe('auth', async () => {
     // any db data created must be destroyed at end of test
     const user = await db.User.create({
       email: email,
-      first_name: 'elena',
-      last_name: 'roby',
+      firstName: 'elena',
+      lastName: 'roby',
     });
     const passwordSet = await user.setPassword(password);
     expect(passwordSet).to.equal('success');
@@ -44,8 +44,8 @@ describe('auth', async () => {
     // any db data created must be destroyed at end of test
     const user = await db.User.create({
       email: email,
-      first_name: 'elena',
-      last_name: 'roby',
+      firstName: 'elena',
+      lastName: 'roby',
     });
     const passwordSet = await user.setPassword(password);
     expect(passwordSet).to.equal('success');

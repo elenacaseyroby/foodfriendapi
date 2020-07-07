@@ -5,11 +5,11 @@ module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define(
     'User',
     {
-      first_name: {
+      firstName: {
         allowNull: false,
         type: DataTypes.STRING,
       },
-      last_name: {
+      lastName: {
         allowNull: false,
         type: DataTypes.STRING,
       },
@@ -23,16 +23,16 @@ module.exports = (sequelize, DataTypes) => {
       salt: {
         type: DataTypes.STRING,
       },
-      password_reset_token: {
+      passwordResetToken: {
         type: DataTypes.STRING,
       },
-      password_reset_expiration_time: {
+      passwordResetExpirationTime: {
         type: DataTypes.DATE,
       },
       birthday: {
         type: DataTypes.DATE,
       },
-      is_vegan: {
+      isVegan: {
         defaultValue: 0,
         type: DataTypes.BOOLEAN,
       },
@@ -40,10 +40,10 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: 0,
         type: DataTypes.BOOLEAN,
       },
-      created_at: {
+      createdAt: {
         type: DataTypes.DATE,
       },
-      updated_at: {
+      updatedAt: {
         type: DataTypes.DATE,
       },
     },
@@ -85,16 +85,16 @@ module.exports = (sequelize, DataTypes) => {
     return this.password === hashPassword(password, this.salt);
   };
   User.prototype.generatePasswordResetToken = function () {
-    this.password_reset_token = crypto.randomBytes(20).toString('hex');
-    this.password_reset_expiration_time = Date.now() + 3600000; //expires in an hour
+    this.passwordResetToken = crypto.randomBytes(20).toString('hex');
+    this.passwordResetExpirationTime = Date.now() + 3600000; //expires in an hour
     // might break here if save() doesn't work
     this.save();
-    return this.password_reset_token;
+    return this.passwordResetToken;
   };
   User.prototype.validatePasswordResetToken = function (token) {
     return (
-      this.password_reset_token === token &&
-      Date.now() < this.password_reset_expiration_time
+      this.passwordResetToken === token &&
+      Date.now() < this.passwordResetExpirationTime
     );
   };
 

@@ -108,8 +108,8 @@ export async function signUp(firstName, lastName, email, password) {
   // If not, create new user.
   const user = await db.User.create({
     email: email.toLowerCase().trim(),
-    first_name: firstName.trim(),
-    last_name: lastName.trim(),
+    firstName: firstName.trim(),
+    lastName: lastName.trim(),
   });
   if (!user) {
     response.status = 500;
