@@ -84,12 +84,12 @@ module.exports = (sequelize, DataTypes) => {
   User.prototype.validatePassword = function (password) {
     return this.password === hashPassword(password, this.salt);
   };
-  User.prototype.generatePasswordResetToken = function () {
+  User.prototype.generatePasswordResetToken = async function () {
     this.passwordResetToken = crypto.randomBytes(20).toString('hex');
     this.passwordResetExpirationTime = Date.now() + 3600000; //expires in an hour
     // might break here if save() doesn't work
-    this.save();
-    return this.passwordResetToken;
+    const saved = await this.save();
+    return saved && this.passwordResetToken;
   };
   User.prototype.validatePasswordResetToken = function (token) {
     return (
