@@ -83,11 +83,18 @@ export async function uploadPathNutrients(file) {
           nutrientIds: pathNutrientIdsList,
         });
         // Don't update benefit record if no changes have been made.
-        if (savedPath.name === path.pathName) return;
+        if (
+          savedPath.name === path.pathName &&
+          savedPath.notes === path.notes &&
+          savedPath.notesSources === path.notesSources
+        )
+          return;
         // Add benefit to list to be updated.
         pathsToUpdate.push({
           id: savedPath.id,
           name: path.pathName,
+          notes: path.notes,
+          notesSources: path.notesSources,
         });
       } else {
         // If benefit doesn't exit, add to benefitsToCreate list.
