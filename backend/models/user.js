@@ -70,6 +70,18 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: 'userId',
       otherKey: 'recipeId',
     });
+    User.belongsToMany(models.TermsAndConditions, {
+      through: 'UserTermsAndConditions',
+      as: 'terms',
+      foreignKey: 'userId',
+      otherKey: 'termsId',
+    });
+    User.belongsToMany(models.PrivacyPolicy, {
+      through: 'UserPrivacyPolicies',
+      as: 'policies',
+      foreignKey: 'userId',
+      otherKey: 'policyId',
+    });
   };
   // methods:
   User.prototype.setPassword = async function (password) {
