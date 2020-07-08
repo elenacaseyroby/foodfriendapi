@@ -18,7 +18,6 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(100),
       },
       timeSent: {
-        allowNull: false,
         type: DataTypes.DATE,
       },
       subject: {
