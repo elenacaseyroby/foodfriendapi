@@ -34,7 +34,7 @@ app.use(bodyParser.json());
 // API ENDPOINTS BELOW
 
 // AUTHENTICATION
-app.post('/login', async (req, res) => {
+app.post('/signin', async (req, res) => {
   const response = await signIn(req.body.email, req.body.password);
   return res.status(response.status).json({
     messsage: response.message,
