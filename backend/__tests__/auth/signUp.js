@@ -1,4 +1,5 @@
-import { checkUserIsLoggedIn, signUp } from '../../services/auth';
+import { checkUserSignedIn } from '../../utils/auth';
+import { signUp } from '../../services/auth/signUp';
 import chai from 'chai';
 import { db } from '../../models';
 
@@ -72,7 +73,7 @@ describe('auth', async () => {
         authorization: response.accessToken,
       },
     };
-    const userIsLoggedIn = checkUserIsLoggedIn(req);
+    const userIsLoggedIn = checkUserSignedIn(req);
     expect(userIsLoggedIn).to.be.true;
     // any db data created must be destroyed at end of test
     const user = await db.User.findOne({

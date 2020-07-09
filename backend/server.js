@@ -1,14 +1,13 @@
 import express from 'express';
 import { db } from './models';
 import multer from 'multer';
+import { checkUserSignedIn, checkIfAdmin } from './utils/auth';
+import { signUp } from './services/auth/signUp';
+import { signIn } from './services/auth/signIn';
 import {
-  checkUserIsLoggedIn,
-  checkIfAdmin,
-  login,
-  signUp,
   resetPassword,
   sendPasswordResetEmail,
-} from './services/auth';
+} from './services/auth/passwordReset';
 import { uploadNutrients } from './csv_upload_scripts/nutrients';
 import { uploadNutrientBenefits } from './csv_upload_scripts/nutrient_benefits';
 import { uploadNutrientFoods } from './csv_upload_scripts/nutrient_foods';
@@ -36,7 +35,7 @@ app.use(bodyParser.json());
 
 // AUTHENTICATION
 app.post('/login', async (req, res) => {
-  const response = await login(req.body.email, req.body.password);
+  const response = await signIn(req.body.email, req.body.password);
   return res.status(response.status).json({
     messsage: response.message,
     userId: response.userId,
@@ -79,7 +78,7 @@ app.post('/resetPassword', async (req, res) => {
 // DATA
 app.get('/users/:userId', async (req, res) => {
   // could move this logic into a middleware function in router.
-  const loggedIn = checkUserIsLoggedIn(req, res);
+  const loggedIn = checkUserSignedIn(req, res);
   if (!loggedIn) {
     return res.status(401).json({
       message: 'You must be logged in to complete this request.',
@@ -108,7 +107,7 @@ app.get('/users/:userId', async (req, res) => {
 
 app.get('/nutrients', async (req, res) => {
   // could move this logic into a middleware function in router.
-  const loggedIn = await checkUserIsLoggedIn(req, res);
+  const loggedIn = await checkUserSignedIn(req, res);
   if (!loggedIn) {
     return res.status(401).json({
       message: 'You must be logged in to complete this request.',

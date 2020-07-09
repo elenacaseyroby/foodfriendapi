@@ -1,4 +1,5 @@
-import { checkUserIsLoggedIn, login } from '../../services/auth';
+import { checkUserSignedIn } from '../../utils/auth';
+import { signIn } from '../../services/auth/signIn';
 import chai from 'chai';
 import { db } from '../../models';
 
@@ -24,7 +25,7 @@ describe('auth', async () => {
       await user.destroy();
     });
   });
-  it('login function returns response with valid accessToken', async () => {
+  it('signin function returns response with valid accessToken', async () => {
     const password = 'testtest';
     const email = 'test@test.com';
     // any db data created must be destroyed at end of test
@@ -35,14 +36,14 @@ describe('auth', async () => {
     });
     const passwordSet = await user.setPassword(password);
     expect(passwordSet).to.equal('success');
-    const response = await login(email, password);
+    const response = await signIn(email, password);
     expect(response.status).to.equal(200);
     const req = {
       headers: {
         authorization: response.accessToken,
       },
     };
-    const userIsLoggedIn = checkUserIsLoggedIn(req);
+    const userIsLoggedIn = checkUserSignedIn(req);
     expect(userIsLoggedIn).to.be.true;
     // any db data created must be destroyed at end of test
     user.destroy();

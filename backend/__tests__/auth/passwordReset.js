@@ -1,4 +1,7 @@
-import { sendPasswordResetEmail, resetPassword } from '../../services/auth';
+import {
+  sendPasswordResetEmail,
+  resetPassword,
+} from '../../services/auth/passwordReset';
 import chai from 'chai';
 import { db } from '../../models';
 
