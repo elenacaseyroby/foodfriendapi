@@ -91,20 +91,6 @@ describe('auth', async () => {
     });
     return 'success';
   });
-  it('user.setPassword returns "success" on save.', async () => {
-    const password = 'testtest';
-    const email = 'test@test.com';
-    // any db data created must be destroyed at end of test
-    const user = await db.User.create({
-      email: email,
-      firstName: 'elena',
-      lastName: 'roby',
-    });
-    const passwordSet = await user.setPassword(password);
-    expect(passwordSet).to.equal('success');
-    // any db data created must be destroyed at end of test
-    user.destroy();
-  });
   it('login function returns response with valid accessToken', async () => {
     const password = 'testtest';
     const email = 'test@test.com';
