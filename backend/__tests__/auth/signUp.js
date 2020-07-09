@@ -3,8 +3,6 @@ import chai from 'chai';
 import { db } from '../../models';
 
 require('dotenv').config();
-const Sequelize = require('sequelize');
-const Op = Sequelize.Op;
 const { expect } = chai;
 
 describe('auth', async () => {
