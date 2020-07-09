@@ -27,7 +27,7 @@ module.exports = (sequelize, DataTypes) => {
     }
   );
   TermsAndConditions.associate = function (models) {
-    TermsAndConditions.belongsToMany(models.Recipe, {
+    TermsAndConditions.belongsToMany(models.User, {
       through: 'UserTermsAndConditions',
       as: 'users',
       foreignKey: 'termsId',

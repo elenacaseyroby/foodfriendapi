@@ -34,6 +34,10 @@ module.exports = (sequelize, DataTypes) => {
   );
   Path.associate = function (models) {
     Path.belongsTo(models.User, { foreignKey: 'ownerId', targetKey: 'id' });
+    // this should link to the activePathId foreign key on the User model
+    // but it could get confused since the Path model also has the
+    // ownerId foreign key to the User model:
+    Path.hasMany(models.User, { foreignKey: 'activePathId', as: 'followers' });
     Path.belongsToMany(models.Nutrient, {
       through: 'PathNutrient',
       as: 'nutrients',

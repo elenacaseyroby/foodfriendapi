@@ -10,7 +10,6 @@ module.exports = {
         type: Sequelize.INTEGER,
       },
       date_published: {
-        allowNull: false,
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },

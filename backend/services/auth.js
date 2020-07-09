@@ -149,6 +149,20 @@ export async function signUp(firstName, lastName, email, password) {
     response.message = "Server error: couldn't save password.";
     return response;
   }
+  // Agree to Privacy Policy and Terms and Conditions.
+  const latestTerms = await db.TermsAndConditions.findOne({
+    order: [['datePublished', 'DESC']],
+  });
+  const agreedTerms = await user.agreeToTerms(latestTerms);
+  const latestPolicy = await db.PrivacyPolicy.findOne({
+    order: [['datePublished', 'DESC']],
+  });
+  const agreedPolicy = await user.agreeToPrivacyPolicy(latestPolicy);
+  if (!(agreedTerms && agreedPolicy)) {
+    response.status = 500;
+    response.message = "Server error: couldn't agree to terms.";
+    return response;
+  }
   response.accessToken = generateJWT(user);
   response.userId = user.id;
   return response;

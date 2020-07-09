@@ -27,7 +27,7 @@ module.exports = (sequelize, DataTypes) => {
     }
   );
   PrivacyPolicy.associate = function (models) {
-    PrivacyPolicy.belongsToMany(models.Recipe, {
+    PrivacyPolicy.belongsToMany(models.User, {
       through: 'UserPrivacyPolicies',
       as: 'users',
       foreignKey: 'policyId',
