@@ -37,7 +37,11 @@ describe('auth', async () => {
     });
   });
   it('send password reset email', async () => {
-    const momentsAgo = Date();
+    // delete all emails
+    const allEmails = await db.Email.findAll({});
+    allEmails.forEach(async (email) => {
+      await email.destroy();
+    });
     const emailAddress = 'elena@roby.com';
     const user = await db.User.create({
       email: emailAddress,
@@ -52,15 +56,12 @@ describe('auth', async () => {
     const email = await db.Email.findOne({
       where: {
         toEmail: emailAddress,
-        timeSent: {
-          [Op.gte]: momentsAgo,
-        },
       },
     });
     expect(email).to.exist;
     // any db data created must be destroyed at end of test
-    user.destroy();
-    email.destroy();
+    await user.destroy();
+    await email.destroy();
   });
   it('reset password successfully using userId and passwordResetToken (like would be sent in email)', async () => {
     // Create test data that would be included in the meta data of the redirect to
