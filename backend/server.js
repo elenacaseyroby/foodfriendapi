@@ -57,12 +57,12 @@ app.post('/signup', async (req, res) => {
   });
 });
 
-app.post('/sendPasswordResetEmail', async (req, res) => {
+app.post('/sendpasswordresetemail', async (req, res) => {
   const response = await sendPasswordResetEmail(req.body.email);
   return res.status(response.status).json({ message: response.message });
 });
 
-app.post('/resetPassword', async (req, res) => {
+app.post('/resetpassword', async (req, res) => {
   const response = await resetPassword(
     req.body.userId,
     req.body.passwordResetToken,
