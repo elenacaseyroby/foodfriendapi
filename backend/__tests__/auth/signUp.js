@@ -16,11 +16,6 @@ describe('auth', async () => {
     const policy = await db.PrivacyPolicy.create({
       text: 'some privacy junk',
     });
-    // Delete any users already in test db.
-    const allUsers = await db.User.findAll({});
-    allUsers.forEach(async (user) => {
-      await user.destroy();
-    });
     // Delete user agreements
     const allPolicyAgreements = await db.UserPrivacyPolicies.findAll({});
     allPolicyAgreements.forEach(async (p) => {
@@ -30,16 +25,16 @@ describe('auth', async () => {
     allTermsAgreements.forEach(async (t) => {
       await t.destroy();
     });
+    // Delete any users already in test db.
+    const allUsers = await db.User.findAll({});
+    allUsers.forEach(async (user) => {
+      await user.destroy();
+    });
     return terms && policy;
   });
   after(async function () {
     // runs before all tests in this file regardless where this line is defined.
 
-    // Delete users.
-    const allUsers = await db.User.findAll({});
-    allUsers.forEach(async (user) => {
-      await user.destroy();
-    });
     // Delete terms & privacy policy.
     const allPolicies = await db.PrivacyPolicy.findAll({});
     allPolicies.forEach(async (p) => {
@@ -51,12 +46,17 @@ describe('auth', async () => {
     });
     // Delete user agreements
     const allPolicyAgreements = await db.UserPrivacyPolicies.findAll({});
-    allPolicyAgreements.forEach((p) => {
-      p.destroy();
+    allPolicyAgreements.forEach(async (p) => {
+      await p.destroy();
     });
     const allTermsAgreements = await db.UserTermsAndConditions.findAll({});
-    allTermsAgreements.forEach((t) => {
-      t.destroy();
+    allTermsAgreements.forEach(async (t) => {
+      await t.destroy();
+    });
+    // Delete users.
+    const allUsers = await db.User.findAll({});
+    allUsers.forEach(async (user) => {
+      await user.destroy();
     });
     return 'success';
   });
@@ -80,7 +80,16 @@ describe('auth', async () => {
         email: email,
       },
     });
-    user.destroy();
+    // Delete user agreements
+    const allPolicyAgreements = await db.UserPrivacyPolicies.findAll({});
+    allPolicyAgreements.forEach(async (p) => {
+      await p.destroy();
+    });
+    const allTermsAgreements = await db.UserTermsAndConditions.findAll({});
+    allTermsAgreements.forEach(async (t) => {
+      await t.destroy();
+    });
+    await user.destroy();
   });
   it('signUp function returns error when first name is empty string', async () => {
     const firstName = '';
@@ -116,6 +125,15 @@ describe('auth', async () => {
     );
     expect(userAgreedToTerms && userAgreedToPrivacy).to.be.true;
     // any db data created must be destroyed at end of test
+    // Delete user agreements
+    const allPolicyAgreements = await db.UserPrivacyPolicies.findAll({});
+    allPolicyAgreements.forEach(async (p) => {
+      await p.destroy();
+    });
+    const allTermsAgreements = await db.UserTermsAndConditions.findAll({});
+    allTermsAgreements.forEach(async (t) => {
+      await t.destroy();
+    });
     user.destroy();
   });
 });
