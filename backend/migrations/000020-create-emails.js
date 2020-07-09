@@ -15,7 +15,6 @@ module.exports = {
       from_email: {
         allowNull: false,
         type: Sequelize.STRING(100),
-        unique: true,
       },
       time_sent: {
         allowNull: false,
