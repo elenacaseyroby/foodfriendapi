@@ -1,6 +1,5 @@
 import {
   checkUserIsLoggedIn,
-  login,
   signUp,
   sendPasswordResetEmail,
   resetPassword,
@@ -11,7 +10,6 @@ import { db } from '../models';
 require('dotenv').config();
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
-const should = chai.should();
 const { expect } = chai;
 
 describe('auth', async () => {
@@ -90,29 +88,6 @@ describe('auth', async () => {
       t.destroy();
     });
     return 'success';
-  });
-  it('login function returns response with valid accessToken', async () => {
-    const password = 'testtest';
-    const email = 'test@test.com';
-    // any db data created must be destroyed at end of test
-    const user = await db.User.create({
-      email: email,
-      firstName: 'elena',
-      lastName: 'roby',
-    });
-    const passwordSet = await user.setPassword(password);
-    expect(passwordSet).to.equal('success');
-    const response = await login(email, password);
-    expect(response.status).to.equal(200);
-    const req = {
-      headers: {
-        authorization: response.accessToken,
-      },
-    };
-    const userIsLoggedIn = checkUserIsLoggedIn(req);
-    expect(userIsLoggedIn).to.be.true;
-    // any db data created must be destroyed at end of test
-    user.destroy();
   });
   it('signUp function returns response with valid accessToken', async () => {
     const firstName = 'Dyl';
