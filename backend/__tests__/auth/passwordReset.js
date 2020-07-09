@@ -1,6 +1,6 @@
-import { sendPasswordResetEmail, resetPassword } from '../services/auth';
+import { sendPasswordResetEmail, resetPassword } from '../../services/auth';
 import chai from 'chai';
-import { db } from '../models';
+import { db } from '../../models';
 
 require('dotenv').config();
 const Sequelize = require('sequelize');
@@ -62,7 +62,7 @@ describe('auth', async () => {
     user.destroy();
     email.destroy();
   });
-  it('reset password successfully', async () => {
+  it('reset password successfully using userId and passwordResetToken (like would be sent in email)', async () => {
     // Create test data that would be included in the meta data of the redirect to
     // the UpdatePassword component in foodfriendmobile.
     const emailAddress = 'elena@roby.com';
@@ -91,7 +91,7 @@ describe('auth', async () => {
     // any db data created must be destroyed at end of test
     updatedUser.destroy();
   });
-  it("don't send password reset email and return error if email not attached to user.", async () => {
+  it("if email not attached to user, don't send password reset email and return error.", async () => {
     const momentsAgo = Date();
     const emailAddress = 'does@not.exist';
     // Request password reset email.
@@ -109,7 +109,4 @@ describe('auth', async () => {
     });
     expect(email).to.not.exist;
   });
-  // it('User cannot log in with incorrect password.', () => {});
-  // it('User can login and use access token to access password-protected endpoints', () => {});
-  // it('User that successfully logs in can load user data.', () => {});
 });

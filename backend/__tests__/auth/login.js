@@ -47,4 +47,7 @@ describe('auth', async () => {
     // any db data created must be destroyed at end of test
     user.destroy();
   });
+  // it('User cannot log in with incorrect password.', () => {});
+  // it('User can login and use access token to access password-protected endpoints', () => {});
+  // it('User that successfully logs in can load user data.', () => {});
 });
