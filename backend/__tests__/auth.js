@@ -1,6 +1,4 @@
-import jwt from 'jsonwebtoken';
 import {
-  generateJWT,
   checkUserIsLoggedIn,
   login,
   signUp,
@@ -92,17 +90,6 @@ describe('auth', async () => {
       t.destroy();
     });
     return 'success';
-  });
-  it('JWT token that is created on login is verified.', () => {
-    const user = {
-      id: 1,
-      email: 't@t.t',
-      password: 'lkjadaf',
-      salt: 'lkjasfdl',
-    };
-    const token = generateJWT(user);
-    const tokenData = jwt.verify(token, process.env.JWT_SECRET);
-    should.exist(tokenData);
   });
   it('user.setPassword returns "success" on save.', async () => {
     const password = 'testtest';
