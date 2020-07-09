@@ -93,7 +93,11 @@ describe('auth', async () => {
     updatedUser.destroy();
   });
   it("if email not attached to user, don't send password reset email and return error.", async () => {
-    const momentsAgo = Date();
+    // delete all emails
+    const allEmails = await db.Email.findAll({});
+    allEmails.forEach(async (email) => {
+      await email.destroy();
+    });
     const emailAddress = 'does@not.exist';
     // Request password reset email.
     const response = await sendPasswordResetEmail(emailAddress);
@@ -103,9 +107,6 @@ describe('auth', async () => {
     const email = await db.Email.findOne({
       where: {
         toEmail: emailAddress,
-        timeSent: {
-          [Op.gte]: momentsAgo,
-        },
       },
     });
     expect(email).to.not.exist;
