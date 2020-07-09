@@ -2,6 +2,10 @@ import { db } from '../../models';
 import { validateEmail, validatePassword } from '../../utils/formValidation';
 import { generateJWT } from './tokens';
 
+// Config sendGrid.
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
 export async function sendPasswordResetEmail(emailAddress) {
   // input email
   // output response
@@ -37,61 +41,53 @@ export async function sendPasswordResetEmail(emailAddress) {
 
   // Else generate email to send password reset token.
   const token = await user.generatePasswordResetToken();
-  try {
-    // Send email with link to endpoint in foodfriend that redirects to deep link to
-    // UpdatePassword component in foodfriendmobile.
-    const url = `${process.env.FOODFRIEND_URL}/passwordreset/${user.id}/${token}`;
-    const link = `<a href="${url}">link</a>`;
-    // Set email properties
-    const toEmail = user.email;
-    const fromEmail = process.env.PASSWORD_RESET_FROM_EMAIL;
-    const subject = 'Password reset request';
-    const body = `<p>Hi ${user.firstName}, <br><br>
+  // Send email with link to endpoint in foodfriend that redirects to deep link to
+  // UpdatePassword component in foodfriendmobile.
+  const url = `${process.env.FOODFRIEND_URL}/passwordreset/${user.id}/${token}`;
+  const link = `<a href="${url}">link</a>`;
+  // Set email properties
+  const toEmail = user.email;
+  const fromEmail = process.env.PASSWORD_RESET_FROM_EMAIL;
+  const subject = 'Password reset request';
+  const body = `<p>Hi ${user.firstName}, <br><br>
     From your smartphone or tablet, you can click on this ${link} to reset your FoodFriend password. <br>
     If you did not request this, please ignore this email and your password will remain unchanged.`;
-    const mailOptions = {
-      to: toEmail,
-      from: fromEmail,
-      subject: subject,
-      text: `Hi ${user.firstName},
+  const mailOptions = {
+    to: toEmail,
+    from: fromEmail,
+    subject: subject,
+    text: `Hi ${user.firstName},
       From your smartphone or tablet, please visit this url: ${url} to reset your FoodFriend password.
       If you did not request this, please ignore this email and your password will remain unchanged.`,
-      html: body,
-    };
-    // Send email if not a test
-    if (!isTest) {
-      sgMail.send(mailOptions, (error, result) => {
-        if (error) {
-          response.status = 500;
-          response.message = error.message;
-          return response;
-        }
-      });
+    html: body,
+  };
+  // Send email if not a test
+  if (!isTest) {
+    try {
+      sgMail.send(mailOptions, (error, result) => {});
+    } catch (error) {
+      response.status = 500;
+      response.message = `Failed to send email. error:${error.message}`;
+      return response;
     }
-    // Save email in emails table.
-    const emailRecord = await db.Email.create({
+  }
+  // Save email in emails table.
+  let emailRecord;
+  try {
+    emailRecord = await db.Email.create({
       toEmail: toEmail,
       fromEmail: fromEmail,
       subject: subject,
       body: body,
     });
-    // If email is sent and record is saved, return success.
-    if (emailRecord) {
-      response.message = `A reset email has been sent to ${user.email}.`;
-      return response;
-    }
-    console.log('Info to help debug:');
-    console.log(`emailRecord: ${emailRecord}`);
-    console.log(`isTest: ${isTest}`);
-    console.log(`sentEmail: ${sentEmail}`);
-    response.status = 500;
-    response.message = 'Email failed to send';
-    return response;
   } catch (error) {
     response.status = 500;
-    response.message = error.message;
+    response.message = `Failed to store email in emails table. error:${error.message}`;
     return response;
   }
+  // If email is sent and record is saved, return success.
+  response.message = `A reset email has been sent to ${user.email}.`;
+  return response;
 }
 
 export async function resetPassword(userId, passwordResetToken, newPassword) {

@@ -6,10 +6,6 @@ import {
 } from '../../utils/formValidation';
 import { generateJWT } from './tokens';
 
-// Config sendGrid.
-const sgMail = require('@sendgrid/mail');
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
 export async function signUp(firstName, lastName, email, password) {
   // input email, password, first name, laste name
   // output response
