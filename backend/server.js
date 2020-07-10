@@ -92,7 +92,8 @@ app.get('/users/:userId', async (req, res) => {
     },
   }).then((user) => {
     if (!user) return res.status(404).json({ message: 'User not found.' });
-    return res.json({
+    return res.status(200).json({
+      message: 'success',
       id: user.id,
       email: user.email,
       firstName: user.firstName,
@@ -113,15 +114,26 @@ app.get('/nutrients', async (req, res) => {
       message: 'You must be logged in to complete this request.',
     });
   }
-  db.Nutrient.findAll({
-    include: [
-      {
-        model: db.Food,
-        through: {},
-        as: 'foods',
-      },
-    ],
-  }).then((result) => res.json(result));
+  try {
+    const nutrients = await db.Nutrient.findAll({
+      include: [
+        {
+          model: db.Food,
+          through: {},
+          as: 'foods',
+        },
+      ],
+    });
+    return res.status(200).json({
+      ...nutrients,
+      message: 'success',
+    });
+  } catch (error) {
+    console.log(`error from /nutrients endpoint: ${error}`);
+    return res.status(500).json({
+      message: 'Server error.  Could not query Nutrients from db.',
+    });
+  }
 });
 
 // ADMIN
