@@ -93,7 +93,6 @@ app.get('/users/:userId', async (req, res) => {
   }).then((user) => {
     if (!user) return res.status(404).json({ message: 'User not found.' });
     return res.status(200).json({
-      message: 'success',
       id: user.id,
       email: user.email,
       firstName: user.firstName,
@@ -104,6 +103,32 @@ app.get('/users/:userId', async (req, res) => {
       activePathId: user.activePathId,
     });
   });
+});
+app.get('/privacypolicy', async (req, res) => {
+  try {
+    const pp = await db.PrivacyPolicy.findOne({
+      order: [['datePublished', 'DESC']],
+    });
+    return res.status(200).json(pp);
+  } catch (error) {
+    console.log(`error from /privacypolicy endpoint: ${error}`);
+    return res.status(500).json({
+      message: 'Server error.  Could not query PrivacyPolicy from db.',
+    });
+  }
+});
+app.get('/termsandconditions', async (req, res) => {
+  try {
+    const terms = await db.TermsAndConditions.findOne({
+      order: [['datePublished', 'DESC']],
+    });
+    return res.status(200).json(terms);
+  } catch (error) {
+    console.log(`error from /privacypolicy endpoint: ${error}`);
+    return res.status(500).json({
+      message: 'Server error.  Could not query PrivacyPolicy from db.',
+    });
+  }
 });
 
 app.get('/nutrients', async (req, res) => {
@@ -124,10 +149,7 @@ app.get('/nutrients', async (req, res) => {
         },
       ],
     });
-    return res.status(200).json({
-      ...nutrients,
-      message: 'success',
-    });
+    return res.status(200).json(nutrients);
   } catch (error) {
     console.log(`error from /nutrients endpoint: ${error}`);
     return res.status(500).json({
