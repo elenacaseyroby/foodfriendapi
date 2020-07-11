@@ -1,14 +1,13 @@
 import express from 'express';
 import { db } from './models';
 import multer from 'multer';
+import { checkUserSignedIn, checkIfAdmin } from './utils/auth';
+import { signUp } from './services/auth/signUp';
+import { signIn } from './services/auth/signIn';
 import {
-  checkUserIsLoggedIn,
-  checkIfAdmin,
-  login,
-  signUp,
   resetPassword,
   sendPasswordResetEmail,
-} from './services/auth';
+} from './services/auth/passwordReset';
 import { uploadNutrients } from './csv_upload_scripts/nutrients';
 import { uploadNutrientBenefits } from './csv_upload_scripts/nutrient_benefits';
 import { uploadNutrientFoods } from './csv_upload_scripts/nutrient_foods';
@@ -35,8 +34,8 @@ app.use(bodyParser.json());
 // API ENDPOINTS BELOW
 
 // AUTHENTICATION
-app.post('/login', async (req, res) => {
-  const response = await login(req.body.email, req.body.password);
+app.post('/signin', async (req, res) => {
+  const response = await signIn(req.body.email, req.body.password);
   return res.status(response.status).json({
     messsage: response.message,
     userId: response.userId,
@@ -58,12 +57,12 @@ app.post('/signup', async (req, res) => {
   });
 });
 
-app.post('/sendPasswordResetEmail', async (req, res) => {
+app.post('/sendpasswordresetemail', async (req, res) => {
   const response = await sendPasswordResetEmail(req.body.email);
   return res.status(response.status).json({ message: response.message });
 });
 
-app.post('/resetPassword', async (req, res) => {
+app.post('/resetpassword', async (req, res) => {
   const response = await resetPassword(
     req.body.userId,
     req.body.passwordResetToken,
@@ -79,7 +78,7 @@ app.post('/resetPassword', async (req, res) => {
 // DATA
 app.get('/users/:userId', async (req, res) => {
   // could move this logic into a middleware function in router.
-  const loggedIn = checkUserIsLoggedIn(req, res);
+  const loggedIn = checkUserSignedIn(req, res);
   if (!loggedIn) {
     return res.status(401).json({
       message: 'You must be logged in to complete this request.',
@@ -93,7 +92,8 @@ app.get('/users/:userId', async (req, res) => {
     },
   }).then((user) => {
     if (!user) return res.status(404).json({ message: 'User not found.' });
-    return res.json({
+    return res.status(200).json({
+      message: 'success',
       id: user.id,
       email: user.email,
       firstName: user.firstName,
@@ -108,21 +108,32 @@ app.get('/users/:userId', async (req, res) => {
 
 app.get('/nutrients', async (req, res) => {
   // could move this logic into a middleware function in router.
-  const loggedIn = await checkUserIsLoggedIn(req, res);
+  const loggedIn = await checkUserSignedIn(req, res);
   if (!loggedIn) {
     return res.status(401).json({
       message: 'You must be logged in to complete this request.',
     });
   }
-  db.Nutrient.findAll({
-    include: [
-      {
-        model: db.Food,
-        through: {},
-        as: 'foods',
-      },
-    ],
-  }).then((result) => res.json(result));
+  try {
+    const nutrients = await db.Nutrient.findAll({
+      include: [
+        {
+          model: db.Food,
+          through: {},
+          as: 'foods',
+        },
+      ],
+    });
+    return res.status(200).json({
+      ...nutrients,
+      message: 'success',
+    });
+  } catch (error) {
+    console.log(`error from /nutrients endpoint: ${error}`);
+    return res.status(500).json({
+      message: 'Server error.  Could not query Nutrients from db.',
+    });
+  }
 });
 
 // ADMIN

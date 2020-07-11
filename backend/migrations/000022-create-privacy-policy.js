@@ -1,37 +1,25 @@
 'use strict';
+
 module.exports = {
   up: (queryInterface, Sequelize) => {
-    return queryInterface.createTable('emails', {
+    return queryInterface.createTable('privacy_policy', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      to_email: {
-        allowNull: false,
-        type: Sequelize.STRING(100),
-      },
-      from_email: {
-        allowNull: false,
-        type: Sequelize.STRING(100),
-      },
-      time_sent: {
-        allowNull: false,
+      date_published: {
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
-      subject: {
-        allowNull: false,
-        type: Sequelize.STRING(100),
-      },
-      body: {
+      text: {
         allowNull: false,
         type: Sequelize.TEXT,
       },
     });
   },
   down: (queryInterface, Sequelize) => {
-    return queryInterface.dropTable('emails');
+    return queryInterface.dropTable('privacy_policy');
   },
 };

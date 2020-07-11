@@ -1,5 +1,6 @@
 'use strict';
 const crypto = require('crypto');
+const { db } = require('.');
 
 module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define(
@@ -70,6 +71,16 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: 'userId',
       otherKey: 'recipeId',
     });
+    User.belongsToMany(models.TermsAndConditions, {
+      through: 'UserTermsAndConditions',
+      foreignKey: 'userId',
+      otherKey: 'termsId',
+    });
+    User.belongsToMany(models.PrivacyPolicy, {
+      through: 'UserPrivacyPolicies',
+      foreignKey: 'userId',
+      otherKey: 'policyId',
+    });
   };
   // methods:
   User.prototype.setPassword = async function (password) {
@@ -97,10 +108,39 @@ module.exports = (sequelize, DataTypes) => {
       Date.now() < this.passwordResetExpirationTime
     );
   };
-
+  User.prototype.agreeToTerms = async function (term) {
+    const alreadyAgreed = await this.hasAgreedToTerms(term);
+    if (alreadyAgreed) return 'success';
+    const agreedTerms = await this.addTermsAndConditions(term, {
+      through: {},
+    });
+    if (agreedTerms) return 'success';
+    return;
+  };
+  User.prototype.hasAgreedToTerms = async function (term) {
+    const userTermIds = await this.getTermsAndConditions().map((term) => {
+      return term.id;
+    });
+    return userTermIds.includes(term.id);
+  };
+  User.prototype.agreeToPrivacyPolicy = async function (policy) {
+    // built in makes this getPolicys instead of getPolicies
+    const alreadyAgreed = await this.hasAgreedToPrivacyPolicy(policy);
+    if (alreadyAgreed) return 'success';
+    const agreedPolicy = await this.addPrivacyPolicy(policy, {
+      through: {},
+    });
+    if (agreedPolicy) return 'success';
+    return;
+  };
+  User.prototype.hasAgreedToPrivacyPolicy = async function (policy) {
+    const userPolicyIds = await this.getPrivacyPolicies().map((policy) => {
+      return policy.id;
+    });
+    return userPolicyIds.includes(policy.id);
+  };
   return User;
 };
-
 function hashPassword(password, salt) {
   return crypto
     .pbkdf2Sync(password, salt, 10000, 100, 'sha512')
