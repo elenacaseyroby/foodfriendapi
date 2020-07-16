@@ -83,15 +83,17 @@ describe('sign up tests:', async () => {
     // any db data created must be destroyed at end of test
     // Delete user agreements
     const allPolicyAgreements = await db.UserPrivacyPolicies.findAll({});
-    allPolicyAgreements.forEach(async (p) => {
+    const policiesDeleted = await allPolicyAgreements.forEach(async (p) => {
       await p.destroy();
     });
     const allTermsAgreements = await db.UserTermsAndConditions.findAll({});
-    allTermsAgreements.forEach(async (t) => {
+    const termsDeleted = await allTermsAgreements.forEach(async (t) => {
       await t.destroy();
     });
     // Delete user
-    await user.destroy();
+    if (policiesDeleted && termsDeleted) {
+      await user.destroy();
+    }
   });
   it('signUp function returns error when first name is empty string', async () => {
     const firstName = '';
