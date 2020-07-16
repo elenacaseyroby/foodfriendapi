@@ -108,6 +108,21 @@ module.exports = (sequelize, DataTypes) => {
       Date.now() < this.passwordResetExpirationTime
     );
   };
+  User.prototype.update = async function (userUpdates) {
+    // Input an object with the user properties you would like to change.
+    // Output updatedUser onsuccess or undefined on failure.
+    // Updates user if new values.
+    for (const property in userUpdates) {
+      if (this[property] !== userUpdates[property] && property !== 'password')
+        this[property] = userUpdates[property];
+    }
+    if (userUpdates.password) {
+      await this.setPassword(userUpdates.password);
+    }
+    const saved = await this.save();
+    if (saved) return this;
+    return;
+  };
   User.prototype.agreeToTerms = async function (term) {
     const alreadyAgreed = await this.hasAgreedToTerms(term);
     if (alreadyAgreed) return 'success';

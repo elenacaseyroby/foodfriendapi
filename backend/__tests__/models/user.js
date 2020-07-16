@@ -38,4 +38,56 @@ describe('user model tests:', async () => {
     // any db data created must be destroyed at end of test
     user.destroy();
   });
+  it('user.update updates user if properties have changed', async () => {
+    // any db data created must be destroyed at end of test
+    const email = 'test@test.com';
+    let user = await db.User.create({
+      email: email,
+      firstName: 'elena',
+      lastName: 'roby',
+    });
+    user = await db.User.findOne({
+      email: email,
+    });
+    const updatedAt = user.updatedAt;
+    const timeOut = await setTimeout(() => {
+      return 'done';
+    }, 10000);
+    if (timeOut === 'done') {
+      const updatedUser = await user.update({ firstName: 'Casey' });
+      expect(updatedAt).is.not.equal(updatedUser.updatedAt);
+    }
+    // any db data created must be destroyed at end of test
+    user.destroy();
+  });
+  it('user.update only updates input properties', async () => {
+    // any db data created must be destroyed at end of test
+    const user = await db.User.create({
+      email: 'test@test.com',
+      firstName: 'elena',
+      lastName: 'roby',
+    });
+    const updatedUser = await user.update({ firstName: 'Casey' });
+    expect(user.lastName).is.equal(updatedUser.lastName);
+    // any db data created must be destroyed at end of test
+    user.destroy();
+  });
+  it('user.update does not update user if properties have not changed', async () => {
+    // any db data created must be destroyed at end of test
+    const user = await db.User.create({
+      email: 'test@test.com',
+      firstName: 'elena',
+      lastName: 'roby',
+    });
+    const updatedAt = user.updatedAt;
+    const timeOut = await setTimeout(() => {
+      return 'done';
+    }, 10000);
+    if (timeOut === 'done') {
+      const updatedUser = await user.update({ firstName: 'elena' });
+      expect(updatedAt).is.not.equal(updatedUser.updatedAt);
+    }
+    // any db data created must be destroyed at end of test
+    user.destroy();
+  });
 });
