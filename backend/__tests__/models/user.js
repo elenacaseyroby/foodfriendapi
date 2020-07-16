@@ -60,7 +60,7 @@ describe('user model tests:', async () => {
     // any db data created must be destroyed at end of test
     user.destroy();
   });
-  it('user.update only updates input properties', async () => {
+  it('user.update(userUpdates) only updates input properties', async () => {
     // any db data created must be destroyed at end of test
     const user = await db.User.create({
       email: 'test@test.com',
@@ -72,7 +72,7 @@ describe('user model tests:', async () => {
     // any db data created must be destroyed at end of test
     user.destroy();
   });
-  it('user.update does not update user if properties have not changed', async () => {
+  it('user.update(userUpdates) does not update user if properties have not changed', async () => {
     // any db data created must be destroyed at end of test
     const user = await db.User.create({
       email: 'test@test.com',
@@ -90,7 +90,7 @@ describe('user model tests:', async () => {
     // any db data created must be destroyed at end of test
     user.destroy();
   });
-  it('user.update returns updated user', async () => {
+  it('user.update(userUpdates) returns updated user', async () => {
     // any db data created must be destroyed at end of test
     const user = await db.User.create({
       email: 'test@test.com',
@@ -102,6 +102,25 @@ describe('user model tests:', async () => {
     expect(user.email).is.not.undefined;
     expect(user.lastName).is.not.undefined;
     expect(user.firstName).is.equal('Casey');
+    // any db data created must be destroyed at end of test
+    user.destroy();
+  });
+  it('user.getApiVersion() returns version of user without salt and password properties', async () => {
+    // any db data created must be destroyed at end of test
+    const user = await db.User.create({
+      email: 'test@test.com',
+      firstName: 'elena',
+      lastName: 'roby',
+      salt: 'asjdlkjg',
+      password: 'alsdkjflkajs',
+    });
+    const apiUser = await user.getApiVersion();
+    expect(apiUser.id).is.not.undefined;
+    expect(apiUser.email).is.not.undefined;
+    expect(apiUser.lastName).is.not.undefined;
+    expect(apiUser.firstName).is.not.undefined;
+    expect(apiUser.salt).is.undefined;
+    expect(apiUser.password).is.undefined;
     // any db data created must be destroyed at end of test
     user.destroy();
   });
