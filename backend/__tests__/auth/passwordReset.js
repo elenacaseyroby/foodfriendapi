@@ -10,7 +10,7 @@ const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 const { expect } = chai;
 
-describe('auth', async () => {
+describe('password reset tests:', async () => {
   before(async function () {
     // runs before all tests in this file regardless where this line is defined.
 

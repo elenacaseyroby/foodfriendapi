@@ -5,7 +5,7 @@ require('dotenv').config();
 const Sequelize = require('sequelize');
 const { expect } = chai;
 
-describe('auth', async () => {
+describe('user model tests:', async () => {
   before(async function () {
     // runs before all tests in this file regardless where this line is defined.
 
