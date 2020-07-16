@@ -1,4 +1,5 @@
 'use strict';
+import { differenceOfTwoArrays } from '../utils/common';
 const crypto = require('crypto');
 const { db } = require('.');
 
@@ -61,13 +62,11 @@ module.exports = (sequelize, DataTypes) => {
     });
     User.belongsToMany(models.Diet, {
       through: 'UserDiet',
-      as: 'diets',
       foreignKey: 'userId',
       otherKey: 'dietId',
     });
     User.belongsToMany(models.Recipe, {
       through: 'UserRecipe',
-      as: 'recipes',
       foreignKey: 'userId',
       otherKey: 'recipeId',
     });
@@ -144,6 +143,37 @@ module.exports = (sequelize, DataTypes) => {
     }
     const saved = await this.save();
     if (saved) return this;
+    return;
+  };
+  User.prototype.updateDiets = async function (updatedDiets) {
+    // input: the diets you would like the user to have,
+    // output: 'success' on success and undefined on failure.
+    const userDiets = await this.getDiets();
+    const userDietIdsList = userDiets.map((diet) => {
+      return diet.id;
+    });
+    const updatedDietIdsList = updatedDiets.map((diet) => {
+      return diet.id;
+    });
+    const dietIdsToAdd = differenceOfTwoArrays(
+      updatedDietIdsList,
+      userDietIdsList
+    );
+    const dietIdsToRemove = differenceOfTwoArrays(
+      userDietIdsList,
+      updatedDietIdsList
+    );
+    const dietsRemoved = await userDiets.map(async (diet) => {
+      if (dietIdsToRemove.includes(diet.id)) {
+        await this.removeDiet(diet);
+      }
+    });
+    const dietsAdded = await updatedDiets.map(async (diet) => {
+      if (dietIdsToAdd.includes(diet.id)) {
+        await this.addDiet(diet);
+      }
+    });
+    if (dietsRemoved && dietsAdded) return 'success';
     return;
   };
   User.prototype.validatePassword = function (password) {

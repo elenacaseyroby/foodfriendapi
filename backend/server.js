@@ -154,6 +154,87 @@ app.put('/users', async (req, res) => {
   // but I also don't want too many db connections so we shall see if I care.
   return res.status(200).json(cleanedUser);
 });
+app.get('/users/:userId/diets', async (req, res) => {
+  // Input: userId in params, authorization (token) in body
+  // Output: diets json object
+  // diets = {
+  //   vegan: {
+  //     id: 1,
+  //   },
+  //   'gluten-free': {
+  //     id: 2,
+  //   },
+  // };
+  if (!req.params.userId)
+    return res.status(401).json({ message: 'Must pass user id.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  const user = await db.User.findOne({
+    where: {
+      id: req.params.userId,
+    },
+  });
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+  console.log('---------------------');
+  try {
+    const diets = await user.getDiets();
+    return res.status(200).json(diets);
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: 'Server error: failed to retrieve user diets.' });
+  }
+});
+app.put('/users/diets', async (req, res) => {
+  // Input: userId, authorization (token) and diets (json objs) in the body.
+  // Output: 200
+  // Ex diets = {
+  //     "userId": 2,
+  //     "diets": {
+  //         "1": {
+  //             "name": "vegan"
+  //         }
+  //     }
+  // }
+  if (!req.body.userId)
+    return res.status(401).json({ message: 'Must pass user id.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(req.body.userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  const user = await db.User.findOne({
+    where: {
+      id: req.body.userId,
+    },
+  });
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+  const dietIdsList = Object.keys(req.body.diets);
+  const diets = await db.Diet.findAll({
+    where: {
+      id: {
+        $in: dietIdsList,
+      },
+    },
+  });
+  const dietsUpdated = await user.updateDiets(diets);
+  if (dietsUpdated)
+    return res.status(200).json({ message: 'Successfully added diets.' });
+  return res
+    .status(500)
+    .json({ message: 'Server error: failed to add diets.' });
+});
 
 // AUTHENTICATION
 app.post('/signin', async (req, res) => {
