@@ -6,7 +6,7 @@ import { db } from '../../models';
 require('dotenv').config();
 const { expect } = chai;
 
-describe('auth', async () => {
+describe('sign in tests:', async () => {
   before(async function () {
     // runs before all tests in this file regardless where this line is defined.
 
@@ -44,7 +44,7 @@ describe('auth', async () => {
       },
     };
     const userIsLoggedIn = checkUserSignedIn(req);
-    expect(userIsLoggedIn).to.be.true;
+    expect(userIsLoggedIn).to.be.equal(user.id);
     // any db data created must be destroyed at end of test
     user.destroy();
   });

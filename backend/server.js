@@ -14,10 +14,6 @@ import { uploadNutrientFoods } from './csv_upload_scripts/nutrient_foods';
 import { uploadNutrientRecipes } from './csv_upload_scripts/nutrient_recipes';
 import { uploadPathNutrients } from './csv_upload_scripts/path_nutrients';
 
-// 400 incorrect info supplied
-// 401 unauthorized
-// 404 not found
-
 // Config environment variables so they are
 // accessible through process.env
 require('dotenv').config();
@@ -31,7 +27,125 @@ const port = process.env.PORT || process.env.PORT;
 const bodyParser = require('body-parser');
 app.use(bodyParser.json());
 
-// API ENDPOINTS BELOW
+// 400 incorrect info supplied
+// 401 unauthorized
+// 404 not found
+
+// API ENDPOINTS:
+
+// MOBILE APP DATA
+app.get('/nutrients', async (req, res) => {
+  // could move this logic into a middleware function in router.
+  const loggedInUserId = await checkUserSignedIn(req);
+  if (!loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  try {
+    const nutrients = await db.Nutrient.findAll({
+      include: [
+        {
+          model: db.Food,
+          through: {},
+          as: 'foods',
+        },
+      ],
+    });
+    return res.status(200).json(nutrients);
+  } catch (error) {
+    console.log(`error from /nutrients endpoint: ${error}`);
+    return res.status(500).json({
+      message: 'Server error.  Could not query Nutrients from db.',
+    });
+  }
+});
+
+app.get('/privacypolicy', async (req, res) => {
+  try {
+    const pp = await db.PrivacyPolicy.findOne({
+      order: [['datePublished', 'DESC']],
+    });
+    return res.status(200).json(pp);
+  } catch (error) {
+    console.log(`error from /privacypolicy endpoint: ${error}`);
+    return res.status(500).json({
+      message: 'Server error.  Could not query PrivacyPolicy from db.',
+    });
+  }
+});
+
+app.get('/termsandconditions', async (req, res) => {
+  try {
+    const terms = await db.TermsAndConditions.findOne({
+      order: [['datePublished', 'DESC']],
+    });
+    return res.status(200).json(terms);
+  } catch (error) {
+    console.log(`error from /privacypolicy endpoint: ${error}`);
+    return res.status(500).json({
+      message: 'Server error.  Could not query PrivacyPolicy from db.',
+    });
+  }
+});
+
+app.get('/users/:userId', async (req, res) => {
+  if (!req.params.userId)
+    return res.status(401).json({ message: 'Must pass user id.' });
+  // could move this logic into a middleware function in router.
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  db.User.findOne({
+    where: {
+      id: req.params.userId,
+    },
+  }).then((user) => {
+    if (!user) return res.status(404).json({ message: 'User not found.' });
+    return res.status(200).json({
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      birthday: user.birthday,
+      isVegan: user.isVegan,
+      menstruates: user.menstruates,
+      activePathId: user.activePathId,
+    });
+  });
+});
+
+app.post('/users', async (req, res) => {
+  // could move this logic into a middleware function in router.
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  if (!req.params.userId)
+    return res.status(401).json({ message: 'Must pass user id.' });
+  db.User.findOne({
+    where: {
+      id: req.params.userId,
+    },
+  }).then((user) => {
+    if (!user) return res.status(404).json({ message: 'User not found.' });
+    return res.status(200).json({
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      birthday: user.birthday,
+      isVegan: user.isVegan,
+      menstruates: user.menstruates,
+      activePathId: user.activePathId,
+    });
+  });
+});
 
 // AUTHENTICATION
 app.post('/signin', async (req, res) => {
@@ -75,90 +189,7 @@ app.post('/resetpassword', async (req, res) => {
   });
 });
 
-// DATA
-app.get('/users/:userId', async (req, res) => {
-  // could move this logic into a middleware function in router.
-  const loggedIn = checkUserSignedIn(req, res);
-  if (!loggedIn) {
-    return res.status(401).json({
-      message: 'You must be logged in to complete this request.',
-    });
-  }
-  if (!req.params.userId)
-    return res.status(401).json({ message: 'Must pass user id.' });
-  db.User.findOne({
-    where: {
-      id: req.params.userId,
-    },
-  }).then((user) => {
-    if (!user) return res.status(404).json({ message: 'User not found.' });
-    return res.status(200).json({
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      birthday: user.birthday,
-      isVegan: user.isVegan,
-      menstruates: user.menstruates,
-      activePathId: user.activePathId,
-    });
-  });
-});
-app.get('/privacypolicy', async (req, res) => {
-  try {
-    const pp = await db.PrivacyPolicy.findOne({
-      order: [['datePublished', 'DESC']],
-    });
-    return res.status(200).json(pp);
-  } catch (error) {
-    console.log(`error from /privacypolicy endpoint: ${error}`);
-    return res.status(500).json({
-      message: 'Server error.  Could not query PrivacyPolicy from db.',
-    });
-  }
-});
-app.get('/termsandconditions', async (req, res) => {
-  try {
-    const terms = await db.TermsAndConditions.findOne({
-      order: [['datePublished', 'DESC']],
-    });
-    return res.status(200).json(terms);
-  } catch (error) {
-    console.log(`error from /privacypolicy endpoint: ${error}`);
-    return res.status(500).json({
-      message: 'Server error.  Could not query PrivacyPolicy from db.',
-    });
-  }
-});
-
-app.get('/nutrients', async (req, res) => {
-  // could move this logic into a middleware function in router.
-  const loggedIn = await checkUserSignedIn(req, res);
-  if (!loggedIn) {
-    return res.status(401).json({
-      message: 'You must be logged in to complete this request.',
-    });
-  }
-  try {
-    const nutrients = await db.Nutrient.findAll({
-      include: [
-        {
-          model: db.Food,
-          through: {},
-          as: 'foods',
-        },
-      ],
-    });
-    return res.status(200).json(nutrients);
-  } catch (error) {
-    console.log(`error from /nutrients endpoint: ${error}`);
-    return res.status(500).json({
-      message: 'Server error.  Could not query Nutrients from db.',
-    });
-  }
-});
-
-// ADMIN
+// ADMIN TOOLS
 app.put('/users/changePassword', async (req, res) => {
   // Must pass headers.adminauthorization with request.
   const isAdmin = await checkIfAdmin(req);
