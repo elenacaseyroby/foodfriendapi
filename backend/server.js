@@ -90,61 +90,69 @@ app.get('/termsandconditions', async (req, res) => {
 });
 
 app.get('/users/:userId', async (req, res) => {
+  // Input: userId as a param and authorization (token) in the body.
+  // Output: user object.
   if (!req.params.userId)
     return res.status(401).json({ message: 'Must pass user id.' });
-  // could move this logic into a middleware function in router.
+
+  // could move this logic into a middleware function in router:
+  // User can only get data of user they are signed in as:
   const loggedInUserId = checkUserSignedIn(req);
-  if (!loggedInUserId) {
+  if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
     return res.status(401).json({
       message: 'You must be logged in to complete this request.',
     });
   }
-  db.User.findOne({
+
+  const user = await db.User.findOne({
     where: {
       id: req.params.userId,
     },
-  }).then((user) => {
-    if (!user) return res.status(404).json({ message: 'User not found.' });
-    return res.status(200).json({
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      birthday: user.birthday,
-      isVegan: user.isVegan,
-      menstruates: user.menstruates,
-      activePathId: user.activePathId,
-    });
   });
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+  // Exclude salt, password and other sensitive data from
+  // the user instance we return:
+  const cleanedUser = await user.getApiVersion();
+  return res.status(200).json(cleanedUser);
 });
 
-app.post('/users', async (req, res) => {
-  // could move this logic into a middleware function in router.
+app.put('/users', async (req, res) => {
+  // Input: userId, authorization (token) and propertiesToUpdate (json object) in the body.
+  // Output: updated user object.
+  // propertiesToUpdate json object should only include properties
+  // that are to be updated. For example,
+  // this will only update the user's email:
+  // propertiesToUpdate = {
+  //   'email' : 'email@email.email'
+  // }
+  if (!req.body.userId)
+    return res.status(401).json({ message: 'Must pass user id.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
   const loggedInUserId = checkUserSignedIn(req);
-  if (!loggedInUserId) {
+  if (!loggedInUserId || parseInt(req.body.userId) !== loggedInUserId) {
     return res.status(401).json({
       message: 'You must be logged in to complete this request.',
     });
   }
-  if (!req.params.userId)
-    return res.status(401).json({ message: 'Must pass user id.' });
-  db.User.findOne({
+
+  const user = await db.User.findOne({
     where: {
-      id: req.params.userId,
+      id: req.body.userId,
     },
-  }).then((user) => {
-    if (!user) return res.status(404).json({ message: 'User not found.' });
-    return res.status(200).json({
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      birthday: user.birthday,
-      isVegan: user.isVegan,
-      menstruates: user.menstruates,
-      activePathId: user.activePathId,
-    });
   });
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+  const updatedUser = await user.update(req.body.propertiesToUpdate);
+  // Exclude salt, password and other sensitive data from
+  // the user instance we return:
+  const cleanedUser = await updatedUser.getApiVersion();
+
+  // consider: it might be better practice to simply return id and then use
+  // /get to get the updated object.. but we will see.
+  // does this break the restful requirements if it both updates and gets?
+  // but I also don't want too many db connections so we shall see if I care.
+  return res.status(200).json(cleanedUser);
 });
 
 // AUTHENTICATION
