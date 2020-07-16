@@ -168,38 +168,38 @@ module.exports = (sequelize, DataTypes) => {
     );
     // if arrays to add and delete are empty, our job is done.
     if (!dietIdsToAdd && !dietIdsToRemove) return 'success';
+
+    // Get diet objects to add.
+    let dietsToAdd = [];
+    updatedDiets.map((diet) => {
+      if (dietIdsToAdd.includes(diet.id)) {
+        dietsToAdd.push(diet);
+      }
+    });
+    // Get diet objects to remove.
+    let dietsToRemove = [];
+    userDiets.map((diet) => {
+      if (dietIdsToRemove.includes(diet.id)) {
+        dietsToRemove.push(diet);
+      }
+    });
+
     try {
       let dietsAdded;
       let dietsRemoved;
       // Add diets.
-      if (dietIdsToAdd.length > 0) {
-        const dietsToAdd = updatedDiets.map((diet) => {
-          if (dietIdsToAdd.includes(diet.id)) {
-            return diet;
-          }
-        });
-        console.log(`dietsToAdd : ${dietsToAdd}`);
+      if (dietsToAdd) {
         // Based on number of diets to add,
         // choose appropriate method:
         if (dietsToAdd.length === 1) {
-          console.log('ADD ONE DIET');
           dietsAdded = await this.addDiet(dietsToAdd);
-          console.log('ADDED ONE DIET');
         }
         if (dietsToAdd.length > 1) {
-          console.log('ADD MULTIPLE DIETS');
           dietsAdded = await this.addDiets(dietsToAdd);
-          console.log('ADDED MULTIPLE DIETS');
         }
       }
       // Remove diets.
-      if (dietIdsToRemove.length > 0) {
-        const dietsToRemove = userDiets.map((diet) => {
-          if (dietIdsToRemove.includes(diet.id)) {
-            return diet;
-          }
-        });
-        console.log(`dietsToRemove : ${dietsToAdd}`);
+      if (dietsToRemove) {
         // Based on number of diets to remove,
         // choose appropriate method:
         if (dietsToRemove.length === 1) {
@@ -209,8 +209,8 @@ module.exports = (sequelize, DataTypes) => {
           dietsRemoved = await this.removeDiets(dietsToRemove);
         }
       }
-      console.log(`diets added ${dietsAdded}`);
-      console.log(`diets removed: ${dietsRemoved}`);
+      console.log(`diets added ${JSON.stringify(dietsAdded)}`);
+      console.log(`diets removed: ${JSON.stringify(dietsRemoved)}`);
       return 'success';
     } catch (error) {
       console.log(error);

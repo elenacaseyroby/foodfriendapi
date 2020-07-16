@@ -186,9 +186,44 @@ describe('userdiet model tests:', async () => {
     const diets = await db.Diet.findAll({});
     const dietsAdded = await user.updateDiets(diets);
     expect(dietsAdded).to.equal('success');
-    console.log(`dietsAdded: ${dietsAdded}`);
     const userDiets = await user.getDiets(); // array of diet objects
     expect(userDiets.length).equals(diets.length);
+    // any db data created must be destroyed at end of test
+    // Delete user agreements
+    const allUserDiets = await db.UserDiet.findAll({});
+    const userDietsDeleted = await allUserDiets.forEach(async (ud) => {
+      await ud.destroy();
+    });
+    // Delete user
+    if (userDietsDeleted) {
+      await user.destroy();
+    }
+  });
+  it('delete diet from user using user.updateDiets', async () => {
+    // any db data created must be destroyed at end of test
+    const user = await db.User.create({
+      email: 'diet6@test.com',
+      firstName: 'elena',
+      lastName: 'roby',
+    });
+    // Add all diets to user.
+    let diets = await db.Diet.findAll({});
+    let dietsAdded = await user.addDiets(diets);
+    expect(dietsAdded).to.not.be.undefined;
+    let userDiets = await user.getDiets(); // array of diet objects
+    expect(userDiets.length).equals(diets.length);
+
+    // Remove all but one:
+    diets = await db.Diet.findAll({
+      where: {
+        name: 'vegan',
+      },
+    });
+    const dietsRemoved = await user.updateDiets(diets);
+    expect(dietsRemoved).to.equal('success');
+    userDiets = await user.getDiets(); // array of diet objects
+    expect(userDiets.length).equals(1);
+
     // any db data created must be destroyed at end of test
     // Delete user agreements
     const allUserDiets = await db.UserDiet.findAll({});
