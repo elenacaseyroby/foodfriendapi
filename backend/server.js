@@ -27,13 +27,10 @@ const port = process.env.PORT || process.env.PORT;
 const bodyParser = require('body-parser');
 app.use(bodyParser.json());
 
-// 400 incorrect info supplied
-// 401 unauthorized
-// 404 not found
+// FoodFriend API style guide:
+// https://docs.google.com/document/d/1PEyAj9p4K4B_t7z1s74qUhJlAi_ZARgdmRbOBfTS0RE/edit?usp=sharing
 
 // API ENDPOINTS:
-
-// MOBILE APP DATA
 app.get('/nutrients', async (req, res) => {
   // could move this logic into a middleware function in router.
   const loggedInUserId = await checkUserSignedIn(req);
@@ -62,6 +59,7 @@ app.get('/nutrients', async (req, res) => {
 });
 
 app.get('/privacypolicy', async (req, res) => {
+  // Gets most recently published by default.
   try {
     const pp = await db.PrivacyPolicy.findOne({
       order: [['datePublished', 'DESC']],
@@ -76,6 +74,7 @@ app.get('/privacypolicy', async (req, res) => {
 });
 
 app.get('/termsandconditions', async (req, res) => {
+  // Gets most recently published by default.
   try {
     const terms = await db.TermsAndConditions.findOne({
       order: [['datePublished', 'DESC']],
@@ -155,6 +154,7 @@ app.put('/users', async (req, res) => {
   return res.status(200).json(cleanedUser);
 });
 app.get('/users/:userId/diets', async (req, res) => {
+  // Gets all diets for a given user.
   // Input: userId in params, authorization (token) in body
   // Output: diets json object
   // diets = {
@@ -182,7 +182,6 @@ app.get('/users/:userId/diets', async (req, res) => {
     },
   });
   if (!user) return res.status(404).json({ message: 'User not found.' });
-  console.log('---------------------');
   try {
     const diets = await user.getDiets();
     return res.status(200).json(diets);
@@ -192,48 +191,41 @@ app.get('/users/:userId/diets', async (req, res) => {
       .json({ message: 'Server error: failed to retrieve user diets.' });
   }
 });
-app.put('/users/diets', async (req, res) => {
-  // Input: userId, authorization (token) and diets (json objs) in the body.
+app.put('/users/:userId/diets', async (req, res) => {
+  // Updates all diets for a given user to match provided dietIds.
+  // Input: userId in params, authorization (token) and dietIds (json objs) in the body.
   // Output: 200
-  // Ex diets = {
-  //     "userId": 2,
-  //     "diets": {
-  //         "1": {
-  //             "name": "vegan"
-  //         }
-  //     }
-  // }
-  if (!req.body.userId)
+  // Ex “dietIds”: [ 1, 5, 7]
+  if (!req.params.userId)
     return res.status(401).json({ message: 'Must pass user id.' });
-
   // could move this logic into a middleware function in router:
   // User can only post data to user they are signed in as:
   const loggedInUserId = checkUserSignedIn(req);
-  if (!loggedInUserId || parseInt(req.body.userId) !== loggedInUserId) {
+  if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
     return res.status(401).json({
       message: 'You must be logged in to complete this request.',
     });
   }
   const user = await db.User.findOne({
     where: {
-      id: req.body.userId,
+      id: req.params.userId,
     },
   });
   if (!user) return res.status(404).json({ message: 'User not found.' });
-  const dietIdsList = Object.keys(req.body.diets);
-  const diets = await db.Diet.findAll({
-    where: {
-      id: {
-        $in: dietIdsList,
+  try {
+    const diets = await db.Diet.findAll({
+      where: {
+        id: req.body.dietIds,
       },
-    },
-  });
-  const dietsUpdated = await user.updateDiets(diets);
-  if (dietsUpdated)
-    return res.status(200).json({ message: 'Successfully added diets.' });
-  return res
-    .status(500)
-    .json({ message: 'Server error: failed to add diets.' });
+    });
+    const dietsUpdated = await user.updateDiets(diets);
+    if (dietsUpdated === 'success')
+      return res.status(200).json({ message: 'Successfully added diets.' });
+  } catch (error) {
+    return res
+      .status(404)
+      .json({ message: 'Server error: failed to update diets.' });
+  }
 });
 
 // AUTHENTICATION

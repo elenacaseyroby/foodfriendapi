@@ -183,7 +183,8 @@ module.exports = (sequelize, DataTypes) => {
         dietsToRemove.push(diet);
       }
     });
-
+    console.log(`diets to add: ${dietIdsToAdd}`);
+    console.log(`diets to remove: ${dietsToRemove}`);
     try {
       let dietsAdded;
       let dietsRemoved;
