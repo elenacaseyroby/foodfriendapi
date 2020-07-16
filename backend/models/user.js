@@ -110,6 +110,9 @@ module.exports = (sequelize, DataTypes) => {
     return saved && this.passwordResetToken;
   };
   User.prototype.getApiVersion = async function () {
+    // This will return a version of the user instance
+    // that excludes an properties in the
+    // propertiesToHide array defined below.
     const propertiesToHide = ['salt', 'password'];
     let apiUserInstance = {};
     for (const property in this.dataValues) {
