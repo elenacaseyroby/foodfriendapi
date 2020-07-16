@@ -1,7 +1,6 @@
 'use strict';
 import { differenceOfTwoArrays } from '../utils/common';
 const crypto = require('crypto');
-const { db } = require('.');
 
 module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define(
@@ -148,33 +147,75 @@ module.exports = (sequelize, DataTypes) => {
   User.prototype.updateDiets = async function (updatedDiets) {
     // input: the diets you would like the user to have,
     // output: 'success' on success and undefined on failure.
+
+    // Convert userDiets and updatedDiets into arrays of ids:
     const userDiets = await this.getDiets();
-    const userDietIdsList = userDiets.map((diet) => {
+    const userDietIdsList = await userDiets.map((diet) => {
       return diet.id;
     });
-    const updatedDietIdsList = updatedDiets.map((diet) => {
+    const updatedDietIdsList = await updatedDiets.map((diet) => {
       return diet.id;
     });
-    const dietIdsToAdd = differenceOfTwoArrays(
+
+    // Compare the arrays to find ids to add and ids to delete
+    const dietIdsToAdd = await differenceOfTwoArrays(
       updatedDietIdsList,
       userDietIdsList
     );
-    const dietIdsToRemove = differenceOfTwoArrays(
+    const dietIdsToRemove = await differenceOfTwoArrays(
       userDietIdsList,
       updatedDietIdsList
     );
-    const dietsRemoved = await userDiets.map(async (diet) => {
-      if (dietIdsToRemove.includes(diet.id)) {
-        await this.removeDiet(diet);
+    // if arrays to add and delete are empty, our job is done.
+    if (!dietIdsToAdd && !dietIdsToRemove) return 'success';
+    try {
+      let dietsAdded;
+      let dietsRemoved;
+      // Add diets.
+      if (dietIdsToAdd.length > 0) {
+        const dietsToAdd = updatedDiets.map((diet) => {
+          if (dietIdsToAdd.includes(diet.id)) {
+            return diet;
+          }
+        });
+        console.log(`dietsToAdd : ${dietsToAdd}`);
+        // Based on number of diets to add,
+        // choose appropriate method:
+        if (dietsToAdd.length === 1) {
+          console.log('ADD ONE DIET');
+          dietsAdded = await this.addDiet(dietsToAdd);
+          console.log('ADDED ONE DIET');
+        }
+        if (dietsToAdd.length > 1) {
+          console.log('ADD MULTIPLE DIETS');
+          dietsAdded = await this.addDiets(dietsToAdd);
+          console.log('ADDED MULTIPLE DIETS');
+        }
       }
-    });
-    const dietsAdded = await updatedDiets.map(async (diet) => {
-      if (dietIdsToAdd.includes(diet.id)) {
-        await this.addDiet(diet);
+      // Remove diets.
+      if (dietIdsToRemove.length > 0) {
+        const dietsToRemove = userDiets.map((diet) => {
+          if (dietIdsToRemove.includes(diet.id)) {
+            return diet;
+          }
+        });
+        console.log(`dietsToRemove : ${dietsToAdd}`);
+        // Based on number of diets to remove,
+        // choose appropriate method:
+        if (dietsToRemove.length === 1) {
+          dietsRemoved = await this.removeDiet(dietsToRemove);
+        }
+        if (dietsToRemove.length > 1) {
+          dietsRemoved = await this.removeDiets(dietsToRemove);
+        }
       }
-    });
-    if (dietsRemoved && dietsAdded) return 'success';
-    return;
+      console.log(`diets added ${dietsAdded}`);
+      console.log(`diets removed: ${dietsRemoved}`);
+      return 'success';
+    } catch (error) {
+      console.log(error);
+      return;
+    }
   };
   User.prototype.validatePassword = function (password) {
     return this.password === hashPassword(password, this.salt);
