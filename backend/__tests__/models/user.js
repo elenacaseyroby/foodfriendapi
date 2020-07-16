@@ -40,7 +40,7 @@ describe('user model tests:', async () => {
   });
   it('user.update updates user if properties have changed', async () => {
     // any db data created must be destroyed at end of test
-    const email = 'test@test.com';
+    const email = 'update1@test.com';
     let user = await db.User.create({
       email: email,
       firstName: 'elena',
@@ -50,20 +50,17 @@ describe('user model tests:', async () => {
       email: email,
     });
     const updatedAt = user.updatedAt;
-    const timeOut = await setTimeout(() => {
-      return 'done';
-    }, 10000);
-    if (timeOut === 'done') {
+    setTimeout(async () => {
       const updatedUser = await user.update({ firstName: 'Casey' });
       expect(updatedAt).is.not.equal(updatedUser.updatedAt);
-    }
-    // any db data created must be destroyed at end of test
-    user.destroy();
+      // any db data created must be destroyed at end of test
+      updatedUser.destroy();
+    }, 10000);
   });
   it('user.update(userUpdates) only updates input properties', async () => {
     // any db data created must be destroyed at end of test
     const user = await db.User.create({
-      email: 'test@test.com',
+      email: 'update2@test.com',
       firstName: 'elena',
       lastName: 'roby',
     });
@@ -75,7 +72,7 @@ describe('user model tests:', async () => {
   it('user.update(userUpdates) does not update user if properties have not changed', async () => {
     // any db data created must be destroyed at end of test
     const user = await db.User.create({
-      email: 'test@test.com',
+      email: 'update3@test.com',
       firstName: 'elena',
       lastName: 'roby',
     });
@@ -93,22 +90,22 @@ describe('user model tests:', async () => {
   it('user.update(userUpdates) returns updated user', async () => {
     // any db data created must be destroyed at end of test
     const user = await db.User.create({
-      email: 'test@test.com',
+      email: 'update4@test.com',
       firstName: 'elena',
       lastName: 'roby',
     });
     const updatedUser = await user.update({ firstName: 'Casey' });
-    expect(user.id).is.not.undefined;
-    expect(user.email).is.not.undefined;
-    expect(user.lastName).is.not.undefined;
-    expect(user.firstName).is.equal('Casey');
+    expect(updatedUser.id).is.not.undefined;
+    expect(updatedUser.email).is.not.undefined;
+    expect(updatedUser.lastName).is.not.undefined;
+    expect(updatedUser.firstName).is.equal('Casey');
     // any db data created must be destroyed at end of test
-    user.destroy();
+    await updatedUser.destroy();
   });
   it('user.getApiVersion() returns version of user without salt and password properties', async () => {
     // any db data created must be destroyed at end of test
     const user = await db.User.create({
-      email: 'test@test.com',
+      email: 'apiversion1@test.com',
       firstName: 'elena',
       lastName: 'roby',
       salt: 'asjdlkjg',
