@@ -31,6 +31,18 @@ app.use(bodyParser.json());
 // https://docs.google.com/document/d/1PEyAj9p4K4B_t7z1s74qUhJlAi_ZARgdmRbOBfTS0RE/edit?usp=sharing
 
 // API ENDPOINTS:
+app.get('/diets', async (req, res) => {
+  try {
+    const diets = await db.Diet.findAll({});
+    return res.status(200).json(diets);
+  } catch (error) {
+    console.log(`error from /diets endpoint: ${error}`);
+    return res.status(500).json({
+      message: 'Server error.  Could not query Diets from db.',
+    });
+  }
+});
+
 app.get('/nutrients', async (req, res) => {
   // could move this logic into a middleware function in router.
   const loggedInUserId = await checkUserSignedIn(req);
