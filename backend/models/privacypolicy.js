@@ -21,7 +21,7 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: 'privacy_policy',
+      tableName: 'privacy_policies',
       underscored: true,
       timestamps: false,
     }

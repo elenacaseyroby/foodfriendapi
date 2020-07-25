@@ -1,12 +1,16 @@
 module.exports = {
-  up: (queryInterface, Sequelize) => {
-    return queryInterface.bulkInsert('privacy_policy', [
+  up: async (queryInterface, Sequelize) => {
+    const policies = await queryInterface.rawSelect('privacy_policies', {}, [
+      'id',
+    ]);
+    if (policies) return 'success';
+    return queryInterface.bulkInsert('privacy_policies', [
       {
         text: 'Placeholder privacy policy text.',
       },
     ]);
   },
   down: (queryInterface, Sequelize) => {
-    return queryInterface.bulkDelete('privacy_policy', null, {});
+    return queryInterface.bulkDelete('privacy_policies', null, {});
   },
 };

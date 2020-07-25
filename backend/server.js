@@ -70,6 +70,27 @@ app.get('/nutrients', async (req, res) => {
   }
 });
 
+app.get('/paths', async (req, res) => {
+  try {
+    const admin = await db.User.findOne({
+      where: {
+        email: 'admin@foodfriend.io',
+      },
+    });
+    const paths = await db.Path.findAll({
+      where: {
+        ownerId: admin.id,
+      },
+    });
+    return res.status(200).json(paths);
+  } catch (error) {
+    console.log(`error from /diets endpoint: ${error}`);
+    return res.status(500).json({
+      message: 'Server error.  Could not query Paths from db.',
+    });
+  }
+});
+
 app.get('/privacypolicy', async (req, res) => {
   // Gets most recently published by default.
   try {

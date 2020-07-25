@@ -2,7 +2,7 @@
 
 module.exports = {
   up: (queryInterface, Sequelize) => {
-    return queryInterface.createTable('privacy_policy', {
+    return queryInterface.createTable('privacy_policies', {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -20,6 +20,6 @@ module.exports = {
     });
   },
   down: (queryInterface, Sequelize) => {
-    return queryInterface.dropTable('privacy_policy');
+    return queryInterface.dropTable('privacy_policies');
   },
 };
