@@ -1,4 +1,5 @@
 module.exports = {
+  // need for onboarding survey
   up: async (queryInterface, Sequelize) => {
     const user1 = await queryInterface.rawSelect(
       'users',

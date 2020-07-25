@@ -1,4 +1,5 @@
 module.exports = {
+  // need for path page
   up: async (queryInterface, Sequelize) => {
     const nutrient = await queryInterface.rawSelect('nutrients', {}, ['name']);
     if (nutrient) return 'success';

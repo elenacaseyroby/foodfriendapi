@@ -1,4 +1,5 @@
 module.exports = {
+  // need for user sign up.
   up: async (queryInterface, Sequelize) => {
     const terms = await queryInterface.rawSelect('terms_and_conditions', {}, [
       'id',

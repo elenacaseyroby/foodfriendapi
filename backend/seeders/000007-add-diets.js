@@ -1,4 +1,5 @@
 module.exports = {
+  // need for onboarding survey.
   up: async (queryInterface, Sequelize) => {
     const diet = await queryInterface.rawSelect('diets', {}, ['name']);
     if (diet) return 'success';
