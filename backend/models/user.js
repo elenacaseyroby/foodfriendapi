@@ -31,7 +31,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DATE,
       },
       birthday: {
-        type: DataTypes.DATE,
+        type: DataTypes.DATEONLY,
       },
       isVegan: {
         defaultValue: 0,

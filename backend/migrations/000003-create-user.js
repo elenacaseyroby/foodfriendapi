@@ -22,7 +22,7 @@ module.exports = {
         unique: true,
       },
       birthday: {
-        type: Sequelize.DATE,
+        type: Sequelize.DATEONLY,
       },
       is_vegan: {
         defaultValue: 0,
