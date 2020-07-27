@@ -6,7 +6,7 @@ import { db } from '../../models';
 require('dotenv').config();
 const { expect } = chai;
 
-describe('auth', async () => {
+describe('sign up tests:', async () => {
   before(async function () {
     // runs before all tests in this file regardless where this line is defined.
 
@@ -74,23 +74,26 @@ describe('auth', async () => {
       },
     };
     const userIsLoggedIn = checkUserSignedIn(req);
-    expect(userIsLoggedIn).to.be.true;
-    // any db data created must be destroyed at end of test
     const user = await db.User.findOne({
       where: {
         email: email,
       },
     });
+    expect(userIsLoggedIn).to.be.equal(user.id);
+    // any db data created must be destroyed at end of test
     // Delete user agreements
     const allPolicyAgreements = await db.UserPrivacyPolicies.findAll({});
-    allPolicyAgreements.forEach(async (p) => {
+    const policiesDeleted = await allPolicyAgreements.forEach(async (p) => {
       await p.destroy();
     });
     const allTermsAgreements = await db.UserTermsAndConditions.findAll({});
-    allTermsAgreements.forEach(async (t) => {
+    const termsDeleted = await allTermsAgreements.forEach(async (t) => {
       await t.destroy();
     });
-    await user.destroy();
+    // Delete user
+    if (policiesDeleted && termsDeleted) {
+      await user.destroy();
+    }
   });
   it('signUp function returns error when first name is empty string', async () => {
     const firstName = '';

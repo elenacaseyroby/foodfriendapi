@@ -4,7 +4,7 @@ import chai from 'chai';
 require('dotenv').config();
 const should = chai.should();
 
-describe('auth', async () => {
+describe('auth token tests:', async () => {
   it('JWT token that is created on signin is verified.', () => {
     const user = {
       id: 1,

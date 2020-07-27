@@ -8,11 +8,9 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
       },
       createdAt: {
-        allowNull: false,
         type: DataTypes.DATE,
       },
       updatedAt: {
-        allowNull: false,
         type: DataTypes.DATE,
       },
     },
@@ -25,7 +23,6 @@ module.exports = (sequelize, DataTypes) => {
   Diet.associate = function (models) {
     Diet.belongsToMany(models.User, {
       through: 'UserDiet',
-      as: 'users',
       foreignKey: 'dietId',
       otherKey: 'userId',
     });

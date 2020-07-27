@@ -1,6 +1,6 @@
 'use strict';
+import { differenceOfTwoArrays } from '../utils/common';
 const crypto = require('crypto');
-const { db } = require('.');
 
 module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define(
@@ -31,7 +31,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DATE,
       },
       birthday: {
-        type: DataTypes.DATE,
+        type: DataTypes.DATEONLY,
       },
       isVegan: {
         defaultValue: 0,
@@ -61,13 +61,11 @@ module.exports = (sequelize, DataTypes) => {
     });
     User.belongsToMany(models.Diet, {
       through: 'UserDiet',
-      as: 'diets',
       foreignKey: 'userId',
       otherKey: 'dietId',
     });
     User.belongsToMany(models.Recipe, {
       through: 'UserRecipe',
-      as: 'recipes',
       foreignKey: 'userId',
       otherKey: 'recipeId',
     });
@@ -82,31 +80,16 @@ module.exports = (sequelize, DataTypes) => {
       otherKey: 'policyId',
     });
   };
-  // methods:
-  User.prototype.setPassword = async function (password) {
-    const salt = crypto.randomBytes(16).toString('hex');
-    const hashedPassword = hashPassword(password, salt);
-    this.salt = salt;
-    this.password = hashedPassword;
-    const saved = await this.save();
-    if (saved) return 'success';
+  // methods in alphabetical order:
+  User.prototype.agreeToPrivacyPolicy = async function (policy) {
+    // built in makes this getPolicys instead of getPolicies
+    const alreadyAgreed = await this.hasAgreedToPrivacyPolicy(policy);
+    if (alreadyAgreed) return 'success';
+    const agreedPolicy = await this.addPrivacyPolicy(policy, {
+      through: {},
+    });
+    if (agreedPolicy) return 'success';
     return;
-  };
-  User.prototype.validatePassword = function (password) {
-    return this.password === hashPassword(password, this.salt);
-  };
-  User.prototype.generatePasswordResetToken = async function () {
-    this.passwordResetToken = crypto.randomBytes(20).toString('hex');
-    this.passwordResetExpirationTime = Date.now() + 3600000; //expires in an hour
-    // might break here if save() doesn't work
-    const saved = await this.save();
-    return saved && this.passwordResetToken;
-  };
-  User.prototype.validatePasswordResetToken = function (token) {
-    return (
-      this.passwordResetToken === token &&
-      Date.now() < this.passwordResetExpirationTime
-    );
   };
   User.prototype.agreeToTerms = async function (term) {
     const alreadyAgreed = await this.hasAgreedToTerms(term);
@@ -117,21 +100,139 @@ module.exports = (sequelize, DataTypes) => {
     if (agreedTerms) return 'success';
     return;
   };
+  User.prototype.generatePasswordResetToken = async function () {
+    this.passwordResetToken = crypto.randomBytes(20).toString('hex');
+    this.passwordResetExpirationTime = Date.now() + 3600000; //expires in an hour
+    // might break here if save() doesn't work
+    const saved = await this.save();
+    return saved && this.passwordResetToken;
+  };
+  User.prototype.getApiVersion = async function () {
+    // This will return a version of the user instance
+    // that excludes an properties in the
+    // propertiesToHide array defined below.
+    const propertiesToHide = ['salt', 'password'];
+    let apiUserInstance = {};
+    for (const property in this.dataValues) {
+      if (!propertiesToHide.includes(property)) {
+        apiUserInstance[property] = this[property];
+      }
+    }
+    return apiUserInstance;
+  };
+  User.prototype.setPassword = async function (password) {
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hashedPassword = hashPassword(password, salt);
+    this.salt = salt;
+    this.password = hashedPassword;
+    const saved = await this.save();
+    if (saved) return 'success';
+    return;
+  };
+  User.prototype.update = async function (userUpdates) {
+    // Input an object with the user properties you would like to change.
+    // Output updatedUser onsuccess or undefined on failure.
+    // Updates user if new values.
+    for (const property in userUpdates) {
+      if (this[property] !== userUpdates[property] && property !== 'password')
+        this[property] = userUpdates[property];
+    }
+    if (userUpdates.password) {
+      await this.setPassword(userUpdates.password);
+    }
+    const saved = await this.save();
+    if (saved) return this;
+    return;
+  };
+  User.prototype.updateDiets = async function (updatedDiets) {
+    // input: the diets you would like the user to have,
+    // output: 'success' on success and undefined on failure.
+
+    // Convert userDiets and updatedDiets into arrays of ids:
+    const userDiets = await this.getDiets();
+    const userDietIdsList = await userDiets.map((diet) => {
+      return diet.id;
+    });
+    const updatedDietIdsList = await updatedDiets.map((diet) => {
+      return diet.id;
+    });
+
+    // Compare the arrays to find ids to add and ids to delete
+    const dietIdsToAdd = await differenceOfTwoArrays(
+      updatedDietIdsList,
+      userDietIdsList
+    );
+    const dietIdsToRemove = await differenceOfTwoArrays(
+      userDietIdsList,
+      updatedDietIdsList
+    );
+    // if arrays to add and delete are empty, our job is done.
+    if (!dietIdsToAdd && !dietIdsToRemove) return 'success';
+
+    // Get diet objects to add.
+    let dietsToAdd = [];
+    updatedDiets.map((diet) => {
+      if (dietIdsToAdd.includes(diet.id)) {
+        dietsToAdd.push(diet);
+      }
+    });
+    // Get diet objects to remove.
+    let dietsToRemove = [];
+    userDiets.map((diet) => {
+      if (dietIdsToRemove.includes(diet.id)) {
+        dietsToRemove.push(diet);
+      }
+    });
+    console.log(`diets to add: ${dietIdsToAdd}`);
+    console.log(`diets to remove: ${dietsToRemove}`);
+    try {
+      let dietsAdded;
+      let dietsRemoved;
+      // Add diets.
+      if (dietsToAdd) {
+        // Based on number of diets to add,
+        // choose appropriate method:
+        if (dietsToAdd.length === 1) {
+          dietsAdded = await this.addDiet(dietsToAdd);
+        }
+        if (dietsToAdd.length > 1) {
+          dietsAdded = await this.addDiets(dietsToAdd);
+        }
+      }
+      // Remove diets.
+      if (dietsToRemove) {
+        // Based on number of diets to remove,
+        // choose appropriate method:
+        if (dietsToRemove.length === 1) {
+          dietsRemoved = await this.removeDiet(dietsToRemove);
+        }
+        if (dietsToRemove.length > 1) {
+          dietsRemoved = await this.removeDiets(dietsToRemove);
+        }
+      }
+      console.log(`diets added ${JSON.stringify(dietsAdded)}`);
+      console.log(`diets removed: ${JSON.stringify(dietsRemoved)}`);
+      return 'success';
+    } catch (error) {
+      console.log(error);
+      return;
+    }
+  };
+  User.prototype.validatePassword = function (password) {
+    return this.password === hashPassword(password, this.salt);
+  };
+  User.prototype.validatePasswordResetToken = function (token) {
+    return (
+      this.passwordResetToken === token &&
+      Date.now() < this.passwordResetExpirationTime
+    );
+  };
+  // technically methods but should be properties:
   User.prototype.hasAgreedToTerms = async function (term) {
     const userTermIds = await this.getTermsAndConditions().map((term) => {
       return term.id;
     });
     return userTermIds.includes(term.id);
-  };
-  User.prototype.agreeToPrivacyPolicy = async function (policy) {
-    // built in makes this getPolicys instead of getPolicies
-    const alreadyAgreed = await this.hasAgreedToPrivacyPolicy(policy);
-    if (alreadyAgreed) return 'success';
-    const agreedPolicy = await this.addPrivacyPolicy(policy, {
-      through: {},
-    });
-    if (agreedPolicy) return 'success';
-    return;
   };
   User.prototype.hasAgreedToPrivacyPolicy = async function (policy) {
     const userPolicyIds = await this.getPrivacyPolicies().map((policy) => {

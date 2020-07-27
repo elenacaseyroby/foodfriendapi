@@ -12,7 +12,7 @@ module.exports = {
         policy_id: {
           allowNull: false,
           type: Sequelize.INTEGER,
-          references: { model: 'privacy_policy', key: 'id' },
+          references: { model: 'privacy_policies', key: 'id' },
         },
         date_accepted: {
           allowNull: false,

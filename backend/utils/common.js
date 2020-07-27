@@ -1,3 +1,11 @@
+import moment from 'moment';
+
+export function convertStringToDate(date) {
+  // input is string like 'MM/DD/YYYY'
+  const sequelizeSafeDate = moment(date, 'MM-DD-YYYY');
+  return sequelizeSafeDate;
+}
+
 export function cleanString(string) {
   // Make lowercase & trim whitespace.
   let cleanString = string.toLowerCase().trim();

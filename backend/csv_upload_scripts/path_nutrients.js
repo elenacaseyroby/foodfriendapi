@@ -1,5 +1,5 @@
 import { db } from '../models';
-import { cleanString } from './common';
+import { cleanString } from '../utils/common';
 import { updatePathNutrients } from '../queries/paths';
 const fs = require('fs');
 const csv = require('csv-parser');
@@ -18,12 +18,12 @@ export async function uploadPathNutrients(file) {
   // Get or create ownerid for foodfriend. findOrCreate wasn't returning user like I needed.
   let admin = await db.User.findOne({
     where: {
-      email: 'admin@admin.admin',
+      email: 'admin@foodfriend.io',
     },
   });
   if (!admin) {
     admin = await db.User.create({
-      email: 'admin@admin.admin',
+      email: 'admin@foodfriend.io',
       firstName: 'Admin',
       lastName: 'Admin',
     });
