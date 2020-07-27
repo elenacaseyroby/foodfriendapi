@@ -2,6 +2,7 @@ import express from 'express';
 import { db } from './models';
 import multer from 'multer';
 import { checkUserSignedIn, checkIfAdmin } from './utils/auth';
+import { convertStringToDate } from './utils/common';
 import { signUp } from './services/auth/signUp';
 import { signIn } from './services/auth/signIn';
 import {
@@ -148,22 +149,31 @@ app.get('/users/:userId', async (req, res) => {
   return res.status(200).json(cleanedUser);
 });
 
-app.put('/users', async (req, res) => {
-  // Input: userId, authorization (token) and propertiesToUpdate (json object) in the body.
+app.put('/users/:userId', async (req, res) => {
+  // Input: userId in params, authorization (token) and properties to update in the body.
   // Output: updated user object.
-  // propertiesToUpdate json object should only include properties
+  // body should only include properties
   // that are to be updated. For example,
   // this will only update the user's email:
-  // propertiesToUpdate = {
-  //   'email' : 'email@email.email'
-  // }
-  if (!req.body.userId)
-    return res.status(401).json({ message: 'Must pass user id.' });
+
+  const userId = req.params.userId;
+  // if date, convert for Sequelize
+  let properties = {};
+  for (const property in req.body) {
+    if (property === 'birthday') {
+      properties[property] = convertStringToDate(req.body[property]);
+      console.log('made it');
+    } else {
+      properties[property] = req.body[property];
+    }
+  }
+  console.log(`properties: ${properties['birthday']}`);
+  if (!userId) return res.status(401).json({ message: 'Must pass user id.' });
 
   // could move this logic into a middleware function in router:
   // User can only post data to user they are signed in as:
   const loggedInUserId = checkUserSignedIn(req);
-  if (!loggedInUserId || parseInt(req.body.userId) !== loggedInUserId) {
+  if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
     return res.status(401).json({
       message: 'You must be logged in to complete this request.',
     });
@@ -171,11 +181,11 @@ app.put('/users', async (req, res) => {
 
   const user = await db.User.findOne({
     where: {
-      id: req.body.userId,
+      id: userId,
     },
   });
   if (!user) return res.status(404).json({ message: 'User not found.' });
-  const updatedUser = await user.update(req.body.propertiesToUpdate);
+  const updatedUser = await user.update(properties);
   // Exclude salt, password and other sensitive data from
   // the user instance we return:
   const cleanedUser = await updatedUser.getApiVersion();
@@ -245,6 +255,7 @@ app.put('/users/:userId/diets', async (req, res) => {
     },
   });
   if (!user) return res.status(404).json({ message: 'User not found.' });
+  console.log(`diet ids: ${req.body.dietIds}`);
   try {
     const diets = await db.Diet.findAll({
       where: {
