@@ -85,7 +85,7 @@ app.get('/paths', async (req, res) => {
     });
     return res.status(200).json(paths);
   } catch (error) {
-    console.log(`error from /diets endpoint: ${error}`);
+    console.log(`error from /paths endpoint: ${error}`);
     return res.status(500).json({
       message: 'Server error.  Could not query Paths from db.',
     });

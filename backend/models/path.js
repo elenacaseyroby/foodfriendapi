@@ -15,7 +15,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       description: {
         allowNull: false,
-        type: TEXT,
+        type: DataTypes.TEXT,
       },
       notes: {
         type: DataTypes.TEXT,
@@ -28,12 +28,6 @@ module.exports = (sequelize, DataTypes) => {
       },
       updatedAt: {
         type: DataTypes.DATE,
-      },
-      headerImgPath: {
-        type: Sequelize.STRING(150),
-      },
-      buttonImgPath: {
-        type: Sequelize.STRING(150),
       },
     },
     {

@@ -14,7 +14,6 @@ module.exports = (sequelize, DataTypes) => {
       button_img_path: {
         type: DataTypes.STRING(150),
       },
-      },
     },
     {
       tableName: 'path_themes',
@@ -23,5 +22,5 @@ module.exports = (sequelize, DataTypes) => {
     }
   );
   PathTheme.associate = function (models) {};
-  return Diet;
+  return PathTheme;
 };

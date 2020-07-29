@@ -47,7 +47,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
       },
       iconPath: {
-        type: Sequelize.STRING(150),
+        type: DataTypes.STRING(150),
       },
     },
     {
