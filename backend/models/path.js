@@ -41,6 +41,7 @@ module.exports = (sequelize, DataTypes) => {
     Path.belongsTo(models.PathTheme, {
       foreignKey: 'themeId',
       targetKey: 'id',
+      as: 'theme',
     });
     // this should link to the activePathId foreign key on the User model
     // but it could get confused since the Path model also has the

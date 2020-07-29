@@ -82,6 +82,13 @@ app.get('/paths', async (req, res) => {
       where: {
         ownerId: admin.id,
       },
+      include: [
+        {
+          // Notice `include` takes an ARRAY
+          model: db.PathTheme,
+          as: 'theme',
+        },
+      ],
     });
     return res.status(200).json(paths);
   } catch (error) {
