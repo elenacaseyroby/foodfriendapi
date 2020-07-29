@@ -18,7 +18,7 @@ module.exports = {
         references: { model: 'users', key: 'id' },
       },
       notes: {
-        type: Sequelize.STRING,
+        type: Sequelize.TEXT,
       },
       notes_sources: {
         type: Sequelize.STRING,
