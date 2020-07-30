@@ -84,9 +84,14 @@ app.get('/paths', async (req, res) => {
       },
       include: [
         {
-          // Notice `include` takes an ARRAY
           model: db.PathTheme,
           as: 'theme',
+        },
+        {
+          model: db.Nutrient,
+          attributes: ['id'],
+          as: 'nutrients',
+          through: { attributes: [] }, // Hide unwanted `PlayerGameTeam` nested object from results
         },
       ],
     });
