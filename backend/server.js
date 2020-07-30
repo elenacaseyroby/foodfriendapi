@@ -60,6 +60,12 @@ app.get('/nutrients', async (req, res) => {
           through: {},
           as: 'foods',
         },
+        {
+          model: db.Benefit,
+          as: 'benefits',
+          attributes: ['name'],
+          through: { attributes: [] },
+        },
       ],
     });
     return res.status(200).json(nutrients);
@@ -91,7 +97,7 @@ app.get('/paths', async (req, res) => {
           model: db.Nutrient,
           attributes: ['id'],
           as: 'nutrients',
-          through: { attributes: [] }, // Hide unwanted `PlayerGameTeam` nested object from results
+          through: { attributes: [] }, // Hide unwanted nested object from results
         },
       ],
     });
