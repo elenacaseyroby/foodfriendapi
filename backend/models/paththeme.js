@@ -11,6 +11,9 @@ module.exports = (sequelize, DataTypes) => {
       header_img_path: {
         type: DataTypes.STRING(150),
       },
+      footer_img_path: {
+        type: DataTypes.STRING(150),
+      },
       button_img_path: {
         type: DataTypes.STRING(150),
       },

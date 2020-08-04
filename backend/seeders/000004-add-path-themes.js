@@ -9,12 +9,16 @@ module.exports = {
         name: 'desert',
         header_img_path:
           'https://foodfriendapp.s3.us-east-2.amazonaws.com/paths/headerImgPath/desert.png',
+        footer_img_path:
+          'https://foodfriendapp.s3.us-east-2.amazonaws.com/paths/footerImgPath/desert.png',
       },
       {
         id: 2,
         name: 'beach',
         header_img_path:
           'https://foodfriendapp.s3.us-east-2.amazonaws.com/paths/headerImgPath/beach.png',
+        footer_img_path:
+          'https://foodfriendapp.s3.us-east-2.amazonaws.com/paths/footerImgPath/beach.png',
         button_img_path:
           'https://foodfriendapp.s3.us-east-2.amazonaws.com/paths/buttonImgPath/beach.png',
       },
@@ -23,6 +27,8 @@ module.exports = {
         name: 'mountains',
         header_img_path:
           'https://foodfriendapp.s3.us-east-2.amazonaws.com/paths/headerImgPath/mountains.png',
+        footer_img_path:
+          'https://foodfriendapp.s3.us-east-2.amazonaws.com/paths/footerImgPath/mountains.png',
         button_img_path:
           'https://foodfriendapp.s3.us-east-2.amazonaws.com/paths/buttonImgPath/mountains.png',
       },
@@ -31,6 +37,8 @@ module.exports = {
         name: 'campsite',
         header_img_path:
           'https://foodfriendapp.s3.us-east-2.amazonaws.com/paths/headerImgPath/campsite.png',
+        footer_img_path:
+          'https://foodfriendapp.s3.us-east-2.amazonaws.com/paths/footerImgPath/campsite.png',
         button_img_path:
           'https://foodfriendapp.s3.us-east-2.amazonaws.com/paths/buttonImgPath/campsite.png',
       },
@@ -39,6 +47,8 @@ module.exports = {
         name: 'city',
         header_img_path:
           'https://foodfriendapp.s3.us-east-2.amazonaws.com/paths/headerImgPath/city.png',
+        footer_img_path:
+          'https://foodfriendapp.s3.us-east-2.amazonaws.com/paths/footerImgPath/city.png',
         button_img_path:
           'https://foodfriendapp.s3.us-east-2.amazonaws.com/paths/buttonImgPath/city.png',
       },
@@ -47,6 +57,8 @@ module.exports = {
         name: 'forest',
         header_img_path:
           'https://foodfriendapp.s3.us-east-2.amazonaws.com/paths/headerImgPath/forest.png',
+        footer_img_path:
+          'https://foodfriendapp.s3.us-east-2.amazonaws.com/paths/footerImgPath/forest.png',
         button_img_path:
           'https://foodfriendapp.s3.us-east-2.amazonaws.com/paths/buttonImgPath/forest.png',
       },

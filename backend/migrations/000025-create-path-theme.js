@@ -16,6 +16,9 @@ module.exports = {
       header_img_path: {
         type: Sequelize.STRING(150),
       },
+      footer_img_path: {
+        type: Sequelize.STRING(150),
+      },
       button_img_path: {
         type: Sequelize.STRING(150),
       },
