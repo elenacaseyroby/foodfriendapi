@@ -18,7 +18,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
       },
       notes: {
-        type: DataTypes.TEXT,
+        type: DataTypes.TEXT(300),
       },
       notesSources: {
         type: DataTypes.STRING,
