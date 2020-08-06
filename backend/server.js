@@ -60,6 +60,12 @@ app.get('/nutrients', async (req, res) => {
           through: {},
           as: 'foods',
         },
+        {
+          model: db.Benefit,
+          as: 'benefits',
+          attributes: ['name'],
+          through: { attributes: [] },
+        },
       ],
     });
     return res.status(200).json(nutrients);
@@ -71,7 +77,51 @@ app.get('/nutrients', async (req, res) => {
   }
 });
 
+app.get('/paths/:userId', async (req, res) => {
+  // Input: userId as a param and authorization (token) in the body.
+  // Output: user's custom path object.
+  if (!req.params.userId)
+    return res.status(401).json({ message: 'Must pass user id.' });
+  const userId = await checkUserSignedIn(req);
+  if (!userId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  try {
+    const customPath = await db.Path.findOne({
+      where: {
+        ownerId: userId,
+      },
+      include: [
+        {
+          model: db.PathTheme,
+          as: 'theme',
+        },
+        {
+          model: db.Nutrient,
+          attributes: ['id'],
+          as: 'nutrients',
+          through: { attributes: [] }, // Hide unwanted nested object from results
+        },
+      ],
+    });
+    return res.status(200).json(customPath);
+  } catch (error) {
+    console.log(`error from /paths/:userId endpoint: ${error}`);
+    return res.status(500).json({
+      message: 'Server error.  Could not query Custom Path from db.',
+    });
+  }
+});
+
 app.get('/paths', async (req, res) => {
+  const userId = await checkUserSignedIn(req);
+  if (!userId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
   try {
     const admin = await db.User.findOne({
       where: {
@@ -82,10 +132,22 @@ app.get('/paths', async (req, res) => {
       where: {
         ownerId: admin.id,
       },
+      include: [
+        {
+          model: db.PathTheme,
+          as: 'theme',
+        },
+        {
+          model: db.Nutrient,
+          attributes: ['id'],
+          as: 'nutrients',
+          through: { attributes: [] }, // Hide unwanted nested object from results
+        },
+      ],
     });
     return res.status(200).json(paths);
   } catch (error) {
-    console.log(`error from /diets endpoint: ${error}`);
+    console.log(`error from /paths endpoint: ${error}`);
     return res.status(500).json({
       message: 'Server error.  Could not query Paths from db.',
     });
@@ -127,7 +189,6 @@ app.get('/users/:userId', async (req, res) => {
   // Output: user object.
   if (!req.params.userId)
     return res.status(401).json({ message: 'Must pass user id.' });
-
   // could move this logic into a middleware function in router:
   // User can only get data of user they are signed in as:
   const loggedInUserId = checkUserSignedIn(req);
@@ -233,6 +294,33 @@ app.get('/users/:userId/diets', async (req, res) => {
       .status(500)
       .json({ message: 'Server error: failed to retrieve user diets.' });
   }
+});
+app.get('/users/:userId/activepath', async (req, res) => {
+  // Input: userId as a param and authorization (token) in the body.
+  // Output: user's active path object.
+  if (!req.params.userId)
+    return res.status(401).json({ message: 'Must pass user id.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only get data of user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  const user = await db.User.findOne({
+    where: {
+      id: req.params.userId,
+    },
+  });
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+  const activePath = await db.Path.findOne({
+    where: {
+      id: user.activePathId,
+    },
+  });
+  return res.status(200).json(activePath);
 });
 app.put('/users/:userId/diets', async (req, res) => {
   // Updates all diets for a given user to match provided dietIds.

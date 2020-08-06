@@ -13,8 +13,12 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         type: DataTypes.STRING,
       },
+      description: {
+        allowNull: false,
+        type: DataTypes.TEXT,
+      },
       notes: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT(300),
       },
       notesSources: {
         type: DataTypes.STRING,
@@ -34,6 +38,11 @@ module.exports = (sequelize, DataTypes) => {
   );
   Path.associate = function (models) {
     Path.belongsTo(models.User, { foreignKey: 'ownerId', targetKey: 'id' });
+    Path.belongsTo(models.PathTheme, {
+      foreignKey: 'themeId',
+      targetKey: 'id',
+      as: 'theme',
+    });
     // this should link to the activePathId foreign key on the User model
     // but it could get confused since the Path model also has the
     // ownerId foreign key to the User model:

@@ -43,6 +43,12 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         type: DataTypes.DATE,
       },
+      themeId: {
+        type: DataTypes.INTEGER,
+      },
+      iconPath: {
+        type: DataTypes.STRING(150),
+      },
     },
     {
       tableName: 'nutrients',

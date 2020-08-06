@@ -14,7 +14,8 @@ function nutrientPropertiesUpdated(oldNutrient, newNutrient) {
     oldNutrient.descriptionSources === newNutrient.descriptionSources &&
     oldNutrient.warnings === newNutrient.warnings &&
     oldNutrient.warningsSources === newNutrient.warningsSources &&
-    oldNutrient.sourceNote === newNutrient.sourceNote
+    oldNutrient.sourceNote === newNutrient.sourceNote &&
+    oldNutrient.themeId === newNutrient.themeId
   )
     return false;
   return true;
