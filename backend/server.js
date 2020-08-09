@@ -9,6 +9,11 @@ import {
   resetPassword,
   sendPasswordResetEmail,
 } from './services/auth/passwordReset';
+import {
+  getDefaultPaths,
+  getMenstruationPaths,
+  getVeganPaths,
+} from './utils/paths';
 import { uploadNutrients } from './csv_upload_scripts/nutrients';
 import { uploadNutrientBenefits } from './csv_upload_scripts/nutrient_benefits';
 import { uploadNutrientFoods } from './csv_upload_scripts/nutrient_foods';
@@ -78,6 +83,75 @@ app.get('/nutrients', async (req, res) => {
 });
 
 app.get('/paths/:userId', async (req, res) => {
+  // Input: userId as a param and authorization (token) in the body.
+  // Output: paths based on user (menstruats & isVegan) including custom path.
+  if (!req.params.userId)
+    return res.status(401).json({ message: 'Must pass user id.' });
+  const userId = await checkUserSignedIn(req);
+  if (!userId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  try {
+    const admin = await db.User.findOne({
+      where: {
+        email: 'admin@foodfriend.io',
+      },
+    });
+    const allPaths = await db.Path.findAll({
+      where: {
+        ownerId: admin.id,
+      },
+    });
+    const user = await db.User.findOne({
+      where: {
+        id: req.params.userId,
+      },
+    });
+    let userPathIds;
+    if (user.isVegan) {
+      userPathIds = getVeganPaths(allPaths);
+    } else if (user.menstruates) {
+      userPathIds = getMenstruationPaths(allPaths);
+    } else {
+      userPathIds = getDefaultPaths(allPaths);
+    }
+    const customPath = await db.Path.findOne({
+      where: {
+        ownerId: userId,
+      },
+    });
+    if (customPath) {
+      userPathIds = userPathIds.push(customPath.id);
+    }
+    const returnPaths = await db.Path.findAll({
+      where: {
+        id: userPathIds,
+      },
+      include: [
+        {
+          model: db.PathTheme,
+          as: 'theme',
+        },
+        {
+          model: db.Nutrient,
+          attributes: ['id'],
+          as: 'nutrients',
+          through: { attributes: [] }, // Hide unwanted nested object from results
+        },
+      ],
+    });
+    return res.status(200).json(returnPaths);
+  } catch (error) {
+    console.log(`error from /paths/:userId endpoint: ${error}`);
+    return res.status(500).json({
+      message: 'Server error.  Could not query user specific Paths from db.',
+    });
+  }
+});
+
+app.get('/paths/:userId/activePath', async (req, res) => {
   // Input: userId as a param and authorization (token) in the body.
   // Output: user's custom path object.
   if (!req.params.userId)
