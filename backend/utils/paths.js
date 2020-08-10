@@ -1,3 +1,5 @@
+import { db } from '../models';
+
 export function getVeganPaths(allPaths) {
   let pathsByName = {};
   allPaths.map((path) => {
@@ -41,4 +43,35 @@ export function getDefaultPaths(allPaths) {
     }
   });
   return defaultPaths;
+}
+
+export async function generateActivePath(menstruates, isVegan, pathName) {
+  const admin = await db.User.findOne({
+    where: {
+      email: 'admin@foodfriend.io',
+    },
+  });
+  const allPaths = await db.Path.findAll({
+    where: {
+      ownerId: admin.id,
+    },
+  });
+  let userPaths;
+  if (isVegan) {
+    userPaths = getVeganPaths(allPaths);
+  } else if (menstruates) {
+    userPaths = getMenstruationPaths(allPaths);
+  } else {
+    userPaths = getDefaultPaths(allPaths);
+  }
+  let activePath;
+  allPaths.map((path) => {
+    if (
+      userPaths.includes(path.id) &&
+      path.name.toLowerCase().includes(pathName.toLowerCase())
+    ) {
+      activePath = path;
+    }
+  });
+  return activePath;
 }
