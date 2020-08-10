@@ -55,6 +55,18 @@ export async function generateActivePath(menstruates, isVegan, pathName) {
     where: {
       ownerId: admin.id,
     },
+    include: [
+      {
+        model: db.PathTheme,
+        as: 'theme',
+      },
+      {
+        model: db.Nutrient,
+        attributes: ['id'],
+        as: 'nutrients',
+        through: { attributes: [] }, // Hide unwanted nested object from results
+      },
+    ],
   });
   let userPaths;
   if (isVegan) {
