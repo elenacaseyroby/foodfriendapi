@@ -9,6 +9,12 @@ import {
   resetPassword,
   sendPasswordResetEmail,
 } from './services/auth/passwordReset';
+import {
+  getDefaultPaths,
+  getMenstruationPaths,
+  getVeganPaths,
+  generateActivePath,
+} from './utils/paths';
 import { uploadNutrients } from './csv_upload_scripts/nutrients';
 import { uploadNutrientBenefits } from './csv_upload_scripts/nutrient_benefits';
 import { uploadNutrientFoods } from './csv_upload_scripts/nutrient_foods';
@@ -79,43 +85,9 @@ app.get('/nutrients', async (req, res) => {
 
 app.get('/paths/:userId', async (req, res) => {
   // Input: userId as a param and authorization (token) in the body.
-  // Output: user's custom path object.
+  // Output: paths based on user (menstruates & isVegan) including custom path.
   if (!req.params.userId)
     return res.status(401).json({ message: 'Must pass user id.' });
-  const userId = await checkUserSignedIn(req);
-  if (!userId) {
-    return res.status(401).json({
-      message: 'You must be logged in to complete this request.',
-    });
-  }
-  try {
-    const customPath = await db.Path.findOne({
-      where: {
-        ownerId: userId,
-      },
-      include: [
-        {
-          model: db.PathTheme,
-          as: 'theme',
-        },
-        {
-          model: db.Nutrient,
-          attributes: ['id'],
-          as: 'nutrients',
-          through: { attributes: [] }, // Hide unwanted nested object from results
-        },
-      ],
-    });
-    return res.status(200).json(customPath);
-  } catch (error) {
-    console.log(`error from /paths/:userId endpoint: ${error}`);
-    return res.status(500).json({
-      message: 'Server error.  Could not query Custom Path from db.',
-    });
-  }
-});
-
-app.get('/paths', async (req, res) => {
   const userId = await checkUserSignedIn(req);
   if (!userId) {
     return res.status(401).json({
@@ -128,9 +100,35 @@ app.get('/paths', async (req, res) => {
         email: 'admin@foodfriend.io',
       },
     });
-    const paths = await db.Path.findAll({
+    const allPaths = await db.Path.findAll({
       where: {
         ownerId: admin.id,
+      },
+    });
+    const user = await db.User.findOne({
+      where: {
+        id: req.params.userId,
+      },
+    });
+    let userPathIds;
+    if (user.isVegan) {
+      userPathIds = getVeganPaths(allPaths);
+    } else if (user.menstruates) {
+      userPathIds = getMenstruationPaths(allPaths);
+    } else {
+      userPathIds = getDefaultPaths(allPaths);
+    }
+    const customPath = await db.Path.findOne({
+      where: {
+        ownerId: userId,
+      },
+    });
+    if (customPath) {
+      userPathIds = userPathIds.push(customPath.id);
+    }
+    const returnPaths = await db.Path.findAll({
+      where: {
+        id: userPathIds,
       },
       include: [
         {
@@ -145,14 +143,91 @@ app.get('/paths', async (req, res) => {
         },
       ],
     });
-    return res.status(200).json(paths);
+    return res.status(200).json(returnPaths);
   } catch (error) {
-    console.log(`error from /paths endpoint: ${error}`);
+    console.log(`error from /paths/:userId endpoint: ${error}`);
     return res.status(500).json({
-      message: 'Server error.  Could not query Paths from db.',
+      message: 'Server error.  Could not query user specific Paths from db.',
     });
   }
 });
+
+// app.get('/paths/:userId/activePath', async (req, res) => {
+//   // Input: userId as a param and authorization (token) in the body.
+//   // Output: user's custom path object.
+//   if (!req.params.userId)
+//     return res.status(401).json({ message: 'Must pass user id.' });
+//   const userId = await checkUserSignedIn(req);
+//   if (!userId) {
+//     return res.status(401).json({
+//       message: 'You must be logged in to complete this request.',
+//     });
+//   }
+//   try {
+//     const customPath = await db.Path.findOne({
+//       where: {
+//         ownerId: userId,
+//       },
+//       include: [
+//         {
+//           model: db.PathTheme,
+//           as: 'theme',
+//         },
+//         {
+//           model: db.Nutrient,
+//           attributes: ['id'],
+//           as: 'nutrients',
+//           through: { attributes: [] }, // Hide unwanted nested object from results
+//         },
+//       ],
+//     });
+//     return res.status(200).json(customPath);
+//   } catch (error) {
+//     console.log(`error from /paths/:userId endpoint: ${error}`);
+//     return res.status(500).json({
+//       message: 'Server error.  Could not query Custom Path from db.',
+//     });
+//   }
+// });
+
+// app.get('/paths', async (req, res) => {
+//   const userId = await checkUserSignedIn(req);
+//   if (!userId) {
+//     return res.status(401).json({
+//       message: 'You must be logged in to complete this request.',
+//     });
+//   }
+//   try {
+//     const admin = await db.User.findOne({
+//       where: {
+//         email: 'admin@foodfriend.io',
+//       },
+//     });
+//     const paths = await db.Path.findAll({
+//       where: {
+//         ownerId: admin.id,
+//       },
+//       include: [
+//         {
+//           model: db.PathTheme,
+//           as: 'theme',
+//         },
+//         {
+//           model: db.Nutrient,
+//           attributes: ['id'],
+//           as: 'nutrients',
+//           through: { attributes: [] }, // Hide unwanted nested object from results
+//         },
+//       ],
+//     });
+//     return res.status(200).json(paths);
+//   } catch (error) {
+//     console.log(`error from /paths endpoint: ${error}`);
+//     return res.status(500).json({
+//       message: 'Server error.  Could not query Paths from db.',
+//     });
+//   }
+// });
 
 app.get('/privacypolicy', async (req, res) => {
   // Gets most recently published by default.
@@ -228,7 +303,6 @@ app.put('/users/:userId', async (req, res) => {
       properties[property] = req.body[property];
     }
   }
-  console.log(`properties: ${properties['birthday']}`);
   if (!userId) return res.status(401).json({ message: 'Must pass user id.' });
 
   // could move this logic into a middleware function in router:
@@ -246,16 +320,20 @@ app.put('/users/:userId', async (req, res) => {
     },
   });
   if (!user) return res.status(404).json({ message: 'User not found.' });
-  const updatedUser = await user.update(properties);
-  // Exclude salt, password and other sensitive data from
-  // the user instance we return:
-  const cleanedUser = await updatedUser.getApiVersion();
+  try {
+    const updatedUser = await user.update(properties);
+    // Exclude salt, password and other sensitive data from
+    // the user instance we return:
+    const cleanedUser = await updatedUser.getApiVersion();
 
-  // consider: it might be better practice to simply return id and then use
-  // /get to get the updated object.. but we will see.
-  // does this break the restful requirements if it both updates and gets?
-  // but I also don't want too many db connections so we shall see if I care.
-  return res.status(200).json(cleanedUser);
+    // consider: it might be better practice to simply return id and then use
+    // /get to get the updated object.. but we will see.
+    // does this break the restful requirements if it both updates and gets?
+    // but I also don't want too many db connections so we shall see if I care.
+    return res.status(200).json(cleanedUser);
+  } catch (error) {
+    return res.status(500).json(`Could not update user: ${error}`);
+  }
 });
 app.get('/users/:userId/diets', async (req, res) => {
   // Gets all diets for a given user.
@@ -357,6 +435,22 @@ app.put('/users/:userId/diets', async (req, res) => {
     return res
       .status(404)
       .json({ message: 'Server error: failed to update diets.' });
+  }
+});
+
+// ENDPOINTS TO PERFORM SPECIFIC FUNCTIONS
+app.get('/generateUserActivePath/', async (req, res) => {
+  // Input: authorization (token) and menstruates, isVegan, pathName in query string.
+  // Output: path based on menstruates, isVegan and pathName.
+  try {
+    const activePath = await generateActivePath(
+      req.query.menstruates,
+      req.query.isVegan,
+      req.query.pathName
+    );
+    return res.status(200).json(activePath);
+  } catch (error) {
+    return res.status(500).json(`Failed to generate active path: ${error}`);
   }
 });
 
