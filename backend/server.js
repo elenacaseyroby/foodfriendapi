@@ -14,6 +14,7 @@ import {
   getMenstruationPaths,
   getVeganPaths,
   generateActivePath,
+  updatePathNutrients,
 } from './services/models/paths';
 import { uploadNutrients } from './csv_upload_scripts/nutrients';
 import { uploadNutrientBenefits } from './csv_upload_scripts/nutrient_benefits';
@@ -258,44 +259,6 @@ app.put('/users/:userId', async (req, res) => {
     return res.status(500).json(`Could not update user: ${error}`);
   }
 });
-app.get('/users/:userId/diets', async (req, res) => {
-  // Gets all diets for a given user.
-  // Input: userId in params, authorization (token) in body
-  // Output: diets json object
-  // diets = {
-  //   vegan: {
-  //     id: 1,
-  //   },
-  //   'gluten-free': {
-  //     id: 2,
-  //   },
-  // };
-  if (!req.params.userId)
-    return res.status(401).json({ message: 'Must pass user id.' });
-
-  // could move this logic into a middleware function in router:
-  // User can only post data to user they are signed in as:
-  const loggedInUserId = checkUserSignedIn(req);
-  if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
-    return res.status(401).json({
-      message: 'You must be logged in to complete this request.',
-    });
-  }
-  const user = await db.User.findOne({
-    where: {
-      id: req.params.userId,
-    },
-  });
-  if (!user) return res.status(404).json({ message: 'User not found.' });
-  try {
-    const diets = await user.getDiets();
-    return res.status(200).json(diets);
-  } catch (error) {
-    return res
-      .status(500)
-      .json({ message: 'Server error: failed to retrieve user diets.' });
-  }
-});
 app.get('/users/:userId/activepath', async (req, res) => {
   // Input: userId as a param and authorization (token) in the body.
   // Output: user's active path object.
@@ -355,41 +318,114 @@ app.put('/users/:userId/custompath', async (req, res) => {
   // Input: userId as a param and authorization (token), pathName, nutrientIds in the body.
   // Output: user's active path object.
   // Ex “nutrientIds”: [ 1, 5, 7]
+  const userId = req.params.userId;
+  const pathName = req.body.pathName;
+  const nutrientIds = req.body.nutrientIds;
+  if (!userId) return res.status(401).json({ message: 'Must pass user id.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only get data of user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  if (!nutrientIds || nutrientIds.length > 3) {
+    return res.status(401).json({
+      message:
+        'Each path must have between 1 and 3 nutrients.  Please make sure there is at least 1 and no more than 3 ids passed as "nutrientIds" in the body of the request.',
+    });
+  }
+  try {
+    // Check for existing custom path
+    let customPath = await db.Path.findOne({
+      where: {
+        ownerId: userId,
+      },
+    });
+    // if exists update name
+    if (customPath) {
+      // if name hasn't changed do nothing.
+      if (customPath.name === pathName) return;
+      customPath = await db.Path.update(
+        { name: pathName },
+        {
+          where: {
+            id: customPath.id,
+          },
+        }
+      );
+    } else {
+      // get custom theme
+      const customTheme = await db.PathTheme.findOne({
+        where: {
+          name: 'desert',
+        },
+      });
+      // if custom path does not exist, create one
+      customPath = await db.Path.create({
+        name: pathName,
+        ownerId: userId,
+        themeId: customTheme.id,
+      });
+    }
+    //update nutrients
+    const nutrientsUpdated = await updatePathNutrients(
+      customPath.id,
+      nutrientIds
+    );
+    if (nutrientsUpdated) {
+      return res
+        .status(200)
+        .json({ message: 'Custom path successfully updated.' });
+    } else {
+      return res.status(500).json({
+        message: 'Something went wrong! Custom path failed to update.',
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      message: `Could not update user's custom path. Error: ${error}`,
+    });
+  }
+});
+app.get('/users/:userId/diets', async (req, res) => {
+  // Gets all diets for a given user.
+  // Input: userId in params, authorization (token) in body
+  // Output: diets json object
+  // diets = {
+  //   vegan: {
+  //     id: 1,
+  //   },
+  //   'gluten-free': {
+  //     id: 2,
+  //   },
+  // };
   if (!req.params.userId)
     return res.status(401).json({ message: 'Must pass user id.' });
 
   // could move this logic into a middleware function in router:
-  // User can only get data of user they are signed in as:
+  // User can only post data to user they are signed in as:
   const loggedInUserId = checkUserSignedIn(req);
   if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
     return res.status(401).json({
       message: 'You must be logged in to complete this request.',
     });
   }
+  const user = await db.User.findOne({
+    where: {
+      id: req.params.userId,
+    },
+  });
+  if (!user) return res.status(404).json({ message: 'User not found.' });
   try {
-    // Check for existing custom path
-    const existingCustomPath = await db.Path.findOne({
-      where: {
-        ownerId: userId,
-      },
-    });
-    if (existingCustomPath) {
-      const updatedFoods = await foodsToUpdate.map((food) => {
-        db.Food.update(food, {
-          where: {
-            id: food.id,
-          },
-        });
-      });
-    }
-    // if exists update
-    // else create new
-    // update user active path id
-    // return res.status(200).json(activePath);
+    const diets = await user.getDiets();
+    return res.status(200).json(diets);
   } catch (error) {
-    return res.status(500).json({
-      message: `Could not update user's custom path. Error: ${error}`,
-    });
+    return res
+      .status(500)
+      .json({ message: 'Server error: failed to retrieve user diets.' });
   }
 });
 app.put('/users/:userId/diets', async (req, res) => {
