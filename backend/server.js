@@ -14,7 +14,7 @@ import {
   getMenstruationPaths,
   getVeganPaths,
   generateActivePath,
-} from './utils/paths';
+} from './services/models/paths';
 import { uploadNutrients } from './csv_upload_scripts/nutrients';
 import { uploadNutrientBenefits } from './csv_upload_scripts/nutrient_benefits';
 import { uploadNutrientFoods } from './csv_upload_scripts/nutrient_foods';
