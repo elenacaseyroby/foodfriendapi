@@ -86,7 +86,7 @@ app.get('/nutrients', async (req, res) => {
 
 app.get('/paths/:userId', async (req, res) => {
   // Input: userId as a param and authorization (token) in the body.
-  // Output: paths based on user (menstruates & isVegan) including custom path.
+  // Output: filterd paths based on user (menstruates & isVegan).
   if (!req.params.userId)
     return res.status(401).json({ message: 'Must pass user id.' });
   const userId = await checkUserSignedIn(req);
@@ -118,14 +118,6 @@ app.get('/paths/:userId', async (req, res) => {
       userPathIds = getMenstruationPaths(allPaths);
     } else {
       userPathIds = getDefaultPaths(allPaths);
-    }
-    const customPath = await db.Path.findOne({
-      where: {
-        ownerId: userId,
-      },
-    });
-    if (customPath) {
-      userPathIds = [...userPathIds, customPath.id];
     }
     const returnPaths = await db.Path.findAll({
       where: {
@@ -305,9 +297,22 @@ app.get('/users/:userId/custompath', async (req, res) => {
       where: {
         ownerId: userId,
       },
+      include: [
+        {
+          model: db.PathTheme,
+          as: 'theme',
+        },
+        {
+          model: db.Nutrient,
+          attributes: ['id'],
+          as: 'nutrients',
+          through: { attributes: [] }, // Hide unwanted nested object from results
+        },
+      ],
     });
     if (!customPath)
       return res.status(404).json({ message: 'Custom path not found.' });
+    return res.status(200).json(customPath);
   } catch (error) {
     return res.status(500).json({
       message: `Could not complete custom path request. Error: ${error}.`,
