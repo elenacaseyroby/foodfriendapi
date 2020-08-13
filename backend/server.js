@@ -125,7 +125,7 @@ app.get('/paths/:userId', async (req, res) => {
       },
     });
     if (customPath) {
-      userPathIds = userPathIds.push(customPath.id);
+      userPathIds = [...userPathIds, customPath.id];
     }
     const returnPaths = await db.Path.findAll({
       where: {
