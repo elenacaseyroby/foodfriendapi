@@ -1,6 +1,9 @@
 import { db } from '../models';
 import { cleanString } from '../utils/common';
-import { updateNutrients, createNewNutrients } from '../queries/nutrients';
+import {
+  updateNutrients,
+  createNewNutrients,
+} from '../services/models/nutrients';
 const fs = require('fs');
 const csv = require('csv-parser');
 
