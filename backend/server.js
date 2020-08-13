@@ -346,16 +346,17 @@ app.put('/users/:userId/custompath', async (req, res) => {
     });
     // if exists update name
     if (customPath) {
-      // if name hasn't changed do nothing.
-      if (customPath.name === pathName) return;
-      customPath = await db.Path.update(
-        { name: pathName },
-        {
-          where: {
-            id: customPath.id,
-          },
-        }
-      );
+      // update if changes
+      if (customPath.name !== pathName) {
+        customPath = await db.Path.update(
+          { name: pathName },
+          {
+            where: {
+              id: customPath.id,
+            },
+          }
+        );
+      }
     } else {
       // get custom theme
       const customTheme = await db.PathTheme.findOne({
@@ -370,12 +371,21 @@ app.put('/users/:userId/custompath', async (req, res) => {
         themeId: customTheme.id,
       });
     }
-    //update nutrients
+    // update nutrients
     const nutrientsUpdated = await updatePathNutrients(
       customPath.id,
       nutrientIds
     );
-    if (nutrientsUpdated) {
+    // set custom path as user's active path
+    const userUpdated = await db.User.update(
+      { activePathId: customPath.id },
+      {
+        where: {
+          id: userId,
+        },
+      }
+    );
+    if (nutrientsUpdated && userUpdated) {
       return res
         .status(200)
         .json({ message: 'Custom path successfully updated.' });
