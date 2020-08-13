@@ -152,83 +152,6 @@ app.get('/paths/:userId', async (req, res) => {
   }
 });
 
-// app.get('/paths/:userId/activePath', async (req, res) => {
-//   // Input: userId as a param and authorization (token) in the body.
-//   // Output: user's custom path object.
-//   if (!req.params.userId)
-//     return res.status(401).json({ message: 'Must pass user id.' });
-//   const userId = await checkUserSignedIn(req);
-//   if (!userId) {
-//     return res.status(401).json({
-//       message: 'You must be logged in to complete this request.',
-//     });
-//   }
-//   try {
-//     const customPath = await db.Path.findOne({
-//       where: {
-//         ownerId: userId,
-//       },
-//       include: [
-//         {
-//           model: db.PathTheme,
-//           as: 'theme',
-//         },
-//         {
-//           model: db.Nutrient,
-//           attributes: ['id'],
-//           as: 'nutrients',
-//           through: { attributes: [] }, // Hide unwanted nested object from results
-//         },
-//       ],
-//     });
-//     return res.status(200).json(customPath);
-//   } catch (error) {
-//     console.log(`error from /paths/:userId endpoint: ${error}`);
-//     return res.status(500).json({
-//       message: 'Server error.  Could not query Custom Path from db.',
-//     });
-//   }
-// });
-
-// app.get('/paths', async (req, res) => {
-//   const userId = await checkUserSignedIn(req);
-//   if (!userId) {
-//     return res.status(401).json({
-//       message: 'You must be logged in to complete this request.',
-//     });
-//   }
-//   try {
-//     const admin = await db.User.findOne({
-//       where: {
-//         email: 'admin@foodfriend.io',
-//       },
-//     });
-//     const paths = await db.Path.findAll({
-//       where: {
-//         ownerId: admin.id,
-//       },
-//       include: [
-//         {
-//           model: db.PathTheme,
-//           as: 'theme',
-//         },
-//         {
-//           model: db.Nutrient,
-//           attributes: ['id'],
-//           as: 'nutrients',
-//           through: { attributes: [] }, // Hide unwanted nested object from results
-//         },
-//       ],
-//     });
-//     return res.status(200).json(paths);
-//   } catch (error) {
-//     console.log(`error from /paths endpoint: ${error}`);
-//     return res.status(500).json({
-//       message: 'Server error.  Could not query Paths from db.',
-//     });
-//   }
-// });
-
 app.get('/privacypolicy', async (req, res) => {
   // Gets most recently published by default.
   try {
@@ -399,6 +322,75 @@ app.get('/users/:userId/activepath', async (req, res) => {
     },
   });
   return res.status(200).json(activePath);
+});
+app.get('/users/:userId/custompath', async (req, res) => {
+  // Input: userId as a param and authorization (token) in the body.
+  // Output: user's custom path object or 404.
+  const userId = req.params.userId;
+  if (!userId) return res.status(401).json({ message: 'Must pass user id.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only get data of user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  try {
+    const customPath = await db.Path.findOne({
+      where: {
+        ownerId: userId,
+      },
+    });
+    if (!customPath)
+      return res.status(404).json({ message: 'Custom path not found.' });
+  } catch (error) {
+    return res.status(500).json({
+      message: `Could not complete custom path request. Error: ${error}.`,
+    });
+  }
+});
+app.put('/users/:userId/custompath', async (req, res) => {
+  // Input: userId as a param and authorization (token), pathName, nutrientIds in the body.
+  // Output: user's active path object.
+  // Ex “nutrientIds”: [ 1, 5, 7]
+  if (!req.params.userId)
+    return res.status(401).json({ message: 'Must pass user id.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only get data of user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  try {
+    // Check for existing custom path
+    const existingCustomPath = await db.Path.findOne({
+      where: {
+        ownerId: userId,
+      },
+    });
+    if (existingCustomPath) {
+      const updatedFoods = await foodsToUpdate.map((food) => {
+        db.Food.update(food, {
+          where: {
+            id: food.id,
+          },
+        });
+      });
+    }
+    // if exists update
+    // else create new
+    // update user active path id
+    // return res.status(200).json(activePath);
+  } catch (error) {
+    return res.status(500).json({
+      message: `Could not update user's custom path. Error: ${error}`,
+    });
+  }
 });
 app.put('/users/:userId/diets', async (req, res) => {
   // Updates all diets for a given user to match provided dietIds.
