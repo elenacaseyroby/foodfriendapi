@@ -1,6 +1,6 @@
 import { db } from '../models';
 import { cleanString } from '../utils/common';
-import { updateBenefitNutrients } from '../queries/benefits';
+import { updateBenefitNutrients } from '../services/models/benefits';
 const fs = require('fs');
 const csv = require('csv-parser');
 

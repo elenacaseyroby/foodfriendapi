@@ -1,6 +1,6 @@
 import { db } from '../models';
 import { cleanString } from '../utils/common';
-import { updatePathNutrients } from '../queries/paths';
+import { updatePathNutrients } from '../services/models/paths';
 const fs = require('fs');
 const csv = require('csv-parser');
 

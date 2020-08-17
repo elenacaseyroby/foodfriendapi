@@ -1,4 +1,4 @@
-import { db } from '../models';
+import { db } from '../../models';
 
 export function updateNutrients(nutrientsList) {
   // nutrientsList should be an array of objects.
