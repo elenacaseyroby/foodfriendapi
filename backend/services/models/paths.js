@@ -97,6 +97,30 @@ export function getDefaultPaths(allPaths) {
 }
 
 export async function generateActivePath(menstruates, isVegan, pathName) {
+  // Filter paths based on user properties (isVegan and menstruates).
+  const userPaths = await filterUserPaths(isVegan, menstruates);
+  let activePath;
+  // Find the path in filtered list whose name (ex. mood for vegans, mood for menstruation)
+  // contains the pathName (ex. mood, energy, etc) that the user has chosen.
+  userPaths.map((path) => {
+    if (path.name.toLowerCase().includes(pathName.toLowerCase())) {
+      activePath = path;
+    }
+  });
+  return activePath;
+}
+
+export async function filterUserPaths(isVegan, menstruates) {
+  // This function filters paths based on user properties (isVegan and menstruates).
+  // Will always return a list with one path for each theme:
+  // mood, energy, beauty, cognition, immunity, etc.
+  // Right now algorithm works based on filtering for paths with certain words in the name
+  // But at some point we can make it more robust/less fragile.
+  // As it stands, path names must always be in one of the following formats:
+  // [Theme]
+  // [Theme] for vegans
+  // [Theme] for menstruation
+  // ex. Mood, Mood for Vegans, Mood for Menstruation.
   const admin = await db.User.findOne({
     where: {
       email: 'admin@foodfriend.io',
@@ -105,6 +129,19 @@ export async function generateActivePath(menstruates, isVegan, pathName) {
   const allPaths = await db.Path.findAll({
     where: {
       ownerId: admin.id,
+    },
+  });
+  let userPathIds;
+  if (isVegan) {
+    userPathIds = getVeganPaths(allPaths);
+  } else if (menstruates) {
+    userPathIds = getMenstruationPaths(allPaths);
+  } else {
+    userPathIds = getDefaultPaths(allPaths);
+  }
+  const userPaths = await db.Path.findAll({
+    where: {
+      id: userPathIds,
     },
     include: [
       {
@@ -119,22 +156,5 @@ export async function generateActivePath(menstruates, isVegan, pathName) {
       },
     ],
   });
-  let userPaths;
-  if (isVegan) {
-    userPaths = getVeganPaths(allPaths);
-  } else if (menstruates) {
-    userPaths = getMenstruationPaths(allPaths);
-  } else {
-    userPaths = getDefaultPaths(allPaths);
-  }
-  let activePath;
-  allPaths.map((path) => {
-    if (
-      userPaths.includes(path.id) &&
-      path.name.toLowerCase().includes(pathName.toLowerCase())
-    ) {
-      activePath = path;
-    }
-  });
-  return activePath;
+  return userPaths;
 }

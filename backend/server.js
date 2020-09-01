@@ -10,9 +10,7 @@ import {
   sendPasswordResetEmail,
 } from './services/auth/passwordReset';
 import {
-  getDefaultPaths,
-  getMenstruationPaths,
-  getVeganPaths,
+  filterUserPaths,
   generateActivePath,
   updatePathNutrients,
 } from './services/models/paths';
@@ -96,46 +94,13 @@ app.get('/paths/:userId', async (req, res) => {
     });
   }
   try {
-    const admin = await db.User.findOne({
-      where: {
-        email: 'admin@foodfriend.io',
-      },
-    });
-    const allPaths = await db.Path.findAll({
-      where: {
-        ownerId: admin.id,
-      },
-    });
     const user = await db.User.findOne({
       where: {
         id: req.params.userId,
       },
     });
-    let userPathIds;
-    if (user.isVegan) {
-      userPathIds = getVeganPaths(allPaths);
-    } else if (user.menstruates) {
-      userPathIds = getMenstruationPaths(allPaths);
-    } else {
-      userPathIds = getDefaultPaths(allPaths);
-    }
-    const returnPaths = await db.Path.findAll({
-      where: {
-        id: userPathIds,
-      },
-      include: [
-        {
-          model: db.PathTheme,
-          as: 'theme',
-        },
-        {
-          model: db.Nutrient,
-          attributes: ['id'],
-          as: 'nutrients',
-          through: { attributes: [] }, // Hide unwanted nested object from results
-        },
-      ],
-    });
+    // Filter paths based on user properties (isVegan and menstruates).
+    const returnPaths = await filterUserPaths(user.isVegan, user.menstruates);
     return res.status(200).json(returnPaths);
   } catch (error) {
     console.log(`error from /paths/:userId endpoint: ${error}`);
