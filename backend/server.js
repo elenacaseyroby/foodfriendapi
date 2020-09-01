@@ -209,19 +209,9 @@ app.put('/users/:userId', async (req, res) => {
   // this will only update the user's email:
 
   const userId = req.params.userId;
-  // if date, convert for Sequelize
-  let properties = {};
-  for (const property in req.body) {
-    if (property === 'birthday') {
-      properties[property] = convertStringToDate(req.body[property]);
-      console.log('made it');
-    } else {
-      properties[property] = req.body[property];
-    }
-  }
   if (!userId) return res.status(401).json({ message: 'Must pass user id.' });
 
-  // could move this logic into a middleware function in router:
+  // Could move this logic into a middleware function in router:
   // User can only post data to user they are signed in as:
   const loggedInUserId = checkUserSignedIn(req);
   if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
@@ -236,6 +226,62 @@ app.put('/users/:userId', async (req, res) => {
     },
   });
   if (!user) return res.status(404).json({ message: 'User not found.' });
+
+  // if date, convert for Sequelize
+  let properties = {};
+  for (const property in req.body) {
+    if (property === 'birthday') {
+      properties[property] = convertStringToDate(req.body[property]);
+    } else {
+      properties[property] = req.body[property];
+    }
+  }
+
+  // Determine if user changes require path update
+  // A user's path is determined based on pathName (mood, immunity, etc.),
+  // if user menstruates and if user is vegan.
+  // If user.isVegan or user.menstruates changes, their path must change to reflect this.
+  // FYI The list of paths a user is allowed to choose from is also determined by
+  // these user properties.
+
+  // If user has an active path, find it.
+  let userActivePath;
+  if (user.activePathId) {
+    userActivePath = await db.Path.findOne({
+      where: {
+        id: user.activePathId,
+      },
+    });
+  }
+  const activePathExists = userActivePath ? true : false;
+  const activePathIsCustom =
+    userActivePath && userActivePath.ownerId === user.id;
+  const isVeganUpdated = req.body.isVegan !== undefined;
+  const menstruatesUpdated = req.body.menstruates !== undefined;
+  if (
+    (isVeganUpdated || menstruatesUpdated) &&
+    activePathExists &&
+    !activePathIsCustom
+  ) {
+    const isVegan =
+      req.body.isVegan === undefined ? user.isVegan : req.body.isVegan;
+    const menstruates =
+      req.body.menstruates === undefined
+        ? user.menstruates
+        : req.body.menstruates;
+    const pathName = userActivePath.name.toLowerCase().trim().split(' ')[0];
+    // Generate new active path using updated user info.
+    const updatedActivePath = await generateActivePath(
+      menstruates,
+      isVegan,
+      pathName
+    );
+    // Update activePathId if new active path is different from old active path.
+    if (updatedActivePath.id !== userActivePath.id) {
+      // not updating path
+      properties['activePathId'] = updatedActivePath.id;
+    }
+  }
   try {
     const updatedUser = await user.update(properties);
     // Exclude salt, password and other sensitive data from
