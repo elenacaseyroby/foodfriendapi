@@ -558,7 +558,9 @@ app.post('/users/:userId/foods/', async (req, res) => {
     return res.status(401).json({ message: 'Must pass foodId in body.' });
 
   if (!servingsCount)
-    return res.status(401).json({ message: 'Must pass servingSize in body.' });
+    return res
+      .status(401)
+      .json({ message: 'Must pass servingsCount in body.' });
 
   // could move this logic into a middleware function in router:
   // User can only post data to user they are signed in as:
@@ -576,9 +578,6 @@ app.post('/users/:userId/foods/', async (req, res) => {
   if (!food) return res.status(404).json({ message: 'Food not found.' });
 
   try {
-    // for (var prop in user) {
-    //   console.log(JSON.stringify(prop));
-    // }
     const recordCreated = await db.UserFood.create({
       userId: userId,
       foodId: foodId,
@@ -596,6 +595,46 @@ app.post('/users/:userId/foods/', async (req, res) => {
     return res
       .status(500)
       .json({ message: `Server error: failed to record meal: ${error}` });
+  }
+});
+
+app.delete('/users/:userId/foods/', async (req, res) => {
+  // Deletes user food record.
+  // Input: userId in params, authorization (token) and userFoodId in body
+  // Output: http success/failure status.
+  const userId = req.params.userId;
+  const userFoodId = req.body.userFoodId;
+  if (!userId)
+    return res.status(401).json({ message: 'Must pass userId in params.' });
+
+  if (!userFoodId)
+    return res.status(401).json({ message: 'Must pass userFoodId in body.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  try {
+    const record = await db.UserFood.findOne({
+      id: userFoodId,
+    });
+    if (record) {
+      const recordDeleted = await record.destroy();
+      if (!recordDeleted) {
+        return res
+          .status(500)
+          .json({ message: `Server error: failed to delete meal.` });
+      }
+    }
+    return res.status(200).json({ message: 'Successfully deleted meal.' });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: `Server error: failed to delete meal: ${error}` });
   }
 });
 
