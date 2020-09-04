@@ -262,33 +262,36 @@ app.put('/users/:userId', async (req, res) => {
     return res.status(500).json(`Could not update user: ${error}`);
   }
 });
-app.get('/users/:userId/activepath', async (req, res) => {
-  // Input: userId as a param and authorization (token) in the body.
-  // Output: user's active path object.
-  if (!req.params.userId)
-    return res.status(401).json({ message: 'Must pass user id.' });
 
-  // could move this logic into a middleware function in router:
-  // User can only get data of user they are signed in as:
-  const loggedInUserId = checkUserSignedIn(req);
-  if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
-    return res.status(401).json({
-      message: 'You must be logged in to complete this request.',
-    });
-  }
-  const user = await db.User.findOne({
-    where: {
-      id: req.params.userId,
-    },
-  });
-  if (!user) return res.status(404).json({ message: 'User not found.' });
-  const activePath = await db.Path.findOne({
-    where: {
-      id: user.activePathId,
-    },
-  });
-  return res.status(200).json(activePath);
-});
+// not used:
+// app.get('/users/:userId/activepath', async (req, res) => {
+//   // Input: userId as a param and authorization (token) in the body.
+//   // Output: user's active path object.
+//   if (!req.params.userId)
+//     return res.status(401).json({ message: 'Must pass user id.' });
+
+//   // could move this logic into a middleware function in router:
+//   // User can only get data of user they are signed in as:
+//   const loggedInUserId = checkUserSignedIn(req);
+//   if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
+//     return res.status(401).json({
+//       message: 'You must be logged in to complete this request.',
+//     });
+//   }
+//   const user = await db.User.findOne({
+//     where: {
+//       id: req.params.userId,
+//     },
+//   });
+//   if (!user) return res.status(404).json({ message: 'User not found.' });
+//   const activePath = await db.Path.findOne({
+//     where: {
+//       id: user.activePathId,
+//     },
+//   });
+//   return res.status(200).json(activePath);
+// });
+
 app.get('/users/:userId/custompath', async (req, res) => {
   // Input: userId as a param and authorization (token) in the body.
   // Output: user's custom path object or 404.
@@ -489,6 +492,102 @@ app.put('/users/:userId/diets', async (req, res) => {
     return res
       .status(404)
       .json({ message: 'Server error: failed to update diets.' });
+  }
+});
+
+app.get('/users/:userId/foods/', async (req, res) => {
+  // Gets all foods eaten by a given user.
+  // Input: userId in params, authorization (token) in body
+  // Optional input: limit in query string
+  // Output: foods JSON object.
+
+  if (!req.params.userId)
+    return res.status(401).json({ message: 'Must pass user id.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  const user = await db.User.findOne({
+    where: {
+      id: req.params.userId,
+    },
+  });
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+
+  try {
+    //TODO learn about and implement pagination.
+    const limit = parseInt(req.query.limit || 100);
+    const mostRecentFoodIds = await db.UserFood.findAll({
+      where: {
+        user_id: user.id,
+      },
+      order: [['createdAt', 'DESC']],
+      limit: limit,
+    }).map((userFood) => {
+      return userFood.foodId;
+    });
+    const mostRecentFoods = await db.Food.findAll({
+      where: {
+        id: mostRecentFoodIds,
+      },
+    });
+    return res.status(200).json(mostRecentFoods);
+  } catch (error) {
+    return res.status(500).json({
+      message: `Server error: failed to retrieve user foods: ${error}`,
+    });
+  }
+});
+
+app.put('/users/:userId/foods/', async (req, res) => {
+  // Adds user food record.
+  // Input: userId in params, authorization (token) and foodId in body
+  // Output: http success/failure status.
+
+  if (!req.params.userId)
+    return res.status(401).json({ message: 'Must pass userId in params.' });
+
+  if (!req.body.foodId)
+    return res.status(401).json({ message: 'Must pass foodId in body.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  const user = await db.User.findOne({
+    where: {
+      id: req.params.userId,
+    },
+  });
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+  const food = await db.Food.findOne({
+    where: {
+      id: req.body.foodId,
+    },
+  });
+
+  try {
+    const recordCreated = await user.addFood(food);
+    if (recordCreated) {
+      return res.status(200).json(mostRecentFoods);
+    } else {
+      return res
+        .status(500)
+        .json({ message: 'Server error: failed to record meal.' });
+    }
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: 'Server error: failed to record meal.' });
   }
 });
 
