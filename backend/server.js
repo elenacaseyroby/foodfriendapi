@@ -524,7 +524,7 @@ app.get('/users/:userId/foods/', async (req, res) => {
     const limit = parseInt(req.query.limit || 100);
     const mostRecentFoodIds = await db.UserFood.findAll({
       where: {
-        user_id: user.id,
+        userId: user.id,
       },
       order: [['createdAt', 'DESC']],
       limit: limit,
@@ -544,16 +544,21 @@ app.get('/users/:userId/foods/', async (req, res) => {
   }
 });
 
-app.put('/users/:userId/foods/', async (req, res) => {
+app.post('/users/:userId/foods/', async (req, res) => {
   // Adds user food record.
-  // Input: userId in params, authorization (token) and foodId in body
+  // Input: userId in params, authorization (token), foodId and servingSize in body
   // Output: http success/failure status.
-
-  if (!req.params.userId)
+  const userId = req.params.userId;
+  const foodId = req.body.foodId;
+  const servingsCount = parseFloat(req.body.servingsCount);
+  if (!userId)
     return res.status(401).json({ message: 'Must pass userId in params.' });
 
-  if (!req.body.foodId)
+  if (!foodId)
     return res.status(401).json({ message: 'Must pass foodId in body.' });
+
+  if (!servingsCount)
+    return res.status(401).json({ message: 'Must pass servingSize in body.' });
 
   // could move this logic into a middleware function in router:
   // User can only post data to user they are signed in as:
@@ -563,22 +568,25 @@ app.put('/users/:userId/foods/', async (req, res) => {
       message: 'You must be logged in to complete this request.',
     });
   }
-  const user = await db.User.findOne({
-    where: {
-      id: req.params.userId,
-    },
-  });
-  if (!user) return res.status(404).json({ message: 'User not found.' });
   const food = await db.Food.findOne({
     where: {
-      id: req.body.foodId,
+      id: foodId,
     },
   });
+  if (!food) return res.status(404).json({ message: 'Food not found.' });
 
   try {
-    const recordCreated = await user.addFood(food);
+    // for (var prop in user) {
+    //   console.log(JSON.stringify(prop));
+    // }
+    const recordCreated = await db.UserFood.create({
+      userId: userId,
+      foodId: foodId,
+      servingsCount: servingsCount,
+    });
+    console.log(`record: ${recordCreated}`);
     if (recordCreated) {
-      return res.status(200).json(mostRecentFoods);
+      return res.status(200).json({ message: 'Successfully recorded meal.' });
     } else {
       return res
         .status(500)
@@ -587,7 +595,7 @@ app.put('/users/:userId/foods/', async (req, res) => {
   } catch (error) {
     return res
       .status(500)
-      .json({ message: 'Server error: failed to record meal.' });
+      .json({ message: `Server error: failed to record meal: ${error}` });
   }
 });
 
