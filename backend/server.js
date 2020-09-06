@@ -1,6 +1,7 @@
 import express from 'express';
 import { db } from './models';
 import multer from 'multer';
+import moment from 'moment';
 import { checkUserSignedIn, checkIfAdmin } from './utils/auth';
 import { convertStringToDate } from './utils/common';
 import { signUp } from './services/auth/signUp';
@@ -209,24 +210,37 @@ app.put('/users/:userId', async (req, res) => {
   // FYI The list of paths a user is allowed to choose from is also determined by
   // these user properties.
 
-  // If user has an active path, find it.
-  let userActivePath;
-  if (user.activePathId) {
-    userActivePath = await db.Path.findOne({
+  let activePath;
+  // If user is updating path, find new active path.
+  if (activePathUpdated) {
+    activePath = await db.Path.findOne({
+      where: {
+        id: req.body.activePathId,
+      },
+    });
+  }
+  // Else find existing active path if exists.
+  else if (user.activePathId) {
+    activePath = await db.Path.findOne({
       where: {
         id: user.activePathId,
       },
     });
   }
-  const activePathExists = userActivePath ? true : false;
-  const activePathIsCustom =
-    userActivePath && userActivePath.ownerId === user.id;
+  // (Can't user !!isVegan because if it's false it will read the same as being undefined.)
   const isVeganUpdated = req.body.isVegan !== undefined;
   const menstruatesUpdated = req.body.menstruates !== undefined;
+  const activePathUpdated = !!req.body.activePathId;
+  const activePathIsCustom = activePath && activePath.ownerId === user.id;
+  const activePathExists = !!activePath;
+  // If user.activePathId, user.isVegan, or user.activePathId are
+  // updated AND the path is not a custom path, make sure the path
+  // is generated using the most up to date user data (path might not
+  // exist if custom).
   if (
-    (isVeganUpdated || menstruatesUpdated) &&
-    activePathExists &&
-    !activePathIsCustom
+    (isVeganUpdated || menstruatesUpdated || activePathUpdated) &&
+    !activePathIsCustom &&
+    activePathExists
   ) {
     const isVegan =
       req.body.isVegan === undefined ? user.isVegan : req.body.isVegan;
@@ -234,16 +248,15 @@ app.put('/users/:userId', async (req, res) => {
       req.body.menstruates === undefined
         ? user.menstruates
         : req.body.menstruates;
-    const pathName = userActivePath.name.toLowerCase().trim().split(' ')[0];
-    // Generate new active path using updated user info.
+    const pathName = activePath.name.toLowerCase().trim().split(' ')[0];
+    // Generate new active path using updated user data.
     const updatedActivePath = await generateActivePath(
       menstruates,
       isVegan,
       pathName
     );
     // Update activePathId if new active path is different from old active path.
-    if (updatedActivePath.id !== userActivePath.id) {
-      // not updating path
+    if (updatedActivePath.id !== user.activePathId) {
       properties['activePathId'] = updatedActivePath.id;
     }
   }
@@ -498,8 +511,13 @@ app.put('/users/:userId/diets', async (req, res) => {
 app.get('/users/:userId/foods/', async (req, res) => {
   // Gets all foods eaten by a given user.
   // Input: userId in params, authorization (token) in body
-  // Optional input: limit in query string
+  // Optional input: limit, dateRange in query string
   // Output: foods JSON object.
+  // dateRange options:
+  // currentDay,
+
+  // const userId = req.params.userId;
+  // const dateRange = req.query.dateRange;
 
   if (!req.params.userId)
     return res.status(401).json({ message: 'Must pass user id.' });
@@ -522,6 +540,11 @@ app.get('/users/:userId/foods/', async (req, res) => {
   try {
     //TODO learn about and implement pagination.
     const limit = parseInt(req.query.limit || 100);
+    // const today = new Date();
+
+    // const fromDate = moment(today, 'MM-DD-YYYY 00:00:00');
+    // const endDate = moment(today, 'MM-DD-YYYY 23:59:59');
+
     const mostRecentFoodIds = await db.UserFood.findAll({
       where: {
         userId: user.id,
