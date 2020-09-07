@@ -29,7 +29,6 @@ export function getRelativeDateTime(operation, units, unitOfTime, time) {
   } else if (time === 'endOfDay') {
     processedDate = processedDate.endOf('day');
   }
-  console.log(processedDate);
   return processedDate;
 }
 
