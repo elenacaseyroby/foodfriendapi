@@ -844,10 +844,12 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
       let totalServingsCount = 0;
       // And all the associated recorded meals.
       let userFoodRecords = [];
-      food.Users.map((userFood) => {
-        userFoodRecords.push(userFood);
-        totalServingsCount += userFood.servingsCount;
+      food.Users.map((user) => {
+        userFoodRecords.push(user.UserFood);
+        totalServingsCount += parseFloat(user.UserFood.servingsCount);
       });
+      console.log('total:');
+      console.log(totalServingsCount);
 
       // add to the percentDvConsumed for each nutrient
 
@@ -866,6 +868,9 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
         // to find the total percent of the daily value consumed.
         reportByNutrient[nutrient.id].percentDvConsumed +=
           nutrient.NutrientFood.percentDvPerServing * totalServingsCount;
+        console.log('----------------------------------');
+        console.log(totalServingsCount);
+        console.log(nutrient.NutrientFood.percentDvPerServing);
 
         // For the given nutrient, add to the userFood (meal) records.
         reportByNutrient[nutrient.id].userFoods = reportByNutrient[
