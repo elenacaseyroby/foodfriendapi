@@ -2,9 +2,8 @@ import express from 'express';
 import { db } from './models';
 import { Op } from 'sequelize';
 import multer from 'multer';
-import moment from 'moment';
 import { checkUserSignedIn, checkIfAdmin } from './utils/auth';
-import { convertStringToDate } from './utils/common';
+import { convertStringToDate, getRelativeDateTime } from './utils/common';
 import { signUp } from './services/auth/signUp';
 import { signIn } from './services/auth/signIn';
 import {
@@ -48,6 +47,77 @@ app.get('/diets', async (req, res) => {
     console.log(`error from /diets endpoint: ${error}`);
     return res.status(500).json({
       message: 'Server error.  Could not query Diets from db.',
+    });
+  }
+});
+
+app.get('/foods/:userId/', async (req, res) => {
+  // Gets all foods eaten by a given user.
+  // Input: userId in params, authorization (token) in body
+  // Optional input: limit, dateRange in query string
+  // Output: foods JSON object.
+  // dateRange options:
+  // currentDay,
+
+  const userId = req.params.userId;
+  const dateRange = req.query.dateRange;
+
+  if (!req.params.userId)
+    return res.status(401).json({ message: 'Must pass user id.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  const user = await db.User.findOne({
+    where: {
+      id: userId,
+    },
+  });
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+
+  try {
+    //TODO learn about and implement pagination.
+    const limit = parseInt(req.query.limit || 1000);
+    let fromTime;
+    let toTime;
+    if (dateRange === 'currentDay') {
+      fromTime = getRelativeDateTime('add', 0, 'days', 'startOfDay');
+      toTime = getRelativeDateTime('add', 0, 'days', 'endOfDay');
+    } else {
+      // fromTime by default way in the past
+      fromTime = getRelativeDateTime('subtract', 100, 'years', 'startOfDay');
+      // toTime by default way in the future
+      toTime = getRelativeDateTime('add', 2, 'days', 'startOfDay');
+    }
+    console.log(fromTime);
+    console.log(toTime);
+    // end fix dates
+    const mostRecentFoodIds = await db.UserFood.findAll({
+      where: {
+        userId: user.id,
+        createdAt: {
+          [Op.between]: [fromTime, toTime],
+        },
+      },
+      order: [['createdAt', 'DESC']],
+      limit: limit,
+    }).map((userFood) => {
+      return userFood.foodId;
+    });
+    const mostRecentFoods = await db.Food.findAll({
+      where: {
+        id: mostRecentFoodIds,
+      },
+    });
+    return res.status(200).json(mostRecentFoods);
+  } catch (error) {
+    return res.status(500).json({
+      message: `Server error: failed to retrieve foods: ${error}`,
     });
   }
 });
@@ -511,7 +581,7 @@ app.put('/users/:userId/diets', async (req, res) => {
 });
 
 app.get('/users/:userId/foods/', async (req, res) => {
-  // Gets all foods eaten by a given user.
+  // Gets all user foods for a given user (records of user eating a food).
   // Input: userId in params, authorization (token) in body
   // Optional input: limit, dateRange in query string
   // Output: foods JSON object.
@@ -541,44 +611,35 @@ app.get('/users/:userId/foods/', async (req, res) => {
 
   try {
     //TODO learn about and implement pagination.
-    const limit = parseInt(req.query.limit || 100);
-    // fix fromDate and endDate dates
-    const today = moment();
+    const limit = parseInt(req.query.limit || 1000);
     let fromTime;
-    let endTime;
+    let toTime;
     if (dateRange === 'currentDay') {
-      fromTime = today.startOf('day');
-      endTime = today.endOf('day');
+      fromTime = getRelativeDateTime('add', 0, 'days', 'startOfDay');
+      toTime = getRelativeDateTime('add', 0, 'days', 'endOfDay');
     } else {
-      // endTime by default way in the future
-      endTime = today.add(2, 'days');
       // fromTime by default way in the past
-      fromTime = today.subtract(100, 'years');
+      fromTime = getRelativeDateTime('subtract', 100, 'years', 'startOfDay');
+      // toTime by default way in the future
+      toTime = getRelativeDateTime('add', 2, 'days', 'startOfDay');
     }
     console.log(fromTime);
-    console.log(endTime);
+    console.log(toTime);
     // end fix dates
-    const mostRecentFoodIds = await db.UserFood.findAll({
+    const meals = await db.UserFood.findAll({
       where: {
         userId: user.id,
         createdAt: {
-          [Op.between]: [fromTime, endTime],
+          [Op.between]: [fromTime, toTime],
         },
       },
       order: [['createdAt', 'DESC']],
       limit: limit,
-    }).map((userFood) => {
-      return userFood.foodId;
     });
-    const mostRecentFoods = await db.Food.findAll({
-      where: {
-        id: mostRecentFoodIds,
-      },
-    });
-    return res.status(200).json(mostRecentFoods);
+    return res.status(200).json(meals);
   } catch (error) {
     return res.status(500).json({
-      message: `Server error: failed to retrieve user foods: ${error}`,
+      message: `Server error: failed to retrieve user meal records (userFoods): ${error}`,
     });
   }
 });
