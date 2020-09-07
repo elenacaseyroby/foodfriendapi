@@ -1,5 +1,6 @@
 import express from 'express';
 import { db } from './models';
+import { Op } from 'sequelize';
 import multer from 'multer';
 import moment from 'moment';
 import { checkUserSignedIn, checkIfAdmin } from './utils/auth';
@@ -20,6 +21,7 @@ import { uploadNutrientBenefits } from './csv_upload_scripts/nutrient_benefits';
 import { uploadNutrientFoods } from './csv_upload_scripts/nutrient_foods';
 import { uploadNutrientRecipes } from './csv_upload_scripts/nutrient_recipes';
 import { uploadPathNutrients } from './csv_upload_scripts/path_nutrients';
+import e from 'express';
 
 // Config environment variables so they are
 // accessible through process.env
@@ -516,8 +518,8 @@ app.get('/users/:userId/foods/', async (req, res) => {
   // dateRange options:
   // currentDay,
 
-  // const userId = req.params.userId;
-  // const dateRange = req.query.dateRange;
+  const userId = req.params.userId;
+  const dateRange = req.query.dateRange;
 
   if (!req.params.userId)
     return res.status(401).json({ message: 'Must pass user id.' });
@@ -525,14 +527,14 @@ app.get('/users/:userId/foods/', async (req, res) => {
   // could move this logic into a middleware function in router:
   // User can only post data to user they are signed in as:
   const loggedInUserId = checkUserSignedIn(req);
-  if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
+  if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
     return res.status(401).json({
       message: 'You must be logged in to complete this request.',
     });
   }
   const user = await db.User.findOne({
     where: {
-      id: req.params.userId,
+      id: userId,
     },
   });
   if (!user) return res.status(404).json({ message: 'User not found.' });
@@ -540,14 +542,28 @@ app.get('/users/:userId/foods/', async (req, res) => {
   try {
     //TODO learn about and implement pagination.
     const limit = parseInt(req.query.limit || 100);
-    // const today = new Date();
-
-    // const fromDate = moment(today, 'MM-DD-YYYY 00:00:00');
-    // const endDate = moment(today, 'MM-DD-YYYY 23:59:59');
-
+    // fix fromDate and endDate dates
+    const today = moment();
+    let fromTime;
+    let endTime;
+    if (dateRange === 'currentDay') {
+      fromTime = today.startOf('day');
+      endTime = today.endOf('day');
+    } else {
+      // endTime by default way in the future
+      endTime = today.add(2, 'days');
+      // fromTime by default way in the past
+      fromTime = today.subtract(100, 'years');
+    }
+    console.log(fromTime);
+    console.log(endTime);
+    // end fix dates
     const mostRecentFoodIds = await db.UserFood.findAll({
       where: {
         userId: user.id,
+        createdAt: {
+          [Op.between]: [fromTime, endTime],
+        },
       },
       order: [['createdAt', 'DESC']],
       limit: limit,
