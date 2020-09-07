@@ -26,13 +26,11 @@ module.exports = (sequelize, DataTypes) => {
   Food.associate = function (models) {
     Food.belongsToMany(models.Nutrient, {
       through: 'NutrientFood',
-      as: 'nutrients',
       foreignKey: 'foodId',
       otherKey: 'nutrientId',
     });
     Food.belongsToMany(models.User, {
       through: 'UserFood',
-      as: 'users',
       foreignKey: 'foodId',
       otherKey: 'userId',
     });

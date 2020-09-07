@@ -239,6 +239,32 @@ app.get('/users/:userId', async (req, res) => {
   return res.status(200).json(cleanedUser);
 });
 
+app.get('/users/:userId', async (req, res) => {
+  // Input: userId as a param and authorization (token) in the body.
+  // Output: user object.
+  if (!req.params.userId)
+    return res.status(401).json({ message: 'Must pass user id.' });
+  // could move this logic into a middleware function in router:
+  // User can only get data of user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+
+  const user = await db.User.findOne({
+    where: {
+      id: req.params.userId,
+    },
+  });
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+  // Exclude salt, password and other sensitive data from
+  // the user instance we return:
+  const cleanedUser = await user.getApiVersion();
+  return res.status(200).json(cleanedUser);
+});
+
 app.put('/users/:userId', async (req, res) => {
   // Input: userId in params, authorization (token) and properties to update in the body.
   // Output: updated user object.
@@ -735,6 +761,139 @@ app.delete('/users/:userId/foods/', async (req, res) => {
     return res
       .status(500)
       .json({ message: `Server error: failed to delete meal: ${error}` });
+  }
+});
+
+app.get('/users/:userId/progressreport/daily', async (req, res) => {
+  // Gets report of user's intake of each nutrient in their path.
+  // Input: userId in params, authorization (token) in body
+  // Output: report JSON object.
+
+  const userId = req.params.userId;
+
+  if (!req.params.userId)
+    return res.status(401).json({ message: 'Must pass user id.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  const user = await db.User.findOne({
+    where: {
+      id: userId,
+    },
+  });
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+
+  try {
+    // Get user's path.
+    const userPath = await db.Path.findOne({
+      where: {
+        id: user.activePathId,
+      },
+      include: [
+        {
+          model: db.Nutrient,
+          as: 'nutrients',
+        },
+      ],
+    });
+    const userNutrients = userPath.nutrients.map((nutrient) => {
+      return nutrient;
+    });
+    // Get user food records for the day.
+    const startOfDay = getRelativeDateTime('add', 0, 'days', 'startOfDay');
+    const endOfDay = getRelativeDateTime('add', 0, 'days', 'endOfDay');
+    let reportByNutrient = {};
+    const foods = await db.Food.findAll({
+      // where: {
+      //   '$Users.id$': userId,
+      // },
+      include: [
+        {
+          model: db.User,
+          required: true,
+          attributes: ['id'],
+          through: {
+            attributes: ['id', 'servingsCount', 'createdAt'],
+            // attributes: [[[sequelize.fn('sum', sequelize.col('servingsCount')), 'servingsTotal']]],
+            where: {
+              userId: userId,
+              createdAt: {
+                [Op.between]: [startOfDay, endOfDay],
+              },
+            },
+          },
+        },
+        {
+          model: db.Nutrient,
+          required: true,
+          attributes: ['name', 'id'],
+          through: { attributes: ['percentDvPerServing'] },
+        },
+      ],
+      order: [['createdAt', 'DESC']],
+    }).map((food) => {
+      // for each food that was eaten:
+
+      // Find the total servings count.
+      let totalServingsCount = 0;
+      // And all the associated recorded meals.
+      let userFoodRecords = [];
+      food.Users.map((userFood) => {
+        userFoodRecords.push(userFood);
+        totalServingsCount += userFood.servingsCount;
+      });
+
+      // add to the percentDvConsumed for each nutrient
+
+      // add to the userfood records or each nutrient
+      food.Nutrients.map((nutrient) => {
+        if (!reportByNutrient[nutrient.id]) {
+          reportByNutrient[nutrient.id] = {
+            percentDvConsumed: 0.0,
+            userFoods: [],
+          };
+        }
+        // For the given nutrient, add to the percentDvConsumed:
+        // multiply the daily value per serving of the given food times the
+        // number of servings of the given food consumed
+        // and add to the existing percent of the daily value consumed
+        // to find the total percent of the daily value consumed.
+        reportByNutrient[nutrient.id].percentDvConsumed +=
+          nutrient.NutrientFood.percentDvPerServing * totalServingsCount;
+
+        // For the given nutrient, add to the userFood (meal) records.
+        reportByNutrient[nutrient.id].userFoods = reportByNutrient[
+          nutrient.id
+        ].userFoods.concat(userFoodRecords);
+      });
+    });
+
+    let report = {};
+    userNutrients.map((nutrient) => {
+      report[nutrient.id] = {
+        nutrientName: nutrient.name,
+        percentDvConsumed: 0.0,
+        userFoods: [],
+      };
+      // if user ate any associated foods, fill report.
+      if (reportByNutrient[nutrient.id]) {
+        report[nutrient.id] = {
+          percentDvConsumed: reportByNutrient[nutrient.id].percentDvConsumed,
+          userFoods: reportByNutrient[nutrient.id].userFoods,
+        };
+      }
+    });
+    return res.status(200).json(report);
+  } catch (error) {
+    return res.status(500).json({
+      message: `Server error: failed to retrieve user meal records (userFoods): ${error}`,
+    });
   }
 });
 
