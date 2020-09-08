@@ -51,77 +51,6 @@ app.get('/diets', async (req, res) => {
   }
 });
 
-app.get('/foods/:userId/', async (req, res) => {
-  // Gets all foods eaten by a given user.
-  // Input: userId in params, authorization (token) in body
-  // Optional input: limit, dateRange in query string
-  // Output: foods JSON object.
-  // dateRange options:
-  // currentDay,
-
-  const userId = req.params.userId;
-  const dateRange = req.query.dateRange;
-
-  if (!req.params.userId)
-    return res.status(401).json({ message: 'Must pass user id.' });
-
-  // could move this logic into a middleware function in router:
-  // User can only post data to user they are signed in as:
-  const loggedInUserId = checkUserSignedIn(req);
-  if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
-    return res.status(401).json({
-      message: 'You must be logged in to complete this request.',
-    });
-  }
-  const user = await db.User.findOne({
-    where: {
-      id: userId,
-    },
-  });
-  if (!user) return res.status(404).json({ message: 'User not found.' });
-
-  try {
-    //TODO learn about and implement pagination.
-    const limit = parseInt(req.query.limit || 1000);
-    let fromTime;
-    let toTime;
-    if (dateRange === 'currentDay') {
-      fromTime = getRelativeDateTime('add', 0, 'days', 'startOfDay');
-      toTime = getRelativeDateTime('add', 0, 'days', 'endOfDay');
-    } else {
-      // fromTime by default way in the past
-      fromTime = getRelativeDateTime('subtract', 100, 'years', 'startOfDay');
-      // toTime by default way in the future
-      toTime = getRelativeDateTime('add', 2, 'days', 'startOfDay');
-    }
-    console.log(fromTime);
-    console.log(toTime);
-    // end fix dates
-    const mostRecentFoodIds = await db.UserFood.findAll({
-      where: {
-        userId: user.id,
-        createdAt: {
-          [Op.between]: [fromTime, toTime],
-        },
-      },
-      order: [['createdAt', 'DESC']],
-      limit: limit,
-    }).map((userFood) => {
-      return userFood.foodId;
-    });
-    const mostRecentFoods = await db.Food.findAll({
-      where: {
-        id: mostRecentFoodIds,
-      },
-    });
-    return res.status(200).json(mostRecentFoods);
-  } catch (error) {
-    return res.status(500).json({
-      message: `Server error: failed to retrieve foods: ${error}`,
-    });
-  }
-});
-
 app.get('/nutrients', async (req, res) => {
   // could move this logic into a middleware function in router.
   const loggedInUserId = await checkUserSignedIn(req);
@@ -155,13 +84,17 @@ app.get('/nutrients', async (req, res) => {
   }
 });
 
-app.get('/paths/:userId', async (req, res) => {
-  // Input: userId as a param and authorization (token) in the body.
+app.get('/paths/', async (req, res) => {
+  // Input: userId as a query string and authorization (token) in the body.
   // Output: filterd paths based on user (menstruates & isVegan).
-  if (!req.params.userId)
-    return res.status(401).json({ message: 'Must pass user id.' });
-  const userId = await checkUserSignedIn(req);
-  if (!userId) {
+
+  // Use user properties to filter paths.
+  const userId = req.query.userId;
+  if (!userId) return res.status(401).json({ message: 'Must pass user id.' });
+  // could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
     return res.status(401).json({
       message: 'You must be logged in to complete this request.',
     });
@@ -169,7 +102,7 @@ app.get('/paths/:userId', async (req, res) => {
   try {
     const user = await db.User.findOne({
       where: {
-        id: req.params.userId,
+        id: userId,
       },
     });
     // Filter paths based on user properties (isVegan and menstruates).
@@ -211,32 +144,6 @@ app.get('/termsandconditions', async (req, res) => {
       message: 'Server error.  Could not query PrivacyPolicy from db.',
     });
   }
-});
-
-app.get('/users/:userId', async (req, res) => {
-  // Input: userId as a param and authorization (token) in the body.
-  // Output: user object.
-  if (!req.params.userId)
-    return res.status(401).json({ message: 'Must pass user id.' });
-  // could move this logic into a middleware function in router:
-  // User can only get data of user they are signed in as:
-  const loggedInUserId = checkUserSignedIn(req);
-  if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
-    return res.status(401).json({
-      message: 'You must be logged in to complete this request.',
-    });
-  }
-
-  const user = await db.User.findOne({
-    where: {
-      id: req.params.userId,
-    },
-  });
-  if (!user) return res.status(404).json({ message: 'User not found.' });
-  // Exclude salt, password and other sensitive data from
-  // the user instance we return:
-  const cleanedUser = await user.getApiVersion();
-  return res.status(200).json(cleanedUser);
 });
 
 app.get('/users/:userId', async (req, res) => {
@@ -607,7 +514,75 @@ app.put('/users/:userId/diets', async (req, res) => {
 });
 
 app.get('/users/:userId/foods/', async (req, res) => {
-  // Gets all user foods for a given user (records of user eating a food).
+  // Gets all foods eaten by a given user.
+  // Input: userId in params, authorization (token) in body
+  // Optional input: limit, dateRange in query string
+  // Output: foods JSON object.
+  // dateRange options:
+  // currentDay,
+
+  const userId = req.params.userId;
+  const dateRange = req.query.dateRange;
+  //TODO learn about and implement pagination.
+  const limit = parseInt(req.query.limit || 1000);
+
+  if (!userId) return res.status(401).json({ message: 'Must pass user id.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  const user = await db.User.findOne({
+    where: {
+      id: userId,
+    },
+  });
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+
+  try {
+    let fromTime;
+    let toTime;
+    if (dateRange === 'currentDay') {
+      fromTime = getRelativeDateTime('add', 0, 'days', 'startOfDay');
+      toTime = getRelativeDateTime('add', 0, 'days', 'endOfDay');
+    } else {
+      // fromTime by default way in the past
+      fromTime = getRelativeDateTime('subtract', 100, 'years', 'startOfDay');
+      // toTime by default way in the future
+      toTime = getRelativeDateTime('add', 2, 'days', 'startOfDay');
+    }
+    // end fix dates
+    const mostRecentFoodIds = await db.UserFood.findAll({
+      where: {
+        userId: user.id,
+        createdAt: {
+          [Op.between]: [fromTime, toTime],
+        },
+      },
+      order: [['createdAt', 'DESC']],
+      limit: limit,
+    }).map((userFood) => {
+      return userFood.foodId;
+    });
+    const mostRecentFoods = await db.Food.findAll({
+      where: {
+        id: mostRecentFoodIds,
+      },
+    });
+    return res.status(200).json(mostRecentFoods);
+  } catch (error) {
+    return res.status(500).json({
+      message: `Server error: failed to retrieve foods: ${error}`,
+    });
+  }
+});
+
+app.get('/users/:userId/userfoods/', async (req, res) => {
+  // Gets all UserFood (meal) records for a given user.
   // Input: userId in params, authorization (token) in body
   // Optional input: limit, dateRange in query string
   // Output: foods JSON object.
@@ -652,7 +627,7 @@ app.get('/users/:userId/foods/', async (req, res) => {
     console.log(fromTime);
     console.log(toTime);
     // end fix dates
-    const meals = await db.UserFood.findAll({
+    const userFoods = await db.UserFood.findAll({
       where: {
         userId: user.id,
         createdAt: {
@@ -662,15 +637,15 @@ app.get('/users/:userId/foods/', async (req, res) => {
       order: [['createdAt', 'DESC']],
       limit: limit,
     });
-    return res.status(200).json(meals);
+    return res.status(200).json(userFoods);
   } catch (error) {
     return res.status(500).json({
-      message: `Server error: failed to retrieve user meal records (userFoods): ${error}`,
+      message: `Server error: failed to retrieve user's userFood (meal) records: ${error}`,
     });
   }
 });
 
-app.post('/users/:userId/foods/', async (req, res) => {
+app.post('/users/:userId/userfoods/', async (req, res) => {
   // Adds user food record.
   // Input: userId in params, authorization (token), foodId and servingSize in body
   // Output: http success/failure status.
@@ -724,7 +699,7 @@ app.post('/users/:userId/foods/', async (req, res) => {
   }
 });
 
-app.delete('/users/:userId/foods/', async (req, res) => {
+app.delete('/users/:userId/userfoods/', async (req, res) => {
   // Deletes user food record.
   // Input: userId in params, authorization (token) and userFoodId in body
   // Output: http success/failure status.
