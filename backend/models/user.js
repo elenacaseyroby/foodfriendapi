@@ -57,6 +57,7 @@ module.exports = (sequelize, DataTypes) => {
   User.associate = function (models) {
     User.belongsTo(models.Path, {
       foreignKey: 'activePathId',
+      as: 'activePath',
       targetKey: 'id',
     });
     User.belongsToMany(models.Diet, {

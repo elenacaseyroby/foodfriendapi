@@ -164,6 +164,10 @@ app.get('/users/:userId', async (req, res) => {
     where: {
       id: req.params.userId,
     },
+    include: {
+      model: db.Path,
+      as: 'activePath',
+    },
   });
   if (!user) return res.status(404).json({ message: 'User not found.' });
   // Exclude salt, password and other sensitive data from
