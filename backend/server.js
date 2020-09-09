@@ -167,6 +167,18 @@ app.get('/users/:userId', async (req, res) => {
     include: {
       model: db.Path,
       as: 'activePath',
+      include: [
+        {
+          model: db.PathTheme,
+          as: 'theme',
+        },
+        {
+          model: db.Nutrient,
+          as: 'nutrients',
+          attributes: ['id'],
+          through: { attributes: [] }, // Hide unwanted nested object from results
+        },
+      ],
     },
   });
   if (!user) return res.status(404).json({ message: 'User not found.' });
@@ -810,6 +822,7 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
         },
         {
           model: db.Nutrient,
+          as: 'nutrients',
           required: true,
           attributes: ['name', 'id'],
           through: { attributes: ['percentDvPerServing'] },
