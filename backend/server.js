@@ -86,37 +86,38 @@ app.get('/nutrients', async (req, res) => {
   }
 });
 
-app.get('/paths/', async (req, res) => {
-  // Input: userId as a query string and authorization (token) in the body.
-  // Output: filterd paths based on user (menstruates & isVegan).
+// unused endpoint.
+// app.get('/paths/', async (req, res) => {
+//   // Input: userId as a query string and authorization (token) in the body.
+//   // Output: filterd paths based on user (menstruates & isVegan).
 
-  // Use user properties to filter paths.
-  const userId = req.query.userId;
-  if (!userId) return res.status(401).json({ message: 'Must pass user id.' });
-  // could move this logic into a middleware function in router:
-  // User can only post data to user they are signed in as:
-  const loggedInUserId = checkUserSignedIn(req);
-  if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
-    return res.status(401).json({
-      message: 'You must be logged in to complete this request.',
-    });
-  }
-  try {
-    const user = await db.User.findOne({
-      where: {
-        id: userId,
-      },
-    });
-    // Filter paths based on user properties (isVegan and menstruates).
-    const returnPaths = await filterUserPaths(user.isVegan, user.menstruates);
-    return res.status(200).json(returnPaths);
-  } catch (error) {
-    console.log(`error from /paths/:userId endpoint: ${error}`);
-    return res.status(500).json({
-      message: 'Server error.  Could not query user specific Paths from db.',
-    });
-  }
-});
+//   // Use user properties to filter paths.
+//   const userId = req.query.userId;
+//   if (!userId) return res.status(401).json({ message: 'Must pass user id.' });
+//   // could move this logic into a middleware function in router:
+//   // User can only post data to user they are signed in as:
+//   const loggedInUserId = checkUserSignedIn(req);
+//   if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
+//     return res.status(401).json({
+//       message: 'You must be logged in to complete this request.',
+//     });
+//   }
+//   try {
+//     const user = await db.User.findOne({
+//       where: {
+//         id: userId,
+//       },
+//     });
+//     // Filter paths based on user properties (isVegan and menstruates).
+//     const returnPaths = await filterUserPaths(user.isVegan, user.menstruates);
+//     return res.status(200).json(returnPaths);
+//   } catch (error) {
+//     console.log(`error from /paths/:userId endpoint: ${error}`);
+//     return res.status(500).json({
+//       message: 'Server error.  Could not query user specific Paths from db.',
+//     });
+//   }
+// });
 
 app.get('/privacypolicy', async (req, res) => {
   // Gets most recently published by default.
@@ -225,7 +226,7 @@ app.get('/users/:userId', async (req, res) => {
         returnUser.activePath[property] = user.activePath[property];
       }
       const foods = await getPathFoods(user.activePath.id);
-      const recommendedFoods = await getPathRecommendedFoods(
+      const highPotencyFoods = await getPathRecommendedFoods(
         user.activePath.id
       );
       // not putting these properties on the model
@@ -233,7 +234,7 @@ app.get('/users/:userId', async (req, res) => {
       // and passing them through for all paths
       // would be way too much data.
       returnUser.activePath.foods = foods;
-      returnUser.activePath.recommendedFoods = recommendedFoods;
+      returnUser.activePath.highPotencyFoods = highPotencyFoods;
     }
     return res.status(200).json(returnUser);
   } catch (error) {
@@ -352,47 +353,49 @@ app.put('/users/:userId', async (req, res) => {
   }
 });
 
-app.get('/users/:userId/custompath', async (req, res) => {
-  // Input: userId as a param and authorization (token) in the body.
-  // Output: user's custom path object or 404.
-  const userId = req.params.userId;
-  if (!userId) return res.status(401).json({ message: 'Must pass user id.' });
+// unused endpoint.
+// app.get('/users/:userId/custompath', async (req, res) => {
+//   // Input: userId as a param and authorization (token) in the body.
+//   // Output: user's custom path object or 404.
+//   const userId = req.params.userId;
+//   if (!userId) return res.status(401).json({ message: 'Must pass user id.' });
 
-  // could move this logic into a middleware function in router:
-  // User can only get data of user they are signed in as:
-  const loggedInUserId = checkUserSignedIn(req);
-  if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
-    return res.status(401).json({
-      message: 'You must be logged in to complete this request.',
-    });
-  }
-  try {
-    const customPath = await db.Path.findOne({
-      where: {
-        ownerId: userId,
-      },
-      include: [
-        {
-          model: db.PathTheme,
-          as: 'theme',
-        },
-        {
-          model: db.Nutrient,
-          attributes: ['id'],
-          as: 'nutrients',
-          through: { attributes: [] }, // Hide unwanted nested object from results
-        },
-      ],
-    });
-    if (!customPath)
-      return res.status(404).json({ message: 'Custom path not found.' });
-    return res.status(200).json(customPath);
-  } catch (error) {
-    return res.status(500).json({
-      message: `Could not complete custom path request. Error: ${error}.`,
-    });
-  }
-});
+//   // could move this logic into a middleware function in router:
+//   // User can only get data of user they are signed in as:
+//   const loggedInUserId = checkUserSignedIn(req);
+//   if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
+//     return res.status(401).json({
+//       message: 'You must be logged in to complete this request.',
+//     });
+//   }
+//   try {
+//     const customPath = await db.Path.findOne({
+//       where: {
+//         ownerId: userId,
+//       },
+//       include: [
+//         {
+//           model: db.PathTheme,
+//           as: 'theme',
+//         },
+//         {
+//           model: db.Nutrient,
+//           attributes: ['id'],
+//           as: 'nutrients',
+//           through: { attributes: [] }, // Hide unwanted nested object from results
+//         },
+//       ],
+//     });
+//     if (!customPath)
+//       return res.status(404).json({ message: 'Custom path not found.' });
+//     return res.status(200).json(customPath);
+//   } catch (error) {
+//     return res.status(500).json({
+//       message: `Could not complete custom path request. Error: ${error}.`,
+//     });
+//   }
+// });
+
 app.put('/users/:userId/custompath', async (req, res) => {
   // Input: userId as a param and authorization (token), pathName, nutrientIds in the body.
   // Output: user's active path object.
