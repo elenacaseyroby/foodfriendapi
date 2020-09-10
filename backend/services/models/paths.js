@@ -158,3 +158,87 @@ export async function filterUserPaths(isVegan, menstruates) {
   });
   return userPaths;
 }
+
+// if you put this on the model, you will always need to
+// query for associated nutrients and nutrientfoods when you
+// query for a path. this is better, because more often, when we're
+// querying for a path, we don't want the path foods.
+// COULD MEMOIZE WITH EXTRA FUNC THAT TAKES IN LIST OF NUTRIENT IDS
+// SO IT WILL ONLY RUN AGAIN IF NUTRIENT IDS CHANGE.
+export async function getPathFoods(pathId) {
+  const path = await db.Path.findOne({
+    where: {
+      id: pathId,
+    },
+    include: [
+      {
+        model: db.Nutrient,
+        as: 'nutrients',
+        through: { attributes: [] }, // Hide unwanted nested object from results
+        include: {
+          model: db.Food,
+          as: 'foods',
+          attributes: ['id', 'name', 'servingSizeNote'],
+          through: { attributes: [] }, // Hide unwanted nested object from results
+        },
+      },
+    ],
+  });
+  const addedFoodIds = [];
+  const distinctFoodsInPath = [];
+  path.nutrients.map((nutrient) => {
+    nutrient.foods.map((food) => {
+      // If food hasn't been added, add it.
+      if (!addedFoodIds.includes(food.id)) {
+        addedFoodIds.push(food.id);
+        distinctFoodsInPath.push(food);
+      }
+    });
+  });
+  return distinctFoodsInPath;
+}
+
+// if you put this on the model, you will always need to
+// query for associated nutrients and nutrientfoods when you
+// query for a path. this is better, because more often, when we're
+// querying for a path, we don't want the path recommended foods.
+// COULD MEMOIZE WITH EXTRA FUNC THAT TAKES IN LIST OF NUTRIENT IDS
+// SO IT WILL ONLY RUN AGAIN IF NUTRIENT IDS CHANGE.
+export async function getPathRecommendedFoods(pathId) {
+  const path = await db.Path.findOne({
+    where: {
+      id: pathId,
+    },
+    include: [
+      {
+        model: db.Nutrient,
+        as: 'nutrients',
+        through: { attributes: [] }, // Hide unwanted nested object from results
+        include: {
+          model: db.Food,
+          as: 'foods',
+          attributes: ['id', 'name', 'servingSizeNote'],
+          through: { attributes: [] }, // Hide unwanted nested object from results
+        },
+      },
+    ],
+  });
+  const nutrientCountByFoodId = {};
+  const foodsInAllPathNutrients = [];
+  path.nutrients.map((nutrient) => {
+    nutrient.foods.map((food) => {
+      // If food doens't exist in hash, add it.
+      if (!nutrientCountByFoodId[food.id]) {
+        nutrientCountByFoodId[food.id] = 0;
+      }
+      // Bump up nutrient count for given food.
+      nutrientCountByFoodId[food.id] += 1;
+      // If food has every nutrient in path, add to array.
+      if (nutrientCountByFoodId[food.id].length === path.nutrients.length) {
+        foodsInAllPathNutrients.push(food);
+      }
+    });
+  });
+  // Return foods with every nutrient in path.
+  return foodsInAllPathNutrients;
+}

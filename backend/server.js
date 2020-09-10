@@ -14,6 +14,8 @@ import {
   filterUserPaths,
   generateActivePath,
   updatePathNutrients,
+  getPathFoods,
+  getPathRecommendedFoods,
 } from './services/models/paths';
 import { uploadNutrients } from './csv_upload_scripts/nutrients';
 import { uploadNutrientBenefits } from './csv_upload_scripts/nutrient_benefits';
@@ -149,6 +151,10 @@ app.get('/termsandconditions', async (req, res) => {
 app.get('/users/:userId', async (req, res) => {
   // Input: userId as a param and authorization (token) in the body.
   // Output: user object.
+  // NOTE: object includes paths and active path since those are dependent
+  // on user properties isVegan and menstruates.
+  // If they stop being dependent on user properties, they can be moved into their
+  // own endpoints.
   if (!req.params.userId)
     return res.status(401).json({ message: 'Must pass user id.' });
   // could move this logic into a middleware function in router:
@@ -182,10 +188,59 @@ app.get('/users/:userId', async (req, res) => {
     },
   });
   if (!user) return res.status(404).json({ message: 'User not found.' });
-  // Exclude salt, password and other sensitive data from
-  // the user instance we return:
-  const cleanedUser = await user.getApiVersion();
-  return res.status(200).json(cleanedUser);
+  try {
+    // Exclude salt, password and other sensitive data from
+    // the user instance we return:
+    // exclude activePath property and replace it with the return version.
+    const propertiesToHide = ['activePath'];
+    const returnUser = await user.getApiVersion(propertiesToHide);
+
+    // Add user's paths and active paths
+    // which are dependent on user.isVegan and user.menstruates.
+    returnUser.paths = await filterUserPaths(user.isVegan, user.menstruates);
+    returnUser.customPath = await db.Path.findOne({
+      where: {
+        ownerId: user.id,
+      },
+      include: [
+        {
+          model: db.PathTheme,
+          as: 'theme',
+        },
+        {
+          model: db.Nutrient,
+          as: 'nutrients',
+          attributes: ['id'],
+          through: { attributes: [] }, // Hide unwanted nested object from results
+        },
+      ],
+    });
+    // add foods and recommended foods properties
+    // which you only need for a user's active path
+    // (bc they are not displayed until you have selected the path).
+    returnUser.activePath = {};
+    if (user.activePath) {
+      // get active path
+      for (const property in user.activePath.dataValues) {
+        returnUser.activePath[property] = user.activePath[property];
+      }
+      const foods = await getPathFoods(user.activePath.id);
+      const recommendedFoods = await getPathRecommendedFoods(
+        user.activePath.id
+      );
+      // not putting these properties on the model
+      // since you only need them for active paths
+      // and passing them through for all paths
+      // would be way too much data.
+      returnUser.activePath.foods = foods;
+      returnUser.activePath.recommendedFoods = recommendedFoods;
+    }
+    return res.status(200).json(returnUser);
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: `Failed to retrieve user data: ${error}` });
+  }
 });
 
 app.put('/users/:userId', async (req, res) => {
@@ -296,35 +351,6 @@ app.put('/users/:userId', async (req, res) => {
     return res.status(500).json(`Could not update user: ${error}`);
   }
 });
-
-// not used:
-// app.get('/users/:userId/activepath', async (req, res) => {
-//   // Input: userId as a param and authorization (token) in the body.
-//   // Output: user's active path object.
-//   if (!req.params.userId)
-//     return res.status(401).json({ message: 'Must pass user id.' });
-
-//   // could move this logic into a middleware function in router:
-//   // User can only get data of user they are signed in as:
-//   const loggedInUserId = checkUserSignedIn(req);
-//   if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
-//     return res.status(401).json({
-//       message: 'You must be logged in to complete this request.',
-//     });
-//   }
-//   const user = await db.User.findOne({
-//     where: {
-//       id: req.params.userId,
-//     },
-//   });
-//   if (!user) return res.status(404).json({ message: 'User not found.' });
-//   const activePath = await db.Path.findOne({
-//     where: {
-//       id: user.activePathId,
-//     },
-//   });
-//   return res.status(200).json(activePath);
-// });
 
 app.get('/users/:userId/custompath', async (req, res) => {
   // Input: userId as a param and authorization (token) in the body.
