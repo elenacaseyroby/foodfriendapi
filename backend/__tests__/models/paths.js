@@ -123,27 +123,81 @@ describe('paths model and services tests:', async () => {
     // Add nutrients
     path.addNutrients([nutrient1, nutrient2, nutrient3]);
     // Add foods
-    nutrient1.addFoods([
+    // nutrient1.addFoods([
+    //   foodWithAllNutrients,
+    //   foodWithAllNutrients2,
+    //   foodWith1Nutrient,
+    //   foodWith2Nutrients,
+    // ]);
+    // nutrient2.addFoods([
+    //   foodWithAllNutrients,
+    //   foodWithAllNutrients2,
+    //   foodWith2Nutrients,
+    // ]);
+    // nutrient3.addFoods([foodWithAllNutrients, foodWithAllNutrients2]);
+    // Add foods to nutrients.
+    const nutrient1Foods = [
       foodWithAllNutrients,
       foodWithAllNutrients2,
       foodWith1Nutrient,
       foodWith2Nutrients,
-    ]);
-    nutrient2.addFoods([
+    ].map((food) => {
+      return {
+        nutrientId: nutrient1.id,
+        foodId: food.id,
+        dvSource: 'asdklfj',
+        percentDvPerServing: 0.5,
+      };
+    });
+    const nutrient1FoodsUpdated = await db.NutrientFood.bulkCreate(
+      nutrient1Foods
+    );
+
+    const nutrient2Foods = [
       foodWithAllNutrients,
       foodWithAllNutrients2,
       foodWith2Nutrients,
-    ]);
-    nutrient3.addFoods([foodWithAllNutrients, foodWithAllNutrients2]);
-
-    const highPotencyFoods = await getPathHighPotencyFoods(path.id);
-    const highPotencyFoodNames = highPotencyFoods.map((food) => {
-      return food.name;
+    ].map((food) => {
+      return {
+        nutrientId: nutrient2.id,
+        foodId: food.id,
+        dvSource: 'asdklfj',
+        percentDvPerServing: 0.5,
+      };
     });
-    expect(highPotencyFoodNames.includes('foodWithAllNutrients')).is.true;
-    expect(highPotencyFoodNames.includes('foodWithAllNutrients2')).is.true;
-    expect(highPotencyFoodNames.includes('foodWith1Nutrient')).is.false;
-    expect(highPotencyFoodNames.includes('foodWith2Nutrients')).is.false;
+    const nutrient2FoodsUpdated = await db.NutrientFood.bulkCreate(
+      nutrient2Foods
+    );
+
+    const nutrient3Foods = [foodWithAllNutrients, foodWithAllNutrients2].map(
+      (food) => {
+        return {
+          nutrientId: nutrient3.id,
+          foodId: food.id,
+          dvSource: 'asdklfj',
+          percentDvPerServing: 0.5,
+        };
+      }
+    );
+    const nutrient3FoodsUpdated = await db.NutrientFood.bulkCreate(
+      nutrient3Foods
+    );
+
+    if (
+      nutrient1FoodsUpdated &&
+      nutrient2FoodsUpdated &&
+      nutrient3FoodsUpdated
+    ) {
+      const highPotencyFoods = await getPathHighPotencyFoods(path.id);
+      const highPotencyFoodNames = highPotencyFoods.map((food) => {
+        return food.name;
+      });
+      expect(highPotencyFoodNames.includes('foodWithAllNutrients')).is.true;
+      expect(highPotencyFoodNames.includes('foodWithAllNutrients2')).is.true;
+      expect(highPotencyFoodNames.includes('foodWith1Nutrient')).is.false;
+      expect(highPotencyFoodNames.includes('foodWith2Nutrients')).is.false;
+    }
+
     //any db data created must be destroyed at end of test
     // foodWith2Nutrients.destroy();
     // foodWith1Nutrient.destroy();

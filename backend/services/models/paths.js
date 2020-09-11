@@ -234,12 +234,9 @@ export async function getPathHighPotencyFoods(pathId) {
       // Bump up nutrient count for given food.
       nutrientCountByFoodId[food.id] += 1;
       // If food has every nutrient in path, add to array.
-      if (nutrientCountByFoodId[food.id].length === path.nutrients.length) {
+      if (nutrientCountByFoodId[food.id] === path.nutrients.length) {
         foodsInAllPathNutrients.push(food);
       }
-      console.log('----------------------');
-      console.log(`nutrientCountByFoodId: ${nutrientCountByFoodId}`);
-      console.log(`foods with all path nutrients: ${foodsInAllPathNutrients}`);
     });
   });
   // Return foods with every nutrient in path.
