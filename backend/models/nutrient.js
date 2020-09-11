@@ -36,11 +36,9 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
       },
       createdAt: {
-        allowNull: false,
         type: DataTypes.DATE,
       },
-      createdAt: {
-        allowNull: false,
+      updatedAt: {
         type: DataTypes.DATE,
       },
       themeId: {
