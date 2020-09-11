@@ -15,7 +15,7 @@ import {
   generateActivePath,
   updatePathNutrients,
   getPathFoods,
-  getPathRecommendedFoods,
+  getPathHighPotencyFoods,
 } from './services/models/paths';
 import { uploadNutrients } from './csv_upload_scripts/nutrients';
 import { uploadNutrientBenefits } from './csv_upload_scripts/nutrient_benefits';
@@ -226,7 +226,7 @@ app.get('/users/:userId', async (req, res) => {
         returnUser.activePath[property] = user.activePath[property];
       }
       const foods = await getPathFoods(user.activePath.id);
-      const highPotencyFoods = await getPathRecommendedFoods(
+      const highPotencyFoods = await getPathHighPotencyFoods(
         user.activePath.id
       );
       // not putting these properties on the model

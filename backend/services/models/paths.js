@@ -204,7 +204,7 @@ export async function getPathFoods(pathId) {
 // querying for a path, we don't want the path recommended foods.
 // COULD MEMOIZE WITH EXTRA FUNC THAT TAKES IN LIST OF NUTRIENT IDS
 // SO IT WILL ONLY RUN AGAIN IF NUTRIENT IDS CHANGE.
-export async function getPathRecommendedFoods(pathId) {
+export async function getPathHighPotencyFoods(pathId) {
   const path = await db.Path.findOne({
     where: {
       id: pathId,
@@ -237,6 +237,9 @@ export async function getPathRecommendedFoods(pathId) {
       if (nutrientCountByFoodId[food.id].length === path.nutrients.length) {
         foodsInAllPathNutrients.push(food);
       }
+      console.log('----------------------');
+      console.log(`nutrientCountByFoodId: ${nutrientCountByFoodId}`);
+      console.log(`foods with all path nutrients: ${foodsInAllPathNutrients}`);
     });
   });
   // Return foods with every nutrient in path.
