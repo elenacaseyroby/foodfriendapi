@@ -907,9 +907,14 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
           nutrient.id
         ].percentDvConsumed.toFixed(2);
         report[nutrient.id].userFoods = reportByNutrient[nutrient.id].userFoods;
+
+        // Make sure each nutrient's percentDvConsumed caps out at 100%.
+        const percentDvConsumed =
+          reportByNutrient[nutrient.id].percentDvConsumed > 1
+            ? 1
+            : reportByNutrient[nutrient.id].percentDvConsumed;
         // add to sum of percentDvConsumed across all nutrients in report
-        reportPercentDvConsumedSum +=
-          reportByNutrient[nutrient.id].percentDvConsumed;
+        reportPercentDvConsumedSum += percentDvConsumed;
       }
     });
     // Divide sum by 3 to get percentage of dv consumed for the whole path.
