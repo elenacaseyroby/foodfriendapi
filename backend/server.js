@@ -600,8 +600,7 @@ app.get('/users/:userId/foods/', async (req, res) => {
       // toTime by default way in the future
       toTime = getRelativeDateTime('add', 2, 'days', 'startOfDay');
     }
-    // end fix dates
-    const mostRecentFoodIds = await db.UserFood.findAll({
+    const foodIds = await db.UserFood.findAll({
       where: {
         userId: user.id,
         createdAt: {
@@ -613,12 +612,12 @@ app.get('/users/:userId/foods/', async (req, res) => {
     }).map((userFood) => {
       return userFood.foodId;
     });
-    const mostRecentFoods = await db.Food.findAll({
+    const foods = await db.Food.findAll({
       where: {
-        id: mostRecentFoodIds,
+        id: foodIds,
       },
     });
-    return res.status(200).json(mostRecentFoods);
+    return res.status(200).json(foods);
   } catch (error) {
     return res.status(500).json({
       message: `Server error: failed to retrieve foods: ${error}`,
