@@ -67,6 +67,7 @@ app.get('/nutrients', async (req, res) => {
           model: db.Food,
           through: {},
           as: 'foods',
+          order: [['NutrientFood.percentDvPerServing', 'DESC']],
         },
         {
           model: db.Benefit,
@@ -605,7 +606,7 @@ app.get('/users/:userId/foods/', async (req, res) => {
         },
       },
       order: [['createdAt', 'DESC']],
-      limit: limit,
+      limit: limit * 2,
     }).map((userFood) => {
       return userFood.foodId;
     });
@@ -613,6 +614,7 @@ app.get('/users/:userId/foods/', async (req, res) => {
       where: {
         id: foodIds,
       },
+      limit: limit,
     });
     return res.status(200).json(foods);
   } catch (error) {
