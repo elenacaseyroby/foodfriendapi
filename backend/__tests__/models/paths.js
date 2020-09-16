@@ -1,9 +1,6 @@
 import chai from 'chai';
 import { db } from '../../models';
-import {
-  getPathFoods,
-  getPathHighPotencyFoods,
-} from '../../services/models/paths';
+import { getPathHighPotencyFoods } from '../../services/models/paths';
 
 require('dotenv').config();
 const Sequelize = require('sequelize');
