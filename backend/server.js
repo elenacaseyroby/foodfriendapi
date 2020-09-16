@@ -1,8 +1,9 @@
 import express from 'express';
 import { db } from './models';
+import { Op } from 'sequelize';
 import multer from 'multer';
 import { checkUserSignedIn, checkIfAdmin } from './utils/auth';
-import { convertStringToDate } from './utils/common';
+import { convertStringToDate, getRelativeDateTime } from './utils/common';
 import { signUp } from './services/auth/signUp';
 import { signIn } from './services/auth/signIn';
 import {
@@ -13,12 +14,14 @@ import {
   filterUserPaths,
   generateActivePath,
   updatePathNutrients,
+  getPathHighPotencyFoods,
 } from './services/models/paths';
 import { uploadNutrients } from './csv_upload_scripts/nutrients';
 import { uploadNutrientBenefits } from './csv_upload_scripts/nutrient_benefits';
 import { uploadNutrientFoods } from './csv_upload_scripts/nutrient_foods';
 import { uploadNutrientRecipes } from './csv_upload_scripts/nutrient_recipes';
 import { uploadPathNutrients } from './csv_upload_scripts/path_nutrients';
+import e from 'express';
 
 // Config environment variables so they are
 // accessible through process.env
@@ -64,6 +67,7 @@ app.get('/nutrients', async (req, res) => {
           model: db.Food,
           through: {},
           as: 'foods',
+          order: [['NutrientFood.percentDvPerServing', 'DESC']],
         },
         {
           model: db.Benefit,
@@ -82,33 +86,38 @@ app.get('/nutrients', async (req, res) => {
   }
 });
 
-app.get('/paths/:userId', async (req, res) => {
-  // Input: userId as a param and authorization (token) in the body.
-  // Output: filterd paths based on user (menstruates & isVegan).
-  if (!req.params.userId)
-    return res.status(401).json({ message: 'Must pass user id.' });
-  const userId = await checkUserSignedIn(req);
-  if (!userId) {
-    return res.status(401).json({
-      message: 'You must be logged in to complete this request.',
-    });
-  }
-  try {
-    const user = await db.User.findOne({
-      where: {
-        id: req.params.userId,
-      },
-    });
-    // Filter paths based on user properties (isVegan and menstruates).
-    const returnPaths = await filterUserPaths(user.isVegan, user.menstruates);
-    return res.status(200).json(returnPaths);
-  } catch (error) {
-    console.log(`error from /paths/:userId endpoint: ${error}`);
-    return res.status(500).json({
-      message: 'Server error.  Could not query user specific Paths from db.',
-    });
-  }
-});
+// unused endpoint.
+// app.get('/paths/', async (req, res) => {
+//   // Input: userId as a query string and authorization (token) in the body.
+//   // Output: filterd paths based on user (menstruates & isVegan).
+
+//   // Use user properties to filter paths.
+//   const userId = req.query.userId;
+//   if (!userId) return res.status(401).json({ message: 'Must pass user id.' });
+//   // could move this logic into a middleware function in router:
+//   // User can only post data to user they are signed in as:
+//   const loggedInUserId = checkUserSignedIn(req);
+//   if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
+//     return res.status(401).json({
+//       message: 'You must be logged in to complete this request.',
+//     });
+//   }
+//   try {
+//     const user = await db.User.findOne({
+//       where: {
+//         id: userId,
+//       },
+//     });
+//     // Filter paths based on user properties (isVegan and menstruates).
+//     const returnPaths = await filterUserPaths(user.isVegan, user.menstruates);
+//     return res.status(200).json(returnPaths);
+//   } catch (error) {
+//     console.log(`error from /paths/:userId endpoint: ${error}`);
+//     return res.status(500).json({
+//       message: 'Server error.  Could not query user specific Paths from db.',
+//     });
+//   }
+// });
 
 app.get('/privacypolicy', async (req, res) => {
   // Gets most recently published by default.
@@ -143,6 +152,10 @@ app.get('/termsandconditions', async (req, res) => {
 app.get('/users/:userId', async (req, res) => {
   // Input: userId as a param and authorization (token) in the body.
   // Output: user object.
+  // NOTE: object includes paths and active path since those are dependent
+  // on user properties isVegan and menstruates.
+  // If they stop being dependent on user properties, they can be moved into their
+  // own endpoints.
   if (!req.params.userId)
     return res.status(401).json({ message: 'Must pass user id.' });
   // could move this logic into a middleware function in router:
@@ -158,12 +171,75 @@ app.get('/users/:userId', async (req, res) => {
     where: {
       id: req.params.userId,
     },
+    include: {
+      model: db.Path,
+      as: 'activePath',
+      include: [
+        {
+          model: db.PathTheme,
+          as: 'theme',
+        },
+        {
+          model: db.Nutrient,
+          as: 'nutrients',
+          attributes: ['id'],
+          through: { attributes: [] }, // Hide unwanted nested object from results
+        },
+      ],
+    },
   });
   if (!user) return res.status(404).json({ message: 'User not found.' });
-  // Exclude salt, password and other sensitive data from
-  // the user instance we return:
-  const cleanedUser = await user.getApiVersion();
-  return res.status(200).json(cleanedUser);
+  try {
+    // Exclude salt, password and other sensitive data from
+    // the user instance we return:
+    // exclude activePath property and replace it with the return version.
+    const propertiesToHide = ['activePath'];
+    const returnUser = await user.getApiVersion(propertiesToHide);
+
+    // Add user's paths and active paths
+    // which are dependent on user.isVegan and user.menstruates.
+    returnUser.paths = await filterUserPaths(user.isVegan, user.menstruates);
+    returnUser.customPath = await db.Path.findOne({
+      where: {
+        ownerId: user.id,
+      },
+      include: [
+        {
+          model: db.PathTheme,
+          as: 'theme',
+        },
+        {
+          model: db.Nutrient,
+          as: 'nutrients',
+          attributes: ['id'],
+          through: { attributes: [] }, // Hide unwanted nested object from results
+        },
+      ],
+    });
+    // add foods and recommended foods properties
+    // which you only need for a user's active path
+    // (bc they are not displayed until you have selected the path).
+    returnUser.activePath = {};
+    if (user.activePath) {
+      // get active path
+      for (const property in user.activePath.dataValues) {
+        returnUser.activePath[property] = user.activePath[property];
+      }
+      const highPotencyFoods = await getPathHighPotencyFoods(
+        user.activePath.id
+      );
+      // not putting these properties on the model
+      // since you only need them for active paths
+      // and passing them through for all paths
+      // would be way too much data.
+      returnUser.activePath.highPotencyFoods = highPotencyFoods;
+    }
+    return res.status(200).json(returnUser);
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: `Failed to retrieve user data: ${error}` });
+  }
 });
 
 app.put('/users/:userId', async (req, res) => {
@@ -209,24 +285,37 @@ app.put('/users/:userId', async (req, res) => {
   // FYI The list of paths a user is allowed to choose from is also determined by
   // these user properties.
 
-  // If user has an active path, find it.
-  let userActivePath;
-  if (user.activePathId) {
-    userActivePath = await db.Path.findOne({
+  let activePath;
+  // If user is updating path, find new active path.
+  if (activePathUpdated) {
+    activePath = await db.Path.findOne({
+      where: {
+        id: req.body.activePathId,
+      },
+    });
+  }
+  // Else find existing active path if exists.
+  else if (user.activePathId) {
+    activePath = await db.Path.findOne({
       where: {
         id: user.activePathId,
       },
     });
   }
-  const activePathExists = userActivePath ? true : false;
-  const activePathIsCustom =
-    userActivePath && userActivePath.ownerId === user.id;
+  // (Can't user !!isVegan because if it's false it will read the same as being undefined.)
   const isVeganUpdated = req.body.isVegan !== undefined;
   const menstruatesUpdated = req.body.menstruates !== undefined;
+  const activePathUpdated = !!req.body.activePathId;
+  const activePathIsCustom = activePath && activePath.ownerId === user.id;
+  const activePathExists = !!activePath;
+  // If user.activePathId, user.isVegan, or user.activePathId are
+  // updated AND the path is not a custom path, make sure the path
+  // is generated using the most up to date user data (path might not
+  // exist if custom).
   if (
-    (isVeganUpdated || menstruatesUpdated) &&
-    activePathExists &&
-    !activePathIsCustom
+    (isVeganUpdated || menstruatesUpdated || activePathUpdated) &&
+    !activePathIsCustom &&
+    activePathExists
   ) {
     const isVegan =
       req.body.isVegan === undefined ? user.isVegan : req.body.isVegan;
@@ -234,16 +323,15 @@ app.put('/users/:userId', async (req, res) => {
       req.body.menstruates === undefined
         ? user.menstruates
         : req.body.menstruates;
-    const pathName = userActivePath.name.toLowerCase().trim().split(' ')[0];
-    // Generate new active path using updated user info.
+    const pathName = activePath.name.toLowerCase().trim().split(' ')[0];
+    // Generate new active path using updated user data.
     const updatedActivePath = await generateActivePath(
       menstruates,
       isVegan,
       pathName
     );
     // Update activePathId if new active path is different from old active path.
-    if (updatedActivePath.id !== userActivePath.id) {
-      // not updating path
+    if (updatedActivePath.id !== user.activePathId) {
       properties['activePathId'] = updatedActivePath.id;
     }
   }
@@ -262,74 +350,50 @@ app.put('/users/:userId', async (req, res) => {
     return res.status(500).json(`Could not update user: ${error}`);
   }
 });
-app.get('/users/:userId/activepath', async (req, res) => {
-  // Input: userId as a param and authorization (token) in the body.
-  // Output: user's active path object.
-  if (!req.params.userId)
-    return res.status(401).json({ message: 'Must pass user id.' });
 
-  // could move this logic into a middleware function in router:
-  // User can only get data of user they are signed in as:
-  const loggedInUserId = checkUserSignedIn(req);
-  if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
-    return res.status(401).json({
-      message: 'You must be logged in to complete this request.',
-    });
-  }
-  const user = await db.User.findOne({
-    where: {
-      id: req.params.userId,
-    },
-  });
-  if (!user) return res.status(404).json({ message: 'User not found.' });
-  const activePath = await db.Path.findOne({
-    where: {
-      id: user.activePathId,
-    },
-  });
-  return res.status(200).json(activePath);
-});
-app.get('/users/:userId/custompath', async (req, res) => {
-  // Input: userId as a param and authorization (token) in the body.
-  // Output: user's custom path object or 404.
-  const userId = req.params.userId;
-  if (!userId) return res.status(401).json({ message: 'Must pass user id.' });
+// unused endpoint.
+// app.get('/users/:userId/custompath', async (req, res) => {
+//   // Input: userId as a param and authorization (token) in the body.
+//   // Output: user's custom path object or 404.
+//   const userId = req.params.userId;
+//   if (!userId) return res.status(401).json({ message: 'Must pass user id.' });
 
-  // could move this logic into a middleware function in router:
-  // User can only get data of user they are signed in as:
-  const loggedInUserId = checkUserSignedIn(req);
-  if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
-    return res.status(401).json({
-      message: 'You must be logged in to complete this request.',
-    });
-  }
-  try {
-    const customPath = await db.Path.findOne({
-      where: {
-        ownerId: userId,
-      },
-      include: [
-        {
-          model: db.PathTheme,
-          as: 'theme',
-        },
-        {
-          model: db.Nutrient,
-          attributes: ['id'],
-          as: 'nutrients',
-          through: { attributes: [] }, // Hide unwanted nested object from results
-        },
-      ],
-    });
-    if (!customPath)
-      return res.status(404).json({ message: 'Custom path not found.' });
-    return res.status(200).json(customPath);
-  } catch (error) {
-    return res.status(500).json({
-      message: `Could not complete custom path request. Error: ${error}.`,
-    });
-  }
-});
+//   // could move this logic into a middleware function in router:
+//   // User can only get data of user they are signed in as:
+//   const loggedInUserId = checkUserSignedIn(req);
+//   if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
+//     return res.status(401).json({
+//       message: 'You must be logged in to complete this request.',
+//     });
+//   }
+//   try {
+//     const customPath = await db.Path.findOne({
+//       where: {
+//         ownerId: userId,
+//       },
+//       include: [
+//         {
+//           model: db.PathTheme,
+//           as: 'theme',
+//         },
+//         {
+//           model: db.Nutrient,
+//           attributes: ['id'],
+//           as: 'nutrients',
+//           through: { attributes: [] }, // Hide unwanted nested object from results
+//         },
+//       ],
+//     });
+//     if (!customPath)
+//       return res.status(404).json({ message: 'Custom path not found.' });
+//     return res.status(200).json(customPath);
+//   } catch (error) {
+//     return res.status(500).json({
+//       message: `Could not complete custom path request. Error: ${error}.`,
+//     });
+//   }
+// });
+
 app.put('/users/:userId/custompath', async (req, res) => {
   // Input: userId as a param and authorization (token), pathName, nutrientIds in the body.
   // Output: user's active path object.
@@ -489,6 +553,374 @@ app.put('/users/:userId/diets', async (req, res) => {
     return res
       .status(404)
       .json({ message: 'Server error: failed to update diets.' });
+  }
+});
+
+app.get('/users/:userId/foods/', async (req, res) => {
+  // Gets all foods eaten by a given user.
+  // Input: userId in params, authorization (token) in body
+  // Optional input: limit, dateRange in query string
+  // Output: foods JSON object.
+  // dateRange options:
+  // currentDay,
+
+  const userId = req.params.userId;
+  const dateRange = req.query.dateRange;
+  //TODO learn about and implement pagination.
+  const limit = parseInt(req.query.limit || 1000);
+
+  if (!userId) return res.status(401).json({ message: 'Must pass user id.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  const user = await db.User.findOne({
+    where: {
+      id: userId,
+    },
+  });
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+
+  try {
+    let fromTime;
+    let toTime;
+    if (dateRange === 'currentDay') {
+      fromTime = getRelativeDateTime('add', 0, 'days', 'startOfDay');
+      toTime = getRelativeDateTime('add', 0, 'days', 'endOfDay');
+    } else {
+      // fromTime by default way in the past
+      fromTime = getRelativeDateTime('subtract', 100, 'years', 'startOfDay');
+      // toTime by default way in the future
+      toTime = getRelativeDateTime('add', 2, 'days', 'startOfDay');
+    }
+    const foodIds = await db.UserFood.findAll({
+      where: {
+        userId: user.id,
+        createdAt: {
+          [Op.between]: [fromTime, toTime],
+        },
+      },
+      order: [['createdAt', 'DESC']],
+      limit: limit * 2,
+    }).map((userFood) => {
+      return userFood.foodId;
+    });
+    const foods = await db.Food.findAll({
+      where: {
+        id: foodIds,
+      },
+      limit: limit,
+    });
+    return res.status(200).json(foods);
+  } catch (error) {
+    return res.status(500).json({
+      message: `Server error: failed to retrieve foods: ${error}`,
+    });
+  }
+});
+
+app.get('/users/:userId/userfoods/', async (req, res) => {
+  // Gets all UserFood (meal) records for a given user.
+  // Input: userId in params, authorization (token) in body
+  // Optional input: limit, dateRange in query string
+  // Output: foods JSON object.
+  // dateRange options:
+  // currentDay,
+
+  const userId = req.params.userId;
+  const dateRange = req.query.dateRange;
+
+  if (!req.params.userId)
+    return res.status(401).json({ message: 'Must pass user id.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  const user = await db.User.findOne({
+    where: {
+      id: userId,
+    },
+  });
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+
+  try {
+    //TODO learn about and implement pagination.
+    const limit = parseInt(req.query.limit || 1000);
+    let fromTime;
+    let toTime;
+    if (dateRange === 'currentDay') {
+      fromTime = getRelativeDateTime('add', 0, 'days', 'startOfDay');
+      toTime = getRelativeDateTime('add', 0, 'days', 'endOfDay');
+    } else {
+      // fromTime by default way in the past
+      fromTime = getRelativeDateTime('subtract', 100, 'years', 'startOfDay');
+      // toTime by default way in the future
+      toTime = getRelativeDateTime('add', 2, 'days', 'startOfDay');
+    }
+    console.log(fromTime);
+    console.log(toTime);
+    // end fix dates
+    const userFoods = await db.UserFood.findAll({
+      where: {
+        userId: user.id,
+        createdAt: {
+          [Op.between]: [fromTime, toTime],
+        },
+      },
+      order: [['createdAt', 'DESC']],
+      limit: limit,
+    });
+    return res.status(200).json(userFoods);
+  } catch (error) {
+    return res.status(500).json({
+      message: `Server error: failed to retrieve user's userFood (meal) records: ${error}`,
+    });
+  }
+});
+
+app.post('/users/:userId/userfoods/', async (req, res) => {
+  // Adds user food record.
+  // Input: userId in params, authorization (token), foodId and servingsCount in body
+  // Output: http success/failure status.
+  const userId = req.params.userId;
+  const foodId = req.body.foodId;
+  const servingsCount = parseFloat(req.body.servingsCount);
+  if (!userId)
+    return res.status(401).json({ message: 'Must pass userId in params.' });
+
+  if (!foodId)
+    return res.status(401).json({ message: 'Must pass foodId in body.' });
+
+  if (!servingsCount)
+    return res
+      .status(401)
+      .json({ message: 'Must pass servingsCount in body.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  const food = await db.Food.findOne({
+    where: {
+      id: foodId,
+    },
+  });
+  if (!food) return res.status(404).json({ message: 'Food not found.' });
+
+  try {
+    const recordCreated = await db.UserFood.create({
+      userId: userId,
+      foodId: foodId,
+      servingsCount: servingsCount,
+    });
+    console.log(`record: ${recordCreated}`);
+    if (recordCreated) {
+      return res.status(200).json({ message: 'Successfully recorded meal.' });
+    } else {
+      return res
+        .status(500)
+        .json({ message: 'Server error: failed to record meal.' });
+    }
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: `Server error: failed to record meal: ${error}` });
+  }
+});
+
+app.delete('/users/:userId/userfoods/', async (req, res) => {
+  // Deletes user food record.
+  // Input: userId in params, authorization (token) and userFoodId in body
+  // Output: http success/failure status.
+  const userId = req.params.userId;
+  const userFoodId = req.body.userFoodId;
+  if (!userId)
+    return res.status(401).json({ message: 'Must pass userId in params.' });
+
+  if (!userFoodId)
+    return res.status(401).json({ message: 'Must pass userFoodId in body.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  try {
+    const record = await db.UserFood.findOne({
+      id: userFoodId,
+    });
+    if (record) {
+      const recordDeleted = await record.destroy();
+      if (!recordDeleted) {
+        return res
+          .status(500)
+          .json({ message: `Server error: failed to delete meal.` });
+      }
+    }
+    return res.status(200).json({ message: 'Successfully deleted meal.' });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: `Server error: failed to delete meal: ${error}` });
+  }
+});
+
+app.get('/users/:userId/progressreport/daily', async (req, res) => {
+  // Gets report of user's intake of each nutrient in their path.
+  // Input: userId in params, authorization (token) in body
+  // Output: report JSON object.
+
+  const userId = req.params.userId;
+
+  if (!req.params.userId)
+    return res.status(401).json({ message: 'Must pass user id.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  const user = await db.User.findOne({
+    where: {
+      id: userId,
+    },
+  });
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+
+  try {
+    // Get user's path.
+    const userPath = await db.Path.findOne({
+      where: {
+        id: user.activePathId,
+      },
+      include: [
+        {
+          model: db.Nutrient,
+          as: 'nutrients',
+        },
+      ],
+    });
+    const pathNutrients = userPath.nutrients.map((nutrient) => {
+      return nutrient;
+    });
+    // Get user food records for the day.
+    const startOfDay = getRelativeDateTime('add', 0, 'days', 'startOfDay');
+    const endOfDay = getRelativeDateTime('add', 0, 'days', 'endOfDay');
+    let reportByNutrient = {};
+    const foods = await db.Food.findAll({
+      // where: {
+      //   '$Users.id$': userId,
+      // },
+      include: [
+        {
+          model: db.User,
+          required: true,
+          attributes: ['id'],
+          through: {
+            attributes: ['id', 'servingsCount', 'createdAt'],
+            // attributes: [[[sequelize.fn('sum', sequelize.col('servingsCount')), 'servingsTotal']]],
+            where: {
+              userId: userId,
+              createdAt: {
+                [Op.between]: [startOfDay, endOfDay],
+              },
+            },
+          },
+        },
+        {
+          model: db.Nutrient,
+          as: 'nutrients',
+          required: true,
+          attributes: ['name', 'id'],
+          through: { attributes: ['percentDvPerServing'] },
+        },
+      ],
+      order: [['createdAt', 'DESC']],
+    }).map((food) => {
+      // for each food that was eaten:
+
+      // Find the total servings count.
+      let totalServingsCount = 0;
+      // And all the associated recorded meals.
+      let userFoodRecords = [];
+      food.Users.map((user) => {
+        userFoodRecords.push(user.UserFood);
+        totalServingsCount += parseFloat(user.UserFood.servingsCount);
+      });
+      // for each nutrient in food,
+      // add to the percentDvConsumed and
+      // add to the userfood records
+      food.nutrients.map((nutrient) => {
+        if (!reportByNutrient[nutrient.id]) {
+          reportByNutrient[nutrient.id] = {
+            percentDvConsumed: 0.0,
+            userFoods: [],
+          };
+        }
+        // For the given nutrient, add to the percentDvConsumed:
+        // multiply the daily value per serving of the given food times the
+        // number of servings of the given food consumed
+        // and add to the existing percent of the daily value consumed
+        // to find the total percent of the daily value consumed.
+        reportByNutrient[nutrient.id].percentDvConsumed +=
+          nutrient.NutrientFood.percentDvPerServing * totalServingsCount;
+
+        // For the given nutrient, add to the userFood (meal) records.
+        reportByNutrient[nutrient.id].userFoods = reportByNutrient[
+          nutrient.id
+        ].userFoods.concat(userFoodRecords);
+      });
+    });
+    // Reduce report from all nutrients in the food eaten to
+    // only nutrients in path.
+    let report = {};
+    let reportPercentDvConsumedSum = 0;
+    pathNutrients.map((nutrient) => {
+      report[nutrient.id] = {
+        nutrientName: nutrient.name,
+        percentDvConsumed: 0.0,
+        userFoods: [],
+      };
+      // if user ate any foods with path nutrient, fill report.
+      if (reportByNutrient[nutrient.id]) {
+        report[nutrient.id].percentDvConsumed = reportByNutrient[
+          nutrient.id
+        ].percentDvConsumed.toFixed(2);
+        report[nutrient.id].userFoods = reportByNutrient[nutrient.id].userFoods;
+        // add to sum of percentDvConsumed across all nutrients in report
+        reportPercentDvConsumedSum +=
+          reportByNutrient[nutrient.id].percentDvConsumed;
+      }
+    });
+    // Divide sum by 3 to get percentage of dv consumed for the whole path.
+    report.totalDvConsumed = parseFloat(reportPercentDvConsumedSum / 3).toFixed(
+      2
+    );
+    return res.status(200).json(report);
+  } catch (error) {
+    return res.status(500).json({
+      message: `Server error: failed to retrieve user meal records (userFoods): ${error}`,
+    });
   }
 });
 

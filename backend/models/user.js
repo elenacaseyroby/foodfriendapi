@@ -57,12 +57,18 @@ module.exports = (sequelize, DataTypes) => {
   User.associate = function (models) {
     User.belongsTo(models.Path, {
       foreignKey: 'activePathId',
+      as: 'activePath',
       targetKey: 'id',
     });
     User.belongsToMany(models.Diet, {
       through: 'UserDiet',
       foreignKey: 'userId',
       otherKey: 'dietId',
+    });
+    User.belongsToMany(models.Food, {
+      through: 'UserFood',
+      foreignKey: 'userId',
+      otherKey: 'foodId',
     });
     User.belongsToMany(models.Recipe, {
       through: 'UserRecipe',
@@ -107,14 +113,17 @@ module.exports = (sequelize, DataTypes) => {
     const saved = await this.save();
     return saved && this.passwordResetToken;
   };
-  User.prototype.getApiVersion = async function () {
+  User.prototype.getApiVersion = async function (propertiesToHide = []) {
     // This will return a version of the user instance
     // that excludes an properties in the
-    // propertiesToHide array defined below.
-    const propertiesToHide = ['salt', 'password'];
+    // allPropertiesToHide array defined below.
+    const defaultPropertiesToHide = ['salt', 'password'];
+    const allPropertiesToHide = defaultPropertiesToHide.concat(
+      propertiesToHide
+    );
     let apiUserInstance = {};
     for (const property in this.dataValues) {
-      if (!propertiesToHide.includes(property)) {
+      if (!allPropertiesToHide.includes(property)) {
         apiUserInstance[property] = this[property];
       }
     }

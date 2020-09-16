@@ -6,6 +6,32 @@ export function convertStringToDate(date) {
   return sequelizeSafeDate;
 }
 
+export function getRelativeDateTime(operation, units, unitOfTime, time) {
+  // units = integer value
+  if (typeof units !== 'number') return;
+  // operation = 'subtract', 'add'
+  if (operation !== 'subtract' && operation !== 'add') return;
+  // unitOfTime = 'days', 'weeks', 'years'
+  if (unitOfTime !== 'days' && unitOfTime !== 'weeks' && unitOfTime !== 'years')
+    return;
+  // time = 'currentTime', 'startOfDay', 'endOfDay'
+  if (time !== 'currentTime' && time !== 'startOfDay' && time !== 'endOfDay')
+    return;
+  const today = moment();
+  let processedDate;
+  if (operation === 'subtract') {
+    processedDate = today.subtract(units, unitOfTime);
+  } else if (operation === 'add') {
+    processedDate = today.add(units, unitOfTime);
+  }
+  if (time === 'startOfDay') {
+    processedDate = processedDate.startOf('day');
+  } else if (time === 'endOfDay') {
+    processedDate = processedDate.endOf('day');
+  }
+  return processedDate;
+}
+
 export function cleanString(string) {
   // Make lowercase & trim whitespace.
   let cleanString = string.toLowerCase().trim();

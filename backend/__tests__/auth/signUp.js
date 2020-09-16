@@ -36,15 +36,6 @@ describe('sign up tests:', async () => {
   after(async function () {
     // runs before all tests in this file regardless where this line is defined.
 
-    // Delete terms & privacy policy.
-    const allPolicies = await db.PrivacyPolicy.findAll({});
-    allPolicies.forEach(async (p) => {
-      await p.destroy();
-    });
-    const allTerms = await db.TermsAndConditions.findAll({});
-    allTerms.forEach(async (t) => {
-      await t.destroy();
-    });
     // Delete user agreements
     const allPolicyAgreements = await db.UserPrivacyPolicies.findAll({});
     allPolicyAgreements.forEach(async (p) => {
@@ -52,6 +43,15 @@ describe('sign up tests:', async () => {
     });
     const allTermsAgreements = await db.UserTermsAndConditions.findAll({});
     allTermsAgreements.forEach(async (t) => {
+      await t.destroy();
+    });
+    // Delete terms & privacy policy.
+    const allPolicies = await db.PrivacyPolicy.findAll({});
+    allPolicies.forEach(async (p) => {
+      await p.destroy();
+    });
+    const allTerms = await db.TermsAndConditions.findAll({});
+    allTerms.forEach(async (t) => {
       await t.destroy();
     });
     // Delete users.
