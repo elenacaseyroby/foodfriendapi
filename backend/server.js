@@ -14,7 +14,6 @@ import {
   filterUserPaths,
   generateActivePath,
   updatePathNutrients,
-  getPathFoods,
   getPathHighPotencyFoods,
 } from './services/models/paths';
 import { uploadNutrients } from './csv_upload_scripts/nutrients';
@@ -225,7 +224,6 @@ app.get('/users/:userId', async (req, res) => {
       for (const property in user.activePath.dataValues) {
         returnUser.activePath[property] = user.activePath[property];
       }
-      const foods = await getPathFoods(user.activePath.id);
       const highPotencyFoods = await getPathHighPotencyFoods(
         user.activePath.id
       );
@@ -233,7 +231,6 @@ app.get('/users/:userId', async (req, res) => {
       // since you only need them for active paths
       // and passing them through for all paths
       // would be way too much data.
-      returnUser.activePath.foods = foods;
       returnUser.activePath.highPotencyFoods = highPotencyFoods;
     }
     return res.status(200).json(returnUser);
