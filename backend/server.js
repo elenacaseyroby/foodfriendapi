@@ -881,6 +881,7 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
       foodsById[food.id].nutrients.map((nutrient) => {
         if (!nutrientReportById[nutrient.id]) {
           nutrientReportById[nutrient.id] = {};
+          nutrientReportById[nutrient.id].nutrientName = nutrient.name;
           nutrientReportById[nutrient.id].id = nutrient.id;
           nutrientReportById[nutrient.id].percentDvConsumed = 0;
           nutrientReportById[nutrient.id].userFoods = [];
@@ -893,7 +894,6 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
         ].userFoods.concat(foodsById[food.id].userFoods);
       });
     });
-
     // Reduce report from all nutrients in the food eaten to
     // only nutrients in path.
     let report = {};
@@ -913,7 +913,11 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
         nutrientReports.push(nutrientReport);
         return;
       }
-      nutrientReports.push(nutrientReportById[nutrient.id]);
+      let nutrientReport = nutrientReportById[nutrient.id];
+      nutrientReport.percentDvConsumed = parseFloat(
+        nutrientReportById[nutrient.id].percentDvConsumed
+      ).toFixed(2);
+      nutrientReports.push(nutrientReport);
       // Make sure each nutrient's percentDvConsumed caps out at 100%.
       const percentDvConsumed =
         nutrientReportById[nutrient.id].percentDvConsumed > 1
