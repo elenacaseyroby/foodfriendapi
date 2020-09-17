@@ -893,34 +893,39 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
     });
     // Reduce report from all nutrients in the food eaten to
     // only nutrients in path.
-    let report = {};
+    let nutrientReports = [];
     let reportPercentDvConsumedSum = 0;
     pathNutrients.map((nutrient) => {
-      report[nutrient.id] = {
+      let nutrientReport = {
+        nutrientId: nutrient.id,
         nutrientName: nutrient.name,
-        percentDvConsumed: 0.0,
+        percentDvConsumed: parseFloat(0).toFixed(2),
         userFoods: [],
       };
       // if user ate any foods with path nutrient, fill report.
       if (reportByNutrient[nutrient.id]) {
-        report[nutrient.id].percentDvConsumed = reportByNutrient[
+        nutrientReport.percentDvConsumed = reportByNutrient[
           nutrient.id
         ].percentDvConsumed.toFixed(2);
-        report[nutrient.id].userFoods = reportByNutrient[nutrient.id].userFoods;
+        nutrientReport.userFoods = reportByNutrient[nutrient.id].userFoods;
 
         // Make sure each nutrient's percentDvConsumed caps out at 100%.
         const percentDvConsumed =
           reportByNutrient[nutrient.id].percentDvConsumed > 1
             ? 1
             : reportByNutrient[nutrient.id].percentDvConsumed;
+
         // add to sum of percentDvConsumed across all nutrients in report
         reportPercentDvConsumedSum += percentDvConsumed;
       }
+      nutrientReports.push(nutrientReport);
     });
+    let report = {};
     // Divide sum by 3 to get percentage of dv consumed for the whole path.
-    report.totalDvConsumed = parseFloat(reportPercentDvConsumedSum / 3).toFixed(
-      2
-    );
+    report.nutrientsTotalDvConsumed = parseFloat(
+      reportPercentDvConsumedSum / 3
+    ).toFixed(2);
+    report.nutrientReports = nutrientReports;
     return res.status(200).json(report);
   } catch (error) {
     return res.status(500).json({
