@@ -667,8 +667,6 @@ app.get('/users/:userId/userfoods/', async (req, res) => {
       // toTime by default way in the future
       toTime = getRelativeDateTime('add', 2, 'days', 'startOfDay');
     }
-    console.log(fromTime);
-    console.log(toTime);
     // end fix dates
     const userFoods = await db.UserFood.findAll({
       where: {
@@ -826,27 +824,24 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
     // Get user food records for the day.
     const startOfDay = getRelativeDateTime('add', 0, 'days', 'startOfDay');
     const endOfDay = getRelativeDateTime('add', 0, 'days', 'endOfDay');
-    let reportByNutrient = {};
-    const foods = await db.Food.findAll({
-      // where: {
-      //   '$Users.id$': userId,
-      // },
-      include: [
-        {
-          model: db.User,
-          required: true,
-          attributes: ['id'],
-          through: {
-            attributes: ['id', 'servingsCount', 'createdAt'],
-            // attributes: [[[sequelize.fn('sum', sequelize.col('servingsCount')), 'servingsTotal']]],
-            where: {
-              userId: userId,
-              createdAt: {
-                [Op.between]: [startOfDay, endOfDay],
-              },
-            },
-          },
+    // Get all userfood records for the day.
+    const userFoods = await db.UserFood.findAll({
+      where: {
+        userId: userId,
+        createdAt: {
+          [Op.between]: [startOfDay, endOfDay],
         },
+      },
+    });
+    // Get all foods in those records.
+    const foodIds = userFoods.map((userFood) => {
+      return userFood.foodId;
+    });
+    const foods = await db.Food.findAll({
+      where: {
+        id: foodIds,
+      },
+      include: [
         {
           model: db.Nutrient,
           as: 'nutrients',
@@ -855,73 +850,77 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
           through: { attributes: ['percentDvPerServing'] },
         },
       ],
-      order: [['createdAt', 'DESC']],
-    }).map((food) => {
-      // for each food that was eaten:
-
-      // Find the total servings count.
-      let totalServingsCount = 0;
-      // And all the associated recorded meals.
-      let userFoodRecords = [];
-      food.Users.map((user) => {
-        userFoodRecords.push(user.UserFood);
-        totalServingsCount += parseFloat(user.UserFood.servingsCount);
-      });
-      // for each nutrient in food,
-      // add to the percentDvConsumed and
-      // add to the userfood records
-      food.nutrients.map((nutrient) => {
-        if (!reportByNutrient[nutrient.id]) {
-          reportByNutrient[nutrient.id] = {
-            percentDvConsumed: 0.0,
-            userFoods: [],
-          };
+    });
+    // Initialize: foodsById hash.
+    let foodsById = {};
+    foods.map((food) => {
+      foodsById[food.id] = {};
+      foodsById[food.id].name = food.name;
+      foodsById[food.id].nutrients = food.nutrients;
+      foodsById[food.id].servingsConsumed = 0;
+      foodsById[food.id].userFoods = [];
+    });
+    // Get userfoods and calculate the sums of servings consumed for each food and put in hash.
+    userFoods.map((userFood) => {
+      // Create custom userfood record with extra info we might want.
+      const userFoodRecord = {
+        id: userFood.id,
+        foodId: userFood.foodId,
+        foodName: foodsById[userFood.foodId].name,
+        foodNutrients: foodsById[userFood.foodId].nutrients,
+        servingsCount: userFood.servingsCount,
+        createdAt: userFood.createdAt,
+      };
+      foodsById[userFood.foodId].servingsConsumed =
+        foodsById[userFood.foodId].servingsConsumed +
+        parseFloat(userFood.servingsCount);
+      foodsById[userFood.foodId].userFoods.push(userFoodRecord);
+    });
+    let nutrientReportById = {};
+    foods.map((food) => {
+      foodsById[food.id].nutrients.map((nutrient) => {
+        if (!nutrientReportById[nutrient.id]) {
+          nutrientReportById[nutrient.id] = {};
+          nutrientReportById[nutrient.id].id = nutrient.id;
+          nutrientReportById[nutrient.id].percentDvConsumed = 0;
+          nutrientReportById[nutrient.id].userFoods = [];
         }
-        // For the given nutrient, add to the percentDvConsumed:
-        // multiply the daily value per serving of the given food times the
-        // number of servings of the given food consumed
-        // and add to the existing percent of the daily value consumed
-        // to find the total percent of the daily value consumed.
-        reportByNutrient[nutrient.id].percentDvConsumed +=
-          nutrient.NutrientFood.percentDvPerServing * totalServingsCount;
-
-        // For the given nutrient, add to the userFood (meal) records.
-        reportByNutrient[nutrient.id].userFoods = reportByNutrient[
+        nutrientReportById[nutrient.id].percentDvConsumed +=
+          foodsById[food.id].servingsConsumed *
+          nutrient.NutrientFood.percentDvPerServing;
+        nutrientReportById[nutrient.id].userFoods = nutrientReportById[
           nutrient.id
-        ].userFoods.concat(userFoodRecords);
+        ].userFoods.concat(foodsById[food.id].userFoods);
       });
     });
+
     // Reduce report from all nutrients in the food eaten to
     // only nutrients in path.
+    let report = {};
     let nutrientReports = [];
     let reportPercentDvConsumedSum = 0;
     pathNutrients.map((nutrient) => {
-      let nutrientReport = {
-        nutrientId: nutrient.id,
-        nutrientName: nutrient.name,
-        percentDvConsumed: parseFloat(0).toFixed(2),
-        userFoods: [],
-      };
-      // if user ate any foods with path nutrient, fill report.
-      if (reportByNutrient[nutrient.id]) {
-        nutrientReport.percentDvConsumed = reportByNutrient[
-          nutrient.id
-        ].percentDvConsumed.toFixed(2);
-        nutrientReport.userFoods = reportByNutrient[nutrient.id].userFoods;
-
-        // Make sure each nutrient's percentDvConsumed caps out at 100%.
-        const percentDvConsumed =
-          reportByNutrient[nutrient.id].percentDvConsumed > 1
-            ? 1
-            : reportByNutrient[nutrient.id].percentDvConsumed;
-
-        // add to sum of percentDvConsumed across all nutrients in report
-        reportPercentDvConsumedSum += percentDvConsumed;
+      // If user hasn't eaten any foods containing the given nutrient
+      // there will be no nutrientReportById record for that nutrient.
+      // In this case, create an empty report for the nutrient.
+      if (!nutrientReportById[nutrient.id]) {
+        const nutrientReport = {
+          nutrientId: nutrient.id,
+          nutrientName: nutrient.name,
+          percentDvConsumed: 0,
+          userFoods: [],
+        };
+        nutrientReports.push(nutrientReport);
+        return;
       }
-      nutrientReports.push(nutrientReport);
+      nutrientReports.push(nutrientReportById[nutrient.id]);
+      // Make sure each nutrient's percentDvConsumed caps out at 100%.
+      const percentDvConsumed =
+        nutrientReportById[nutrient.id].percentDvConsumed > 1
+          ? 1
+          : nutrientReportById[nutrient.id].percentDvConsumed;
+      reportPercentDvConsumedSum += percentDvConsumed;
     });
-    let report = {};
-    // Divide sum by 3 to get percentage of dv consumed for the whole path.
     report.nutrientsTotalDvConsumed = parseFloat(
       reportPercentDvConsumedSum / 3
     ).toFixed(2);
@@ -929,7 +928,7 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
     return res.status(200).json(report);
   } catch (error) {
     return res.status(500).json({
-      message: `Server error: failed to retrieve user meal records (userFoods): ${error}`,
+      message: `Server error: failed to retrieve daily progress report: ${error}`,
     });
   }
 });
