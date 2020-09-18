@@ -3,6 +3,12 @@ module.exports = (sequelize, DataTypes) => {
   const Benefit = sequelize.define(
     'Benefit',
     {
+      id: {
+        allowNull: false,
+        autoIncrement: true,
+        primaryKey: true,
+        type: DataTypes.INTEGER,
+      },
       name: {
         allowNull: false,
         type: DataTypes.STRING,

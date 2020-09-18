@@ -761,16 +761,15 @@ app.delete('/users/:userId/userfoods/', async (req, res) => {
     });
   }
   try {
-    const record = await db.UserFood.findOne({
-      id: userFoodId,
+    const recordDeleted = await db.UserFood.destroy({
+      where: {
+        id: userFoodId,
+      },
     });
-    if (record) {
-      const recordDeleted = await record.destroy();
-      if (!recordDeleted) {
-        return res
-          .status(500)
-          .json({ message: `Server error: failed to delete meal.` });
-      }
+    if (!recordDeleted) {
+      return res
+        .status(500)
+        .json({ message: `Server error: failed to delete meal.` });
     }
     return res.status(200).json({ message: 'Successfully deleted meal.' });
   } catch (error) {
@@ -856,25 +855,27 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
     foods.map((food) => {
       foodsById[food.id] = {};
       foodsById[food.id].name = food.name;
+      foodsById[food.id].servingSize = food.servingSize;
       foodsById[food.id].nutrients = food.nutrients;
       foodsById[food.id].servingsConsumed = 0;
-      foodsById[food.id].userFoods = [];
+      foodsById[food.id].consumedFoods = [];
     });
     // Get userfoods and calculate the sums of servings consumed for each food and put in hash.
     userFoods.map((userFood) => {
-      // Create custom userfood record with extra info we might want.
-      const userFoodRecord = {
-        id: userFood.id,
-        foodId: userFood.foodId,
-        foodName: foodsById[userFood.foodId].name,
-        foodNutrients: foodsById[userFood.foodId].nutrients,
-        servingsCount: userFood.servingsCount,
-        createdAt: userFood.createdAt,
+      // Create custom food record with extra info for the progress screen in the front end.
+      const consumedFood = {
+        id: userFood.foodId,
+        name: foodsById[userFood.foodId].name,
+        servingSize: foodsById[userFood.foodId].servingSize || '',
+        nutrients: foodsById[userFood.foodId].nutrients,
+        userFoodId: userFood.id,
+        userFoodServingsCount: userFood.servingsCount,
+        userFoodCreatedAt: userFood.createdAt,
       };
       foodsById[userFood.foodId].servingsConsumed =
         foodsById[userFood.foodId].servingsConsumed +
         parseFloat(userFood.servingsCount);
-      foodsById[userFood.foodId].userFoods.push(userFoodRecord);
+      foodsById[userFood.foodId].consumedFoods.push(consumedFood);
     });
     let nutrientReportById = {};
     foods.map((food) => {
@@ -884,14 +885,14 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
           nutrientReportById[nutrient.id].nutrientName = nutrient.name;
           nutrientReportById[nutrient.id].id = nutrient.id;
           nutrientReportById[nutrient.id].percentDvConsumed = 0;
-          nutrientReportById[nutrient.id].userFoods = [];
+          nutrientReportById[nutrient.id].consumedFoods = [];
         }
         nutrientReportById[nutrient.id].percentDvConsumed +=
           foodsById[food.id].servingsConsumed *
           nutrient.NutrientFood.percentDvPerServing;
-        nutrientReportById[nutrient.id].userFoods = nutrientReportById[
+        nutrientReportById[nutrient.id].consumedFoods = nutrientReportById[
           nutrient.id
-        ].userFoods.concat(foodsById[food.id].userFoods);
+        ].consumedFoods.concat(foodsById[food.id].consumedFoods);
       });
     });
     // Reduce report from all nutrients in the food eaten to
@@ -908,7 +909,7 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
           nutrientId: nutrient.id,
           nutrientName: nutrient.name,
           percentDvConsumed: 0,
-          userFoods: [],
+          consumedFoods: [],
         };
         nutrientReports.push(nutrientReport);
         return;

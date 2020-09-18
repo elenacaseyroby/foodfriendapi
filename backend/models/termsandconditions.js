@@ -7,6 +7,12 @@ module.exports = (sequelize, DataTypes) => {
   const TermsAndConditions = sequelize.define(
     'TermsAndConditions',
     {
+      id: {
+        allowNull: false,
+        autoIncrement: true,
+        primaryKey: true,
+        type: DataTypes.INTEGER,
+      },
       text: {
         type: DataTypes.TEXT,
         noUpdate: {
