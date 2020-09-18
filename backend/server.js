@@ -899,7 +899,7 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
     // only nutrients in path.
     let report = {};
     let nutrientReports = [];
-    let reportPercentDvConsumedSum = 0;
+    let reportPercentDvConsumedSum = 0.0;
     pathNutrients.map((nutrient) => {
       // If user hasn't eaten any foods containing the given nutrient
       // there will be no nutrientReportById record for that nutrient.
@@ -924,7 +924,7 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
         nutrientReportById[nutrient.id].percentDvConsumed > 1
           ? 1
           : nutrientReportById[nutrient.id].percentDvConsumed;
-      reportPercentDvConsumedSum += percentDvConsumed;
+      reportPercentDvConsumedSum += parseFloat(percentDvConsumed);
     });
     report.nutrientsTotalDvConsumed = parseFloat(
       reportPercentDvConsumedSum / 3
