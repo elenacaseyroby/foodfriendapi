@@ -184,6 +184,12 @@ app.get('/users/:userId', async (req, res) => {
           as: 'nutrients',
           attributes: ['id'],
           through: { attributes: [] }, // Hide unwanted nested object from results
+          include: [
+            {
+              model: db.Recipe,
+              as: 'recipes',
+            },
+          ],
         },
       ],
     },
