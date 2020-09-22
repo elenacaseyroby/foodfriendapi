@@ -182,7 +182,7 @@ app.get('/users/:userId', async (req, res) => {
         {
           model: db.Nutrient,
           as: 'nutrients',
-          attributes: ['id'],
+          attributes: ['id', 'name'],
           through: { attributes: [] }, // Hide unwanted nested object from results
           include: [
             {
@@ -627,6 +627,68 @@ app.get('/users/:userId/foods/', async (req, res) => {
     return res.status(500).json({
       message: `Server error: failed to retrieve foods: ${error}`,
     });
+  }
+});
+
+app.post('/users/:userId/recipes/', async (req, res) => {
+  // Adds user recipe record.
+  // Input: userId in params, authorization (token), recipeId in body
+  // Output: http success/failure status.
+  const userId = req.params.userId;
+  const recipeId = req.body.recipeId;
+  if (!userId)
+    return res.status(401).json({ message: 'Must pass userId in params.' });
+
+  if (!recipeId)
+    return res.status(401).json({ message: 'Must pass recipeId in body.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  // Check that record doesn't already exist.
+  const record = db.UserRecipe.findAll({
+    where: {
+      userId: userId,
+      recipe: recipeId,
+    },
+  });
+  if (record)
+    return res.status(200).json({ message: 'Recipe already favorited.' });
+
+  // Check that recipe exists.
+  const recipe = await db.Recipe.findOne({
+    where: {
+      id: recipeId,
+    },
+  });
+  if (!recipe) return res.status(404).json({ message: 'Recipe not found.' });
+
+  try {
+    const user = await db.User.findOne({
+      where: {
+        id: userId,
+      },
+    });
+    const recipeAdded = await user.addRecipe(recipe);
+    if (recipeAdded) {
+      return res
+        .status(200)
+        .json({ message: 'Successfully favorited recipe.' });
+    } else {
+      return res.status(500).json({
+        message:
+          'Server error: failed to favorite recipe. Does user recipe record already exist?',
+      });
+    }
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: `Server error: failed to favorite recipe: ${error}` });
   }
 });
 
