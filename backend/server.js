@@ -134,6 +134,58 @@ app.get('/privacypolicy', async (req, res) => {
   }
 });
 
+app.put('/recipes/:recipeId/reportlink', async (req, res) => {
+  // Input: recipeId in params, authorization (token) and userId in the body.
+  // Output: success/failure
+
+  const recipeId = req.params.recipeId;
+  const userId = req.body.userId;
+  if (!userId) return res.status(401).json({ message: 'Must pass user id.' });
+
+  // Could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+
+  const user = await db.User.findOne({
+    where: {
+      id: userId,
+    },
+  });
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+
+  const recipe = await db.Recipe.findOne({
+    where: {
+      id: recipeId,
+    },
+  });
+  if (!recipe) return res.status(404).json({ message: 'Recipe not found.' });
+  try {
+    const updatedRecipe = await recipe.update({
+      reportedByUserId: userId,
+      userReportIsVerified: null,
+    });
+    if (updatedRecipe) {
+      return res
+        .status(200)
+        .json({ message: 'Recipe link successfully reported' });
+    } else {
+      return res
+        .status(500)
+        .json({ message: 'Recipe link failed to be reported' });
+    }
+  } catch (error) {
+    console.log(`Recipe link failed to be reported: ${error}`);
+    return res
+      .status(500)
+      .json({ message: `Recipe link failed to be reported: ${error}` });
+  }
+});
+
 app.get('/termsandconditions', async (req, res) => {
   // Gets most recently published by default.
   try {
