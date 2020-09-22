@@ -651,10 +651,10 @@ app.post('/users/:userId/recipes/', async (req, res) => {
     });
   }
   // Check that record doesn't already exist.
-  const record = db.UserRecipe.findAll({
+  const record = db.UserRecipe.findOne({
     where: {
       userId: userId,
-      recipe: recipeId,
+      recipeId: recipeId,
     },
   });
   if (record)
@@ -718,13 +718,11 @@ app.delete('/users/:userId/recipes/', async (req, res) => {
       recipeId: recipeId,
     },
   });
-  if (!record)
-    res
-      .status(200)
-      .json({
-        message:
-          'Recipe did not appear to be favorited by user. No action was taken.',
-      });
+  if (record)
+    res.status(200).json({
+      message:
+        'Recipe did not appear to be favorited by user. No action was taken.',
+    });
   try {
     const recordDeleted = await db.UserRecipe.destroy({
       where: {
@@ -743,6 +741,46 @@ app.delete('/users/:userId/recipes/', async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: `Server error: failed to remove favorite from recipe: ${error}`,
+    });
+  }
+});
+
+app.get('/users/:userId/recipes/', async (req, res) => {
+  // Gets all favorited recipes for a given user.
+  // Input: userId in params, authorization (token) in body
+  // Output: foods JSON object.
+
+  const userId = req.params.userId;
+
+  if (!req.params.userId)
+    return res.status(401).json({ message: 'Must pass user id.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  const user = await db.User.findOne({
+    where: {
+      id: userId,
+    },
+    include: [
+      {
+        model: db.Recipe,
+        as: 'recipes',
+      },
+    ],
+  });
+  console.log(JSON.stringify(user));
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+  try {
+    return res.status(200).json(user.recipes || []);
+  } catch (error) {
+    return res.status(500).json({
+      message: `Server error: failed to retrieve user's favorited recipes: ${error}`,
     });
   }
 });
