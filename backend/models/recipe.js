@@ -31,7 +31,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       userReportIsVerified: {
         allowNull: true,
-        defaultValue: false,
+        defaultValue: null,
         type: DataTypes.BOOLEAN,
       },
       isActive: {
