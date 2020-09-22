@@ -37,13 +37,13 @@ module.exports = (sequelize, DataTypes) => {
       isActive: {
         type: DataTypes.VIRTUAL,
         get() {
-          return !this.reportedByUser || this.userReportIsVerified === false;
+          return !this.reportedByUserId || this.userReportIsVerified === false;
         },
       },
       isUnderReview: {
         type: DataTypes.VIRTUAL,
         get() {
-          return this.userReportIsVerified === null;
+          return !!this.reportedByUserId && this.userReportIsVerified === null;
         },
       },
       createdAt: {
@@ -61,7 +61,7 @@ module.exports = (sequelize, DataTypes) => {
   );
   Recipe.associate = function (models) {
     Recipe.belongsTo(models.User, {
-      foreignKey: 'reportedByUser',
+      foreignKey: 'reportedByUserId',
       as: 'reportedByUser',
       targetKey: 'id',
     });
