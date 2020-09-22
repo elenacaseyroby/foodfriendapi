@@ -692,6 +692,61 @@ app.post('/users/:userId/recipes/', async (req, res) => {
   }
 });
 
+app.delete('/users/:userId/recipes/', async (req, res) => {
+  // Deletes user recipe record.
+  // Input: userId in params, authorization (token) and recipeId in body
+  // Output: http success/failure status.
+  const userId = req.params.userId;
+  const recipeId = req.body.recipeId;
+  if (!userId)
+    return res.status(401).json({ message: 'Must pass userId in params.' });
+
+  if (!recipeId)
+    return res.status(401).json({ message: 'Must pass userFoodId in body.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  const record = await db.UserRecipe.findOne({
+    where: {
+      userId: userId,
+      recipeId: recipeId,
+    },
+  });
+  if (!record)
+    res
+      .status(200)
+      .json({
+        message:
+          'Recipe did not appear to be favorited by user. No action was taken.',
+      });
+  try {
+    const recordDeleted = await db.UserRecipe.destroy({
+      where: {
+        userId: userId,
+        recipeId: recipeId,
+      },
+    });
+    if (!recordDeleted) {
+      return res.status(500).json({
+        message: `Server error: failed to remove favorite from recipe.`,
+      });
+    }
+    return res
+      .status(200)
+      .json({ message: 'Successfully removed favorite from recipe.' });
+  } catch (error) {
+    return res.status(500).json({
+      message: `Server error: failed to remove favorite from recipe: ${error}`,
+    });
+  }
+});
+
 app.get('/users/:userId/userfoods/', async (req, res) => {
   // Gets all UserFood (meal) records for a given user.
   // Input: userId in params, authorization (token) in body
