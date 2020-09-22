@@ -188,6 +188,17 @@ app.get('/users/:userId', async (req, res) => {
             {
               model: db.Recipe,
               as: 'recipes',
+              where: {
+                //isActive === true
+                [Op.or]: [
+                  {
+                    reportedByUserId: null,
+                  },
+                  {
+                    userReportIsVerified: null,
+                  },
+                ],
+              },
             },
           ],
         },
