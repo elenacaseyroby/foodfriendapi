@@ -651,12 +651,13 @@ app.post('/users/:userId/recipes/', async (req, res) => {
     });
   }
   // Check that record doesn't already exist.
-  const record = db.UserRecipe.findOne({
+  const record = await db.UserRecipe.findOne({
     where: {
       userId: userId,
       recipeId: recipeId,
     },
   });
+  console.log(record);
   if (record)
     return res.status(200).json({ message: 'Recipe already favorited.' });
 
@@ -718,8 +719,8 @@ app.delete('/users/:userId/recipes/', async (req, res) => {
       recipeId: recipeId,
     },
   });
-  if (record)
-    res.status(200).json({
+  if (!record)
+    return res.status(200).json({
       message:
         'Recipe did not appear to be favorited by user. No action was taken.',
     });
