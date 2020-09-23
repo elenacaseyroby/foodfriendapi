@@ -483,6 +483,7 @@ app.get('/users/:userId/activePath/recipes/', async (req, res) => {
       where: {
         nutrientId: pathNutrientIds,
       },
+      order: [['createdAt', 'DESC']],
     });
     nutrientRecipes.map((recipeNutrient) => {
       if (!recipeIdsByNutrientId[recipeNutrient.nutrientId]) {
@@ -951,10 +952,10 @@ app.get('/users/:userId/recipes/', async (req, res) => {
       {
         model: db.Recipe,
         as: 'recipes',
+        order: [['createdAt', 'DESC']],
       },
     ],
   });
-  console.log(JSON.stringify(user));
   if (!user) return res.status(404).json({ message: 'User not found.' });
   try {
     return res.status(200).json(user.recipes || []);
