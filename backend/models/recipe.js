@@ -37,7 +37,7 @@ module.exports = (sequelize, DataTypes) => {
       isActive: {
         type: DataTypes.VIRTUAL,
         get() {
-          return !this.reportedByUserId || this.userReportIsVerified === false;
+          return !(this.reportedByUserId && this.userReportIsVerified);
         },
       },
       isUnderReview: {
