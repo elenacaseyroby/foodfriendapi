@@ -1269,7 +1269,7 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
       reportPercentDvConsumedSum += parseFloat(percentDvConsumed);
     });
     report.nutrientsTotalDvConsumed = parseFloat(
-      reportPercentDvConsumedSum / 3
+      reportPercentDvConsumedSum / pathNutrients.length
     ).toFixed(2);
     report.nutrientReports = nutrientReports;
     return res.status(200).json(report);
