@@ -134,6 +134,58 @@ app.get('/privacypolicy', async (req, res) => {
   }
 });
 
+app.put('/recipes/:recipeId/reportlink', async (req, res) => {
+  // Input: recipeId in params, authorization (token) and userId in the body.
+  // Output: success/failure
+
+  const recipeId = req.params.recipeId;
+  const userId = req.body.userId;
+  if (!userId) return res.status(401).json({ message: 'Must pass user id.' });
+
+  // Could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+
+  const user = await db.User.findOne({
+    where: {
+      id: userId,
+    },
+  });
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+
+  const recipe = await db.Recipe.findOne({
+    where: {
+      id: recipeId,
+    },
+  });
+  if (!recipe) return res.status(404).json({ message: 'Recipe not found.' });
+  try {
+    const updatedRecipe = await recipe.update({
+      reportedByUserId: userId,
+      userReportIsVerified: null,
+    });
+    if (updatedRecipe) {
+      return res
+        .status(200)
+        .json({ message: 'Recipe link successfully reported' });
+    } else {
+      return res
+        .status(500)
+        .json({ message: 'Recipe link failed to be reported' });
+    }
+  } catch (error) {
+    console.log(`Recipe link failed to be reported: ${error}`);
+    return res
+      .status(500)
+      .json({ message: `Recipe link failed to be reported: ${error}` });
+  }
+});
+
 app.get('/termsandconditions', async (req, res) => {
   // Gets most recently published by default.
   try {
@@ -348,6 +400,140 @@ app.put('/users/:userId', async (req, res) => {
     return res.status(200).json(cleanedUser);
   } catch (error) {
     return res.status(500).json(`Could not update user: ${error}`);
+  }
+});
+
+app.get('/users/:userId/activePath/recipes/', async (req, res) => {
+  // Gets activePath including recipes for a given user.
+  // Input: userId in params, authorization (token) in body
+  // Output: foods JSON object.
+
+  const userId = req.params.userId;
+
+  if (!req.params.userId)
+    return res.status(401).json({ message: 'Must pass user id.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  const user = await db.User.findOne({
+    where: {
+      id: userId,
+    },
+  });
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+
+  if (!user.activePathId)
+    return res.status(404).json({ message: 'No active path selected.' });
+
+  try {
+    // const nutrientsWithRecipes = await db.Nutrient.findAll({
+    //   include: [
+    //     {
+    //       model: db.Recipe,
+    //       as: 'recipes',
+    //       where: {
+    //         //isActive === true
+    //         [Op.or]: [
+    //           {
+    //             reportedByUserId: null,
+    //           },
+    //           {
+    //             userReportIsVerified: null,
+    //           },
+    //           {
+    //             userReportIsVerified: false,
+    //           },
+    //         ],
+    //       },
+    //     },
+    //     {
+    //       model: db.Path,
+    //       as: 'paths',
+    //       required: true,
+    //       where: {
+    //         id: user.activePathId,
+    //       },
+    //       attributes: [],
+    //     },
+    //   ],
+    // });
+
+    // Get nutrients in path:
+    const pathNutrientIds = await db.PathNutrient.findAll({
+      where: {
+        pathId: user.activePathId,
+      },
+    }).map((pathNutrient) => {
+      return pathNutrient.nutrientId;
+    });
+    const pathNutrients = await db.Nutrient.findAll({
+      where: {
+        id: pathNutrientIds,
+      },
+    });
+    // Get recipes for each nutrient:
+    let recipeIdsByNutrientId = {};
+    const nutrientRecipes = await db.NutrientRecipe.findAll({
+      where: {
+        nutrientId: pathNutrientIds,
+      },
+      order: [['createdAt', 'DESC']],
+    });
+    nutrientRecipes.map((recipeNutrient) => {
+      if (!recipeIdsByNutrientId[recipeNutrient.nutrientId]) {
+        recipeIdsByNutrientId[recipeNutrient.nutrientId] = [];
+      }
+      recipeIdsByNutrientId[recipeNutrient.nutrientId].push(
+        recipeNutrient.recipeId
+      );
+    });
+    const activeRecipes = await db.Recipe.findAll({
+      where: {
+        //isActive === true
+        [Op.or]: [
+          {
+            reportedByUserId: null,
+          },
+          {
+            userReportIsVerified: null,
+          },
+          {
+            userReportIsVerified: false,
+          },
+        ],
+      },
+    });
+    const recipesByNutrientId = {};
+    // initialize
+    pathNutrientIds.map((id) => {
+      recipesByNutrientId[id] = [];
+    });
+    activeRecipes.map((recipe) => {
+      pathNutrientIds.map((nutrientId) => {
+        const nutrientRecipeIds = recipeIdsByNutrientId[nutrientId];
+        if (!nutrientRecipeIds.includes(recipe.id)) return;
+        recipesByNutrientId[nutrientId].push(recipe);
+      });
+    });
+    let nutrientsWithRecipes = [];
+    pathNutrients.map((nutrient) => {
+      let nutrientWithRecipe = {};
+      nutrientWithRecipe.name = nutrient.name;
+      nutrientWithRecipe.id = nutrient.id;
+      nutrientWithRecipe.recipes = recipesByNutrientId[nutrient.id];
+      nutrientsWithRecipes.push(nutrientWithRecipe);
+    });
+    return res.status(200).json(nutrientsWithRecipes);
+  } catch (error) {
+    return res.status(500).json({
+      message: `Server error: failed to retrieve user's activePath recipes: ${error}`,
+    });
   }
 });
 
@@ -620,6 +806,162 @@ app.get('/users/:userId/foods/', async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: `Server error: failed to retrieve foods: ${error}`,
+    });
+  }
+});
+
+app.post('/users/:userId/recipes/', async (req, res) => {
+  // Adds user recipe record.
+  // Input: userId in params, authorization (token), recipeId in body
+  // Output: http success/failure status.
+  const userId = req.params.userId;
+  const recipeId = req.body.recipeId;
+  if (!userId)
+    return res.status(401).json({ message: 'Must pass userId in params.' });
+
+  if (!recipeId)
+    return res.status(401).json({ message: 'Must pass recipeId in body.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  // Check that record doesn't already exist.
+  const record = await db.UserRecipe.findOne({
+    where: {
+      userId: userId,
+      recipeId: recipeId,
+    },
+  });
+  console.log(record);
+  if (record)
+    return res.status(200).json({ message: 'Recipe already favorited.' });
+
+  // Check that recipe exists.
+  const recipe = await db.Recipe.findOne({
+    where: {
+      id: recipeId,
+    },
+  });
+  if (!recipe) return res.status(404).json({ message: 'Recipe not found.' });
+
+  try {
+    const user = await db.User.findOne({
+      where: {
+        id: userId,
+      },
+    });
+    const recipeAdded = await user.addRecipe(recipe);
+    if (recipeAdded) {
+      return res
+        .status(200)
+        .json({ message: 'Successfully favorited recipe.' });
+    } else {
+      return res.status(500).json({
+        message:
+          'Server error: failed to favorite recipe. Does user recipe record already exist?',
+      });
+    }
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: `Server error: failed to favorite recipe: ${error}` });
+  }
+});
+
+app.delete('/users/:userId/recipes/', async (req, res) => {
+  // Deletes user recipe record.
+  // Input: userId in params, authorization (token) and recipeId in body
+  // Output: http success/failure status.
+  const userId = req.params.userId;
+  const recipeId = req.body.recipeId;
+  if (!userId)
+    return res.status(401).json({ message: 'Must pass userId in params.' });
+
+  if (!recipeId)
+    return res.status(401).json({ message: 'Must pass userFoodId in body.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  const record = await db.UserRecipe.findOne({
+    where: {
+      userId: userId,
+      recipeId: recipeId,
+    },
+  });
+  if (!record)
+    return res.status(200).json({
+      message:
+        'Recipe did not appear to be favorited by user. No action was taken.',
+    });
+  try {
+    const recordDeleted = await db.UserRecipe.destroy({
+      where: {
+        userId: userId,
+        recipeId: recipeId,
+      },
+    });
+    if (!recordDeleted) {
+      return res.status(500).json({
+        message: `Server error: failed to remove favorite from recipe.`,
+      });
+    }
+    return res
+      .status(200)
+      .json({ message: 'Successfully removed favorite from recipe.' });
+  } catch (error) {
+    return res.status(500).json({
+      message: `Server error: failed to remove favorite from recipe: ${error}`,
+    });
+  }
+});
+
+app.get('/users/:userId/recipes/', async (req, res) => {
+  // Gets all favorited recipes for a given user.
+  // Input: userId in params, authorization (token) in body
+  // Output: foods JSON object.
+
+  const userId = req.params.userId;
+
+  if (!req.params.userId)
+    return res.status(401).json({ message: 'Must pass user id.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  const user = await db.User.findOne({
+    where: {
+      id: userId,
+    },
+    include: [
+      {
+        model: db.Recipe,
+        as: 'recipes',
+        order: [['createdAt', 'DESC']],
+      },
+    ],
+  });
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+  try {
+    return res.status(200).json(user.recipes || []);
+  } catch (error) {
+    return res.status(500).json({
+      message: `Server error: failed to retrieve user's favorited recipes: ${error}`,
     });
   }
 });

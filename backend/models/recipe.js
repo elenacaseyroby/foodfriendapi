@@ -29,10 +29,22 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         type: DataTypes.STRING,
       },
-      active: {
-        allowNull: false,
-        defaultValue: 1,
+      userReportIsVerified: {
+        allowNull: true,
+        defaultValue: null,
         type: DataTypes.BOOLEAN,
+      },
+      isActive: {
+        type: DataTypes.VIRTUAL,
+        get() {
+          return !(this.reportedByUserId && this.userReportIsVerified);
+        },
+      },
+      isUnderReview: {
+        type: DataTypes.VIRTUAL,
+        get() {
+          return !!this.reportedByUserId && this.userReportIsVerified === null;
+        },
       },
       createdAt: {
         type: DataTypes.DATE,
@@ -48,6 +60,11 @@ module.exports = (sequelize, DataTypes) => {
     }
   );
   Recipe.associate = function (models) {
+    Recipe.belongsTo(models.User, {
+      foreignKey: 'reportedByUserId',
+      as: 'reportedByUser',
+      targetKey: 'id',
+    });
     Recipe.belongsToMany(models.User, {
       through: 'UserRecipe',
       as: 'users',
