@@ -234,25 +234,8 @@ app.get('/users/:userId', async (req, res) => {
         {
           model: db.Nutrient,
           as: 'nutrients',
-          attributes: ['id', 'name'],
+          attributes: ['id'],
           through: { attributes: [] }, // Hide unwanted nested object from results
-          include: [
-            {
-              model: db.Recipe,
-              as: 'recipes',
-              where: {
-                //isActive === true
-                [Op.or]: [
-                  {
-                    reportedByUserId: null,
-                  },
-                  {
-                    userReportIsVerified: null,
-                  },
-                ],
-              },
-            },
-          ],
         },
       ],
     },
