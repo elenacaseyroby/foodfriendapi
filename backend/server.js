@@ -449,28 +449,37 @@ app.get('/users/:userId/activePath/recipes/', async (req, res) => {
     return res.status(404).json({ message: 'No active path selected.' });
 
   try {
-    // model: db.Nutrient,
-    //       as: 'nutrients',
-    //       attributes: ['id', 'name'],
-    //       through: { attributes: [] }, // Hide unwanted nested object from results
-    //       include: [
-    //         {
-    //           model: db.Recipe,
-    //           as: 'recipes',
-    //           where: {
-    //             //isActive === true
-    //             [Op.or]: [
-    //               {
-    //                 reportedByUserId: null,
-    //               },
-    //               {
-    //                 userReportIsVerified: null,
-    //               },
-    //             ],
+    // const nutrientsWithRecipes = await db.Nutrient.findAll({
+    //   include: [
+    //     {
+    //       model: db.Recipe,
+    //       as: 'recipes',
+    //       where: {
+    //         //isActive === true
+    //         [Op.or]: [
+    //           {
+    //             reportedByUserId: null,
     //           },
-    //         },
-    //       ],
-    // get nutrients in active path
+    //           {
+    //             userReportIsVerified: null,
+    //           },
+    //           {
+    //             userReportIsVerified: false,
+    //           },
+    //         ],
+    //       },
+    //     },
+    //     {
+    //       model: db.Path,
+    //       as: 'paths',
+    //       required: true,
+    //       where: {
+    //         id: user.activePathId,
+    //       },
+    //       attributes: [],
+    //     },
+    //   ],
+    // });
 
     // Get nutrients in path:
     const pathNutrientIds = await db.PathNutrient.findAll({
@@ -500,13 +509,28 @@ app.get('/users/:userId/activePath/recipes/', async (req, res) => {
         recipeNutrient.recipeId
       );
     });
-    const allRecipes = await db.Recipe.findAll({});
+    const activeRecipes = await db.Recipe.findAll({
+      where: {
+        //isActive === true
+        [Op.or]: [
+          {
+            reportedByUserId: null,
+          },
+          {
+            userReportIsVerified: null,
+          },
+          {
+            userReportIsVerified: false,
+          },
+        ],
+      },
+    });
     const recipesByNutrientId = {};
     // initialize
     pathNutrientIds.map((id) => {
       recipesByNutrientId[id] = [];
     });
-    allRecipes.map((recipe) => {
+    activeRecipes.map((recipe) => {
       pathNutrientIds.map((nutrientId) => {
         const nutrientRecipeIds = recipeIdsByNutrientId[nutrientId];
         if (!nutrientRecipeIds.includes(recipe.id)) return;
