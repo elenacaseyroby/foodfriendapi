@@ -420,6 +420,115 @@ app.put('/users/:userId', async (req, res) => {
   }
 });
 
+app.get('/users/:userId/activePath/recipes/', async (req, res) => {
+  // Gets activePath including recipes for a given user.
+  // Input: userId in params, authorization (token) in body
+  // Output: foods JSON object.
+
+  const userId = req.params.userId;
+
+  if (!req.params.userId)
+    return res.status(401).json({ message: 'Must pass user id.' });
+
+  // could move this logic into a middleware function in router:
+  // User can only post data to user they are signed in as:
+  const loggedInUserId = checkUserSignedIn(req);
+  if (!loggedInUserId || parseInt(userId) !== loggedInUserId) {
+    return res.status(401).json({
+      message: 'You must be logged in to complete this request.',
+    });
+  }
+  const user = await db.User.findOne({
+    where: {
+      id: userId,
+    },
+  });
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+
+  if (!user.activePathId)
+    return res.status(404).json({ message: 'No active path selected.' });
+
+  try {
+    // model: db.Nutrient,
+    //       as: 'nutrients',
+    //       attributes: ['id', 'name'],
+    //       through: { attributes: [] }, // Hide unwanted nested object from results
+    //       include: [
+    //         {
+    //           model: db.Recipe,
+    //           as: 'recipes',
+    //           where: {
+    //             //isActive === true
+    //             [Op.or]: [
+    //               {
+    //                 reportedByUserId: null,
+    //               },
+    //               {
+    //                 userReportIsVerified: null,
+    //               },
+    //             ],
+    //           },
+    //         },
+    //       ],
+    // get nutrients in active path
+
+    // Get nutrients in path:
+    const pathNutrientIds = await db.PathNutrient.findAll({
+      where: {
+        pathId: user.activePathId,
+      },
+    }).map((pathNutrient) => {
+      return pathNutrient.nutrientId;
+    });
+    const pathNutrients = await db.Nutrient.findAll({
+      where: {
+        id: pathNutrientIds,
+      },
+    });
+    // Get recipes for each nutrient:
+    let recipeIdsByNutrientId = {};
+    const nutrientRecipes = await db.NutrientRecipe.findAll({
+      where: {
+        nutrientId: pathNutrientIds,
+      },
+    });
+    nutrientRecipes.map((recipeNutrient) => {
+      if (!recipeIdsByNutrientId[recipeNutrient.nutrientId]) {
+        recipeIdsByNutrientId[recipeNutrient.nutrientId] = [];
+      }
+      recipeIdsByNutrientId[recipeNutrient.nutrientId].push(
+        recipeNutrient.recipeId
+      );
+    });
+    const allRecipes = await db.Recipe.findAll({});
+    const recipesByNutrientId = {};
+    // initialize
+    pathNutrientIds.map((id) => {
+      recipesByNutrientId[id] = [];
+    });
+    allRecipes.map((recipe) => {
+      pathNutrientIds.map((nutrientId) => {
+        const nutrientRecipeIds = recipeIdsByNutrientId[nutrientId];
+        if (!nutrientRecipeIds.includes(recipe.id)) return;
+        recipesByNutrientId[nutrientId].push(recipe);
+      });
+    });
+    let nutrientsWithRecipes = [];
+    pathNutrients.map((nutrient) => {
+      let nutrientWithRecipe = {};
+      nutrientWithRecipe.name = nutrient.name;
+      nutrientWithRecipe.id = nutrient.id;
+      nutrientWithRecipe.recipes = recipesByNutrientId[nutrient.id];
+      nutrientsWithRecipes.push(nutrientWithRecipe);
+    });
+    return res.status(200).json(nutrientsWithRecipes);
+  } catch (error) {
+    return res.status(500).json({
+      message: `Server error: failed to retrieve user's activePath recipes: ${error}`,
+    });
+  }
+});
+
 // unused endpoint.
 // app.get('/users/:userId/custompath', async (req, res) => {
 //   // Input: userId as a param and authorization (token) in the body.
