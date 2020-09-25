@@ -1113,6 +1113,16 @@ app.delete('/users/:userId/userfoods/', async (req, res) => {
       message: 'You must be logged in to complete this request.',
     });
   }
+  const record = await db.UserFood.findOne({
+    where: {
+      id: userFoodId,
+    },
+  });
+  if (!record) {
+    return res
+      .status(200)
+      .json({ message: `UserFood record was not found. No action taken.` });
+  }
   try {
     const recordDeleted = await db.UserFood.destroy({
       where: {
