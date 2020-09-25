@@ -67,7 +67,7 @@ app.get('/nutrients', async (req, res) => {
           model: db.Food,
           through: {},
           as: 'foods',
-          order: [['NutrientFood.percentDvPerServing', 'DESC']],
+          // order: [['NutrientFood.percentDvPerServing', 'DESC']],
         },
         {
           model: db.Benefit,
@@ -483,7 +483,6 @@ app.get('/users/:userId/activePath/recipes/', async (req, res) => {
       where: {
         nutrientId: pathNutrientIds,
       },
-      order: [['createdAt', 'DESC']],
     });
     nutrientRecipes.map((recipeNutrient) => {
       if (!recipeIdsByNutrientId[recipeNutrient.nutrientId]) {
@@ -800,6 +799,19 @@ app.get('/users/:userId/foods/', async (req, res) => {
       where: {
         id: foodIds,
       },
+      // include: [
+      //   {
+      //     model: db.User,
+      //     as: 'users',
+      //     required: true,
+      //     where: {
+      //       id: userId,
+      //     },
+      //     attributes: ['id'],
+      //     through: { attributes: ['createdAt'] },
+      //     order: [['UserFood.createdAt', 'DESC']],
+      //   },
+      // ],
       limit: limit,
     });
     return res.status(200).json(foods);
@@ -952,7 +964,6 @@ app.get('/users/:userId/recipes/', async (req, res) => {
       {
         model: db.Recipe,
         as: 'recipes',
-        order: [['createdAt', 'DESC']],
       },
     ],
   });
