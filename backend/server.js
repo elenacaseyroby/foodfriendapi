@@ -849,7 +849,6 @@ app.post('/users/:userId/recipes/', async (req, res) => {
       recipeId: recipeId,
     },
   });
-  console.log(record);
   if (record)
     return res.status(200).json({ message: 'Recipe already favorited.' });
 
