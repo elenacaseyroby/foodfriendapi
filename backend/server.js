@@ -1207,7 +1207,7 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
           model: db.Nutrient,
           as: 'nutrients',
           required: true,
-          attributes: ['name', 'id'],
+          attributes: ['name', 'dvNote', 'id'],
           through: { attributes: ['percentDvPerServing'] },
         },
       ],
