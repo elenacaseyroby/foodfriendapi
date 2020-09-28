@@ -1271,7 +1271,7 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
         const nutrientReport = {
           nutrientId: nutrient.id,
           nutrientName: nutrient.name,
-          nutrientDvNote = nutrient.dvNote,
+          nutrientDvNote: nutrient.dvNote,
           percentDvConsumed: 0,
           consumedFoods: [],
         };
