@@ -1245,6 +1245,7 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
         if (!nutrientReportById[nutrient.id]) {
           nutrientReportById[nutrient.id] = {};
           nutrientReportById[nutrient.id].nutrientName = nutrient.name;
+          nutrientReportById[nutrient.id].nutrientDvNote = nutrient.dvNote;
           nutrientReportById[nutrient.id].id = nutrient.id;
           nutrientReportById[nutrient.id].percentDvConsumed = 0;
           nutrientReportById[nutrient.id].consumedFoods = [];
@@ -1270,6 +1271,7 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
         const nutrientReport = {
           nutrientId: nutrient.id,
           nutrientName: nutrient.name,
+          nutrientDvNote = nutrient.dvNote,
           percentDvConsumed: 0,
           consumedFoods: [],
         };
