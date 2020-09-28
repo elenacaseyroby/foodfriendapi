@@ -2,13 +2,13 @@
 
 module.exports = {
   up: (queryInterface, Sequelize) => {
-    return queryInterface.addColumn('nutrients', 'theme_id', {
-      type: Sequelize.INTEGER,
+    return queryInterface.addColumn('nutrients', 'dv_note', {
+      type: Sequelize.STRING(15),
       allowNull: false,
     });
   },
 
   down: (queryInterface, Sequelize) => {
-    return queryInterface.removeColumn('nutrients', 'theme_id');
+    return queryInterface.removeColumn('nutrients', 'dv_note');
   },
 };
