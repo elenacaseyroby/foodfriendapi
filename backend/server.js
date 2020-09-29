@@ -3,7 +3,11 @@ import { db } from './models';
 import { Op } from 'sequelize';
 import multer from 'multer';
 import { checkUserSignedIn, checkIfAdmin } from './utils/auth';
-import { convertStringToDate, getRelativeDateTime } from './utils/common';
+import {
+  convertStringToDate,
+  getTodaysDate,
+  getRelativeDateTime,
+} from './utils/common';
 import { signUp } from './services/auth/signUp';
 import { signIn } from './services/auth/signIn';
 import {
@@ -242,6 +246,9 @@ app.get('/users/:userId', async (req, res) => {
   });
   if (!user) return res.status(404).json({ message: 'User not found.' });
   try {
+    // track user activity:
+    const today = getTodaysDate();
+    user.update({ dateLastActive: today });
     // Exclude salt, password and other sensitive data from
     // the user instance we return:
     // exclude activePath property and replace it with the return version.

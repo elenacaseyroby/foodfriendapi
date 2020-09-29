@@ -47,6 +47,9 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: 0,
         type: DataTypes.BOOLEAN,
       },
+      dateLastActive: {
+        type: DataTypes.DATE,
+      },
       createdAt: {
         type: DataTypes.DATE,
       },

@@ -6,6 +6,11 @@ export function convertStringToDate(date) {
   return sequelizeSafeDate;
 }
 
+export function getTodaysDate() {
+  const today = moment();
+  return today;
+}
+
 export function getRelativeDateTime(operation, units, unitOfTime, time) {
   // units = integer value
   if (typeof units !== 'number') return;
