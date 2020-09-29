@@ -438,7 +438,7 @@ app.get('/users/:userId/activePath/recipes/', async (req, res) => {
     //       model: db.Recipe,
     //       as: 'recipes',
     //       where: {
-    //         //isActive === true
+    //         // filter out broken links
     //         [Op.or]: [
     //           {
     //             reportedByUserId: null,
@@ -494,7 +494,7 @@ app.get('/users/:userId/activePath/recipes/', async (req, res) => {
     });
     const activeRecipes = await db.Recipe.findAll({
       where: {
-        //isActive === true
+        // filter out recipes with broken links
         [Op.or]: [
           {
             reportedByUserId: null,
@@ -963,6 +963,21 @@ app.get('/users/:userId/recipes/', async (req, res) => {
       {
         model: db.Recipe,
         as: 'recipes',
+        required: false,
+        where: {
+          // filter out recipes with broken links.
+          [Op.or]: [
+            {
+              reportedByUserId: null,
+            },
+            {
+              userReportIsVerified: null,
+            },
+            {
+              userReportIsVerified: false,
+            },
+          ],
+        },
       },
     ],
   });
