@@ -50,6 +50,9 @@ module.exports = (sequelize, DataTypes) => {
       dateLastActive: {
         type: DataTypes.DATE,
       },
+      utcOffsetHours: {
+        type: DataTypes.INTEGER(5),
+      },
       createdAt: {
         type: DataTypes.DATE,
       },

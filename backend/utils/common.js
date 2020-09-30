@@ -6,9 +6,17 @@ export function convertStringToDate(date) {
   return sequelizeSafeDate;
 }
 
-export function getTodaysDate() {
+export function getTodaysDate(utcOffsetHours) {
   const today = moment();
   return today;
+}
+export function convertDateTimeToUtc(dateInUtc, utcOffsetHours) {
+  // add utcOffsetHours
+  return userTimeInUtc;
+}
+export function convertDateTimeFromUtc(dateInUtc, utcOffsetHours) {
+  // subtract utcOffsetHours
+  return utcInUserTime;
 }
 
 export function getRelativeDateTime(operation, units, unitOfTime, time) {

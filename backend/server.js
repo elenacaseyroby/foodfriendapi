@@ -206,7 +206,7 @@ app.get('/termsandconditions', async (req, res) => {
 });
 
 app.get('/users/:userId', async (req, res) => {
-  // Input: userId as a param and authorization (token) in the body.
+  // Input: userId as a param and authorization (token) and utcOffsetHours in the body.
   // Output: user object.
   // NOTE: object includes paths and active path since those are dependent
   // on user properties isVegan and menstruates.
@@ -247,8 +247,9 @@ app.get('/users/:userId', async (req, res) => {
   if (!user) return res.status(404).json({ message: 'User not found.' });
   try {
     // track user activity:
-    const today = getTodaysDate();
-    user.update({ dateLastActive: today });
+    const { utcOffsetHours } = req.headers;
+    const today = getTodaysDate(utcOffsetHours);
+    user.update({ dateLastActive: today, utcOffsetHours: utcOffsetHours });
     // Exclude salt, password and other sensitive data from
     // the user instance we return:
     // exclude activePath property and replace it with the return version.
