@@ -10,11 +10,11 @@ module.exports = {
       },
       name: {
         allowNull: false,
-        type: Sequelize.STRING,
+        type: Sequelize.STRING(100),
         unique: true,
       },
       serving_size_note: {
-        type: Sequelize.STRING,
+        type: Sequelize.STRING(50),
       },
       created_at: {
         allowNull: false,

@@ -5,7 +5,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       name: {
         allowNull: false,
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(50),
         unique: true,
       },
       header_img_path: {
