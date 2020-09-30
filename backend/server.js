@@ -5,8 +5,9 @@ import multer from 'multer';
 import { checkUserSignedIn, checkIfAdmin } from './utils/auth';
 import {
   convertStringToDate,
-  getTodaysDate,
-  getRelativeDateTime,
+  getTodaysDateInUtc,
+  getRelativeDateTimeInUtc,
+  addToDateTime,
 } from './utils/common';
 import { signUp } from './services/auth/signUp';
 import { signIn } from './services/auth/signIn';
@@ -206,7 +207,7 @@ app.get('/termsandconditions', async (req, res) => {
 });
 
 app.get('/users/:userId', async (req, res) => {
-  // Input: userId as a param and authorization (token) and utcOffsetHours in the body.
+  // Input: userId as a param and authorization (token) and utcOffsetInHours in the body.
   // Output: user object.
   // NOTE: object includes paths and active path since those are dependent
   // on user properties isVegan and menstruates.
@@ -222,6 +223,11 @@ app.get('/users/:userId', async (req, res) => {
       message: 'You must be logged in to complete this request.',
     });
   }
+  const utcOffsetInHours = req.headers.utcoffsetinhours;
+  if (!utcOffsetInHours)
+    return res
+      .status(401)
+      .json({ message: 'Must pass utcOffsetInHours in request header.' });
 
   const user = await db.User.findOne({
     where: {
@@ -247,9 +253,8 @@ app.get('/users/:userId', async (req, res) => {
   if (!user) return res.status(404).json({ message: 'User not found.' });
   try {
     // track user activity:
-    const { utcOffsetHours } = req.headers;
-    const today = getTodaysDate(utcOffsetHours);
-    user.update({ dateLastActive: today, utcOffsetHours: utcOffsetHours });
+    const today = getTodaysDateInUtc();
+    user.update({ dateLastActive: today, utcOffsetInHours: utcOffsetInHours });
     // Exclude salt, password and other sensitive data from
     // the user instance we return:
     // exclude activePath property and replace it with the return version.
@@ -779,23 +784,37 @@ app.get('/users/:userId/foods/', async (req, res) => {
   });
   if (!user) return res.status(404).json({ message: 'User not found.' });
 
+  const utcOffsetInHours = req.headers.utcoffsetinhours;
+  if (!utcOffsetInHours)
+    return res
+      .status(401)
+      .json({ message: 'Must pass utcoffsetinhours in request header.' });
+
   try {
     let fromTime;
     let toTime;
     if (dateRange === 'currentDay') {
-      fromTime = getRelativeDateTime('add', 0, 'days', 'startOfDay');
-      toTime = getRelativeDateTime('add', 0, 'days', 'endOfDay');
+      fromTime = getRelativeDateTimeInUtc('add', 0, 'days', 'startOfDay');
+      toTime = getRelativeDateTimeInUtc('add', 0, 'days', 'endOfDay');
     } else {
       // fromTime by default way in the past
-      fromTime = getRelativeDateTime('subtract', 100, 'years', 'startOfDay');
+      fromTime = getRelativeDateTimeInUtc(
+        'subtract',
+        100,
+        'years',
+        'startOfDay'
+      );
       // toTime by default way in the future
-      toTime = getRelativeDateTime('add', 2, 'days', 'startOfDay');
+      toTime = getRelativeDateTimeInUtc('add', 2, 'days', 'startOfDay');
     }
+    // offset hours in utc to reflect user timezone
+    const toTimeWOffset = addToDateTime(utcOffsetInHours, 'hours', toTime);
+    const fromTimeWOffset = addToDateTime(utcOffsetInHours, 'hours', fromTime);
     const foodIds = await db.UserFood.findAll({
       where: {
         userId: user.id,
         createdAt: {
-          [Op.between]: [fromTime, toTime],
+          [Op.between]: [fromTimeWOffset, toTimeWOffset],
         },
       },
       order: [['createdAt', 'DESC']],
@@ -1028,26 +1047,40 @@ app.get('/users/:userId/userfoods/', async (req, res) => {
   });
   if (!user) return res.status(404).json({ message: 'User not found.' });
 
+  const utcOffsetInHours = req.headers.utcoffsetinhours;
+  if (!utcOffsetInHours)
+    return res
+      .status(401)
+      .json({ message: 'Must pass utcoffsetinhours in request header.' });
+
   try {
     //TODO learn about and implement pagination.
     const limit = parseInt(req.query.limit || 1000);
     let fromTime;
     let toTime;
     if (dateRange === 'currentDay') {
-      fromTime = getRelativeDateTime('add', 0, 'days', 'startOfDay');
-      toTime = getRelativeDateTime('add', 0, 'days', 'endOfDay');
+      fromTime = getRelativeDateTimeInUtc('add', 0, 'days', 'startOfDay');
+      toTime = getRelativeDateTimeInUtc('add', 0, 'days', 'endOfDay');
     } else {
       // fromTime by default way in the past
-      fromTime = getRelativeDateTime('subtract', 100, 'years', 'startOfDay');
+      fromTime = getRelativeDateTimeInUtc(
+        'subtract',
+        100,
+        'years',
+        'startOfDay'
+      );
       // toTime by default way in the future
-      toTime = getRelativeDateTime('add', 2, 'days', 'startOfDay');
+      toTime = getRelativeDateTimeInUtc('add', 2, 'days', 'startOfDay');
     }
+    // offset hours in utc to reflect user timezone
+    const toTimeWOffset = addToDateTime(utcOffsetInHours, 'hours', toTime);
+    const fromTimeWOffset = addToDateTime(utcOffsetInHours, 'hours', fromTime);
     // end fix dates
     const userFoods = await db.UserFood.findAll({
       where: {
         userId: user.id,
         createdAt: {
-          [Op.between]: [fromTime, toTime],
+          [Op.between]: [fromTimeWOffset, toTimeWOffset],
         },
       },
       order: [['createdAt', 'DESC']],
@@ -1166,7 +1199,7 @@ app.delete('/users/:userId/userfoods/', async (req, res) => {
 
 app.get('/users/:userId/progressreport/daily', async (req, res) => {
   // Gets report of user's intake of each nutrient in their path.
-  // Input: userId in params, authorization (token) in body
+  // Input: userId in params, authorization (token) and utcoffsetinhours in headers
   // Output: report JSON object.
 
   const userId = req.params.userId;
@@ -1189,6 +1222,12 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
   });
   if (!user) return res.status(404).json({ message: 'User not found.' });
 
+  const utcOffsetInHours = req.headers.utcoffsetinhours;
+  if (!utcOffsetInHours)
+    return res
+      .status(401)
+      .json({ message: 'Must pass utcoffsetinhours in request header.' });
+
   try {
     // Get user's path.
     const userPath = await db.Path.findOne({
@@ -1206,14 +1245,22 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
       return nutrient;
     });
     // Get user food records for the day.
-    const startOfDay = getRelativeDateTime('add', 0, 'days', 'startOfDay');
-    const endOfDay = getRelativeDateTime('add', 0, 'days', 'endOfDay');
+    const startOfDay = getRelativeDateTimeInUtc('add', 0, 'days', 'startOfDay');
+    const endOfDay = getRelativeDateTimeInUtc('add', 0, 'days', 'endOfDay');
+    // offset hours in utc to reflect user timezone
+    // ex. for a person in nyc start of day would be 4am and end of day would be +1day 4am
+    const startOfDayWOffset = addToDateTime(
+      utcOffsetInHours,
+      'hours',
+      startOfDay
+    );
+    const endOfDayWOffset = addToDateTime(utcOffsetInHours, 'hours', endOfDay);
     // Get all userfood records for the day.
     const userFoods = await db.UserFood.findAll({
       where: {
         userId: userId,
         createdAt: {
-          [Op.between]: [startOfDay, endOfDay],
+          [Op.between]: [startOfDayWOffset, endOfDayWOffset],
         },
       },
     });
