@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { BrowserRouter as Router, Route } from 'react-router-dom';
+import AboutUs from './components/aboutUs/AboutUs';
 import './App.css';
 
 class App extends Component {
@@ -24,6 +25,8 @@ class App extends Component {
   render() {
     return (
       <Router>
+        <Route exact path="/" component={AboutUs} />
+        <Route exact path="/about" component={AboutUs} />
         <Route
           exact
           path="/passwordreset/:id/:token"
