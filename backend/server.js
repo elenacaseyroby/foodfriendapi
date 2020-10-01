@@ -1241,6 +1241,10 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
         },
       ],
     });
+    if (!userPath)
+      return res.status(401).json({
+        message: `No user active path. User must select path to view progress report.`,
+      });
     const pathNutrients = userPath.nutrients.map((nutrient) => {
       return nutrient;
     });
