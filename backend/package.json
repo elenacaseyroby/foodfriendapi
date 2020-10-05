@@ -30,7 +30,7 @@
   },
   "scripts": {
     "test": "export NODE_ENV=test && mocha --require babel-register __tests__/*.js __tests__/*/*.js --exit",
-    "start": "export NODE_ENV=development && nodemon server.js --exec babel-node --presets babel-preset-env"
+    "start": "nodemon server.js --exec babel-node --presets babel-preset-env"
   },
   "author": "",
   "license": "ISC"
