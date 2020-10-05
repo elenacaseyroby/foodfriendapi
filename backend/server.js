@@ -3,7 +3,12 @@ import { db } from './models';
 import { Op } from 'sequelize';
 import multer from 'multer';
 import { checkUserSignedIn, checkIfAdmin } from './utils/auth';
-import { convertStringToDate, getRelativeDateTime } from './utils/common';
+import {
+  convertStringToDate,
+  getTodaysDateInUtc,
+  getRelativeDateTimeInUtc,
+  addToDateTime,
+} from './utils/common';
 import { signUp } from './services/auth/signUp';
 import { signIn } from './services/auth/signIn';
 import {
@@ -67,7 +72,7 @@ app.get('/nutrients', async (req, res) => {
           model: db.Food,
           through: {},
           as: 'foods',
-          order: [['NutrientFood.percentDvPerServing', 'DESC']],
+          // order: [['NutrientFood.percentDvPerServing', 'DESC']],
         },
         {
           model: db.Benefit,
@@ -202,7 +207,7 @@ app.get('/termsandconditions', async (req, res) => {
 });
 
 app.get('/users/:userId', async (req, res) => {
-  // Input: userId as a param and authorization (token) in the body.
+  // Input: userId as a param and authorization (token) and utcOffsetInHours in the body.
   // Output: user object.
   // NOTE: object includes paths and active path since those are dependent
   // on user properties isVegan and menstruates.
@@ -218,6 +223,11 @@ app.get('/users/:userId', async (req, res) => {
       message: 'You must be logged in to complete this request.',
     });
   }
+  const utcOffsetInHours = req.headers.utcoffsetinhours;
+  if (!utcOffsetInHours)
+    return res
+      .status(401)
+      .json({ message: 'Must pass utcOffsetInHours in request header.' });
 
   const user = await db.User.findOne({
     where: {
@@ -242,6 +252,9 @@ app.get('/users/:userId', async (req, res) => {
   });
   if (!user) return res.status(404).json({ message: 'User not found.' });
   try {
+    // track user activity:
+    const today = getTodaysDateInUtc();
+    user.update({ dateLastActive: today, utcOffsetInHours: utcOffsetInHours });
     // Exclude salt, password and other sensitive data from
     // the user instance we return:
     // exclude activePath property and replace it with the return version.
@@ -438,7 +451,7 @@ app.get('/users/:userId/activePath/recipes/', async (req, res) => {
     //       model: db.Recipe,
     //       as: 'recipes',
     //       where: {
-    //         //isActive === true
+    //         // filter out broken links
     //         [Op.or]: [
     //           {
     //             reportedByUserId: null,
@@ -483,7 +496,6 @@ app.get('/users/:userId/activePath/recipes/', async (req, res) => {
       where: {
         nutrientId: pathNutrientIds,
       },
-      order: [['createdAt', 'DESC']],
     });
     nutrientRecipes.map((recipeNutrient) => {
       if (!recipeIdsByNutrientId[recipeNutrient.nutrientId]) {
@@ -495,7 +507,7 @@ app.get('/users/:userId/activePath/recipes/', async (req, res) => {
     });
     const activeRecipes = await db.Recipe.findAll({
       where: {
-        //isActive === true
+        // filter out recipes with broken links
         [Op.or]: [
           {
             reportedByUserId: null,
@@ -772,23 +784,37 @@ app.get('/users/:userId/foods/', async (req, res) => {
   });
   if (!user) return res.status(404).json({ message: 'User not found.' });
 
+  const utcOffsetInHours = req.headers.utcoffsetinhours;
+  if (!utcOffsetInHours)
+    return res
+      .status(401)
+      .json({ message: 'Must pass utcoffsetinhours in request header.' });
+
   try {
     let fromTime;
     let toTime;
     if (dateRange === 'currentDay') {
-      fromTime = getRelativeDateTime('add', 0, 'days', 'startOfDay');
-      toTime = getRelativeDateTime('add', 0, 'days', 'endOfDay');
+      fromTime = getRelativeDateTimeInUtc('add', 0, 'days', 'startOfDay');
+      toTime = getRelativeDateTimeInUtc('add', 0, 'days', 'endOfDay');
     } else {
       // fromTime by default way in the past
-      fromTime = getRelativeDateTime('subtract', 100, 'years', 'startOfDay');
+      fromTime = getRelativeDateTimeInUtc(
+        'subtract',
+        100,
+        'years',
+        'startOfDay'
+      );
       // toTime by default way in the future
-      toTime = getRelativeDateTime('add', 2, 'days', 'startOfDay');
+      toTime = getRelativeDateTimeInUtc('add', 2, 'days', 'startOfDay');
     }
+    // offset hours in utc to reflect user timezone
+    const toTimeWOffset = addToDateTime(utcOffsetInHours, 'hours', toTime);
+    const fromTimeWOffset = addToDateTime(utcOffsetInHours, 'hours', fromTime);
     const foodIds = await db.UserFood.findAll({
       where: {
         userId: user.id,
         createdAt: {
-          [Op.between]: [fromTime, toTime],
+          [Op.between]: [fromTimeWOffset, toTimeWOffset],
         },
       },
       order: [['createdAt', 'DESC']],
@@ -800,6 +826,19 @@ app.get('/users/:userId/foods/', async (req, res) => {
       where: {
         id: foodIds,
       },
+      // include: [
+      //   {
+      //     model: db.User,
+      //     as: 'users',
+      //     required: true,
+      //     where: {
+      //       id: userId,
+      //     },
+      //     attributes: ['id'],
+      //     through: { attributes: ['createdAt'] },
+      //     order: [['UserFood.createdAt', 'DESC']],
+      //   },
+      // ],
       limit: limit,
     });
     return res.status(200).json(foods);
@@ -837,7 +876,6 @@ app.post('/users/:userId/recipes/', async (req, res) => {
       recipeId: recipeId,
     },
   });
-  console.log(record);
   if (record)
     return res.status(200).json({ message: 'Recipe already favorited.' });
 
@@ -952,7 +990,21 @@ app.get('/users/:userId/recipes/', async (req, res) => {
       {
         model: db.Recipe,
         as: 'recipes',
-        order: [['createdAt', 'DESC']],
+        required: false,
+        where: {
+          // filter out recipes with broken links.
+          [Op.or]: [
+            {
+              reportedByUserId: null,
+            },
+            {
+              userReportIsVerified: null,
+            },
+            {
+              userReportIsVerified: false,
+            },
+          ],
+        },
       },
     ],
   });
@@ -995,26 +1047,40 @@ app.get('/users/:userId/userfoods/', async (req, res) => {
   });
   if (!user) return res.status(404).json({ message: 'User not found.' });
 
+  const utcOffsetInHours = req.headers.utcoffsetinhours;
+  if (!utcOffsetInHours)
+    return res
+      .status(401)
+      .json({ message: 'Must pass utcoffsetinhours in request header.' });
+
   try {
     //TODO learn about and implement pagination.
     const limit = parseInt(req.query.limit || 1000);
     let fromTime;
     let toTime;
     if (dateRange === 'currentDay') {
-      fromTime = getRelativeDateTime('add', 0, 'days', 'startOfDay');
-      toTime = getRelativeDateTime('add', 0, 'days', 'endOfDay');
+      fromTime = getRelativeDateTimeInUtc('add', 0, 'days', 'startOfDay');
+      toTime = getRelativeDateTimeInUtc('add', 0, 'days', 'endOfDay');
     } else {
       // fromTime by default way in the past
-      fromTime = getRelativeDateTime('subtract', 100, 'years', 'startOfDay');
+      fromTime = getRelativeDateTimeInUtc(
+        'subtract',
+        100,
+        'years',
+        'startOfDay'
+      );
       // toTime by default way in the future
-      toTime = getRelativeDateTime('add', 2, 'days', 'startOfDay');
+      toTime = getRelativeDateTimeInUtc('add', 2, 'days', 'startOfDay');
     }
+    // offset hours in utc to reflect user timezone
+    const toTimeWOffset = addToDateTime(utcOffsetInHours, 'hours', toTime);
+    const fromTimeWOffset = addToDateTime(utcOffsetInHours, 'hours', fromTime);
     // end fix dates
     const userFoods = await db.UserFood.findAll({
       where: {
         userId: user.id,
         createdAt: {
-          [Op.between]: [fromTime, toTime],
+          [Op.between]: [fromTimeWOffset, toTimeWOffset],
         },
       },
       order: [['createdAt', 'DESC']],
@@ -1102,6 +1168,16 @@ app.delete('/users/:userId/userfoods/', async (req, res) => {
       message: 'You must be logged in to complete this request.',
     });
   }
+  const record = await db.UserFood.findOne({
+    where: {
+      id: userFoodId,
+    },
+  });
+  if (!record) {
+    return res
+      .status(200)
+      .json({ message: `UserFood record was not found. No action taken.` });
+  }
   try {
     const recordDeleted = await db.UserFood.destroy({
       where: {
@@ -1123,7 +1199,7 @@ app.delete('/users/:userId/userfoods/', async (req, res) => {
 
 app.get('/users/:userId/progressreport/daily', async (req, res) => {
   // Gets report of user's intake of each nutrient in their path.
-  // Input: userId in params, authorization (token) in body
+  // Input: userId in params, authorization (token) and utcoffsetinhours in headers
   // Output: report JSON object.
 
   const userId = req.params.userId;
@@ -1146,6 +1222,12 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
   });
   if (!user) return res.status(404).json({ message: 'User not found.' });
 
+  const utcOffsetInHours = req.headers.utcoffsetinhours;
+  if (!utcOffsetInHours)
+    return res
+      .status(401)
+      .json({ message: 'Must pass utcoffsetinhours in request header.' });
+
   try {
     // Get user's path.
     const userPath = await db.Path.findOne({
@@ -1159,18 +1241,30 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
         },
       ],
     });
+    if (!userPath)
+      return res.status(401).json({
+        message: `No user active path. User must select path to view progress report.`,
+      });
     const pathNutrients = userPath.nutrients.map((nutrient) => {
       return nutrient;
     });
     // Get user food records for the day.
-    const startOfDay = getRelativeDateTime('add', 0, 'days', 'startOfDay');
-    const endOfDay = getRelativeDateTime('add', 0, 'days', 'endOfDay');
+    const startOfDay = getRelativeDateTimeInUtc('add', 0, 'days', 'startOfDay');
+    const endOfDay = getRelativeDateTimeInUtc('add', 0, 'days', 'endOfDay');
+    // offset hours in utc to reflect user timezone
+    // ex. for a person in nyc start of day would be 4am and end of day would be +1day 4am
+    const startOfDayWOffset = addToDateTime(
+      utcOffsetInHours,
+      'hours',
+      startOfDay
+    );
+    const endOfDayWOffset = addToDateTime(utcOffsetInHours, 'hours', endOfDay);
     // Get all userfood records for the day.
     const userFoods = await db.UserFood.findAll({
       where: {
         userId: userId,
         createdAt: {
-          [Op.between]: [startOfDay, endOfDay],
+          [Op.between]: [startOfDayWOffset, endOfDayWOffset],
         },
       },
     });
@@ -1187,7 +1281,7 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
           model: db.Nutrient,
           as: 'nutrients',
           required: true,
-          attributes: ['name', 'id'],
+          attributes: ['name', 'dvNote', 'id'],
           through: { attributes: ['percentDvPerServing'] },
         },
       ],
@@ -1225,6 +1319,7 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
         if (!nutrientReportById[nutrient.id]) {
           nutrientReportById[nutrient.id] = {};
           nutrientReportById[nutrient.id].nutrientName = nutrient.name;
+          nutrientReportById[nutrient.id].nutrientDvNote = nutrient.dvNote;
           nutrientReportById[nutrient.id].id = nutrient.id;
           nutrientReportById[nutrient.id].percentDvConsumed = 0;
           nutrientReportById[nutrient.id].consumedFoods = [];
@@ -1250,6 +1345,7 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
         const nutrientReport = {
           nutrientId: nutrient.id,
           nutrientName: nutrient.name,
+          nutrientDvNote: nutrient.dvNote,
           percentDvConsumed: 0,
           consumedFoods: [],
         };
@@ -1269,7 +1365,7 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
       reportPercentDvConsumedSum += parseFloat(percentDvConsumed);
     });
     report.nutrientsTotalDvConsumed = parseFloat(
-      reportPercentDvConsumedSum / 3
+      reportPercentDvConsumedSum / pathNutrients.length
     ).toFixed(2);
     report.nutrientReports = nutrientReports;
     return res.status(200).json(report);

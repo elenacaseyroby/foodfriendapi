@@ -1,12 +1,45 @@
-import moment from 'moment';
+export function addToDateTime(units, unitOfTime, dateTime = new Date()) {
+  const hour = 60 * 60 * 1000;
+  const day = 24 * hour;
+  const week = 7 * day;
+  const year = 365 * day;
+  let multiplier;
+  if (unitOfTime === 'hours') multiplier = hour;
+  else if (unitOfTime === 'days') multiplier = day;
+  else if (unitOfTime === 'weeks') multiplier = week;
+  else if (unitOfTime === 'years') multiplier = year;
+  const newDateTime = dateTime.getTime() + units * multiplier;
+  return new Date(newDateTime);
+}
 
-export function convertStringToDate(date) {
+export function subtractFromDateTime(units, unitOfTime, dateTime = new Date()) {
+  const hour = 60 * 60 * 1000;
+  const day = 24 * hour;
+  const week = 7 * day;
+  const year = 365 * day;
+  let multiplier;
+  if (unitOfTime === 'hours') multiplier = hour;
+  else if (unitOfTime === 'days') multiplier = day;
+  else if (unitOfTime === 'weeks') multiplier = week;
+  else if (unitOfTime === 'years') multiplier = year;
+  const newDateTime = dateTime.getTime() - units * multiplier;
+  return new Date(newDateTime);
+}
+
+export function convertStringToDate(dateStr) {
   // input is string like 'MM/DD/YYYY'
-  const sequelizeSafeDate = moment(date, 'MM-DD-YYYY');
+  const date = Date.parse(dateStr);
+  const sequelizeSafeDate = new Date(date);
   return sequelizeSafeDate;
 }
 
-export function getRelativeDateTime(operation, units, unitOfTime, time) {
+export function getTodaysDateInUtc() {
+  // always in utc
+  const today = new Date();
+  return today;
+}
+
+export function getRelativeDateTimeInUtc(operation, units, unitOfTime, time) {
   // units = integer value
   if (typeof units !== 'number') return;
   // operation = 'subtract', 'add'
@@ -17,19 +50,20 @@ export function getRelativeDateTime(operation, units, unitOfTime, time) {
   // time = 'currentTime', 'startOfDay', 'endOfDay'
   if (time !== 'currentTime' && time !== 'startOfDay' && time !== 'endOfDay')
     return;
-  const today = moment();
   let processedDate;
   if (operation === 'subtract') {
-    processedDate = today.subtract(units, unitOfTime);
+    processedDate = subtractFromDateTime(units, unitOfTime);
   } else if (operation === 'add') {
-    processedDate = today.add(units, unitOfTime);
+    processedDate = addToDateTime(units, unitOfTime);
   }
   if (time === 'startOfDay') {
-    processedDate = processedDate.startOf('day');
+    processedDate = processedDate.setUTCHours(0, 0, 0, 0);
   } else if (time === 'endOfDay') {
-    processedDate = processedDate.endOf('day');
+    processedDate = processedDate.setUTCHours(23, 59, 59, 999);
+  } else {
+    processedDate = processedDate.setUTCHours();
   }
-  return processedDate;
+  return new Date(processedDate);
 }
 
 export function cleanString(string) {

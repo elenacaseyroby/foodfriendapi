@@ -11,11 +11,15 @@ module.exports = (sequelize, DataTypes) => {
       },
       name: {
         allowNull: false,
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(50),
       },
       dvInMg: {
         allowNull: false,
         type: DataTypes.DECIMAL(12, 6),
+      },
+      dvNote: {
+        allowNull: false,
+        type: DataTypes.STRING(15),
       },
       dvSource: {
         type: DataTypes.STRING,
@@ -43,9 +47,11 @@ module.exports = (sequelize, DataTypes) => {
       },
       themeId: {
         type: DataTypes.INTEGER,
+        allowNull: false,
       },
       iconPath: {
         type: DataTypes.STRING(150),
+        allowNull: false,
       },
     },
     {

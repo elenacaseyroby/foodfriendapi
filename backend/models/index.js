@@ -3,21 +3,14 @@ const fs = require('fs');
 const path = require('path');
 const Sequelize = require('sequelize');
 const basename = path.basename(__filename);
+require('dotenv').config();
 
 // Need to investigate how to not store config.json in github but still use in heroku.
 const env = process.env.NODE_ENV || 'development';
 const config = require(__dirname + '/../config/config.js')[env];
 // Connect to db.
-if (config.use_env_variable) {
-  var sequelize = new Sequelize(process.env[config.use_env_variable]);
-} else {
-  var sequelize = new Sequelize(
-    config.database,
-    config.username,
-    config.password,
-    config
-  );
-}
+var sequelize = new Sequelize(config.DB_URL);
+console.log(config.DB_URL);
 
 const db = {};
 

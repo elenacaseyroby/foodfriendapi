@@ -11,10 +11,10 @@ module.exports = (sequelize, DataTypes) => {
       },
       name: {
         allowNull: false,
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(100),
       },
       servingSizeNote: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(50),
       },
       createdAt: {
         type: DataTypes.DATE,
@@ -38,6 +38,7 @@ module.exports = (sequelize, DataTypes) => {
     });
     Food.belongsToMany(models.User, {
       through: 'UserFood',
+      as: 'users',
       foreignKey: 'foodId',
       otherKey: 'userId',
     });

@@ -14,24 +14,24 @@ module.exports = (sequelize, DataTypes) => {
       },
       firstName: {
         allowNull: false,
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(70),
       },
       lastName: {
         allowNull: false,
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(70),
       },
       email: {
         allowNull: false,
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(150),
       },
       password: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(70),
       },
       salt: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(100),
       },
       passwordResetToken: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(100),
       },
       passwordResetExpirationTime: {
         type: DataTypes.DATE,
@@ -46,6 +46,12 @@ module.exports = (sequelize, DataTypes) => {
       menstruates: {
         defaultValue: 0,
         type: DataTypes.BOOLEAN,
+      },
+      dateLastActive: {
+        type: DataTypes.DATE,
+      },
+      utcOffsetInHours: {
+        type: DataTypes.INTEGER(5),
       },
       createdAt: {
         type: DataTypes.DATE,
