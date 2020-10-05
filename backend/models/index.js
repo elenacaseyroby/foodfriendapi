@@ -10,7 +10,6 @@ const env = process.env.NODE_ENV || 'development';
 const config = require(__dirname + '/../config/config.js')[env];
 // Connect to db.
 var sequelize = new Sequelize(config.DB_URL);
-console.log(config.DB_URL);
 
 const db = {};
 
