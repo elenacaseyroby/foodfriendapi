@@ -104,6 +104,7 @@ export async function uploadPathNutrients(file) {
           ownerId: admin.id,
           notes: path.notes,
           notesSources: path.notesSources,
+          themeId: path.themeId,
         };
         pathsToCreate.push(newPath);
         let pathNutrientIdsList = [];
@@ -126,40 +127,44 @@ export async function uploadPathNutrients(file) {
       pathNamesTouched.push(cleanString(path.pathName));
     })
     .on('end', async () => {
-      console.log('CSV file successfully processed');
-      // Delete csv from tmp/csv
-      fs.unlinkSync(file.path, (err) => {
-        console.error(err);
-      });
-      console.log('file deleted');
-
-      // Update paths.
-      const updatedPaths = await pathsToUpdate.map((path) => {
-        db.Path.update(path, {
-          returning: true,
-          where: { id: path.id },
+      try {
+        console.log('CSV file successfully processed');
+        // Delete csv from tmp/csv
+        fs.unlinkSync(file.path, (err) => {
+          console.error(err);
         });
-      });
+        console.log('file deleted');
 
-      // Create New paths
-      const newPaths = await db.Path.bulkCreate(pathsToCreate);
+        // Update paths.
+        const updatedPaths = await pathsToUpdate.map((path) => {
+          db.Path.update(path, {
+            returning: true,
+            where: { id: path.id },
+          });
+        });
 
-      console.log(`${updatedPaths.length} paths updated.`);
-      console.log(`${newPaths.length} paths created.`);
+        // Create New paths
+        const newPaths = await db.Path.bulkCreate(pathsToCreate);
 
-      // Sort existing and new paths by name.
-      const paths = await db.Path.findAll({});
-      const pathsByName = paths.reduce(function (map, path) {
-        map[path.name] = path;
-        return map;
-      }, {});
-      // Update NutrientPath records.
-      pathNutrientsToUpdate.map((pathNutrients) => {
-        if (!pathsByName[pathNutrients.pathName]) return;
-        const pathId = pathsByName[pathNutrients.pathName].id;
-        const nutrientIdsList = pathNutrients.nutrientIds;
-        return updatePathNutrients(pathId, nutrientIdsList);
-      });
+        console.log(`${updatedPaths.length} paths updated.`);
+        console.log(`${newPaths.length} paths created.`);
+
+        // Sort existing and new paths by name.
+        const paths = await db.Path.findAll({});
+        const pathsByName = paths.reduce(function (map, path) {
+          map[path.name] = path;
+          return map;
+        }, {});
+        // Update NutrientPath records.
+        pathNutrientsToUpdate.map((pathNutrients) => {
+          if (!pathsByName[pathNutrients.pathName]) return;
+          const pathId = pathsByName[pathNutrients.pathName].id;
+          const nutrientIdsList = pathNutrients.nutrientIds;
+          return updatePathNutrients(pathId, nutrientIdsList);
+        });
+      } catch (error) {
+        console.log(error);
+      }
       // TODO: return nutrient rows that could not be created/updated
       // because of bad or missing data.
     });
