@@ -7,4 +7,4 @@ backend/tmp
 # npm-debug.log
 # .nyc_output/
 # coverage/
-# test/*.log
+# test/*.lognode_modules
