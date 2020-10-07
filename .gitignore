@@ -8,3 +8,4 @@ backend/tmp
 # .nyc_output/
 # coverage/
 # test/*.lognode_modules
+npm-debug.log
