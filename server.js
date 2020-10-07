@@ -43,7 +43,13 @@ const app = express();
 const port = process.env.PORT || process.env.PORT;
 
 // Serve static files from the React app
-app.use(express.static(path.join(__dirname, 'frontend/build')));
+app.use(express.static(path.join(__dirname, 'frontend/public')));
+
+// The "catchall" handler: for any request that doesn't
+// match one above, send back React's index.html file.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname + '/frontend/public/index.html'));
+});
 
 // Config bodyparser for handling api request data.
 app.use(bodyParser.json());
