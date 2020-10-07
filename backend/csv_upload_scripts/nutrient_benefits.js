@@ -1,6 +1,6 @@
-import { db } from '../models';
-import { cleanString } from '../utils/common';
-import { updateBenefitNutrients } from '../services/models/benefits';
+const { db } = require('../models');
+const { cleanString } = require('../utils/common');
+const { updateBenefitNutrients } = require('../services/models/benefits');
 const fs = require('fs');
 const csv = require('csv-parser');
 

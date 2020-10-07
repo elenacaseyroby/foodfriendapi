@@ -1,32 +1,37 @@
-import express from 'express';
-import { db } from './models';
-import { Op } from 'sequelize';
-import multer from 'multer';
-import { checkUserSignedIn, checkIfAdmin } from './utils/auth';
-import {
+const express = require('express');
+const bodyParser = require('body-parser');
+const { db } = require('./models');
+const { Op } = require('./sequelize');
+const multer = require('multer');
+const { checkUserSignedIn, checkIfAdmin } = require('./utils/auth');
+const {
   convertStringToDate,
   getTodaysDateInUtc,
   getRelativeDateTimeInUtc,
   addToDateTime,
-} from './utils/common';
-import { signUp } from './services/auth/signUp';
-import { signIn } from './services/auth/signIn';
-import {
+} = require('./utils/common');
+const { signUp } = require('./services/auth/signUp');
+const { signIn } = require('./services/auth/signIn');
+const {
   resetPassword,
   sendPasswordResetEmail,
-} from './services/auth/passwordReset';
-import {
+} = require('./services/auth/passwordReset');
+const {
   filterUserPaths,
   generateActivePath,
   updatePathNutrients,
   getPathHighPotencyFoods,
-} from './services/models/paths';
-import { uploadNutrients } from './csv_upload_scripts/nutrients';
-import { uploadNutrientBenefits } from './csv_upload_scripts/nutrient_benefits';
-import { uploadNutrientFoods } from './csv_upload_scripts/nutrient_foods';
-import { uploadNutrientRecipes } from './csv_upload_scripts/nutrient_recipes';
-import { uploadPathNutrients } from './csv_upload_scripts/path_nutrients';
-import e from 'express';
+} = require('./services/models/paths');
+const { uploadNutrients } = require('./csv_upload_scripts/nutrients');
+
+const {
+  uploadNutrientBenefits,
+} = require('./csv_upload_scripts/nutrient_benefits');
+const { uploadNutrientFoods } = require('./csv_upload_scripts/nutrient_foods');
+const {
+  uploadNutrientRecipes,
+} = require('./csv_upload_scripts/nutrient_recipes');
+const { uploadPathNutrients } = require('./csv_upload_scripts/path_nutrients');
 
 // Config environment variables so they are
 // accessible through process.env
@@ -38,7 +43,6 @@ const app = express();
 const port = process.env.PORT || process.env.PORT;
 
 // Config bodyparser for handling api request data.
-const bodyParser = require('body-parser');
 app.use(bodyParser.json());
 
 // FoodFriend API style guide:

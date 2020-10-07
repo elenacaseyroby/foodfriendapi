@@ -1,10 +1,7 @@
-import chai from 'chai';
-import { db } from '../../models';
-import { getPathHighPotencyFoods } from '../../services/models/paths';
-
+const { db } = require('../../models');
+const { getPathHighPotencyFoods } = require('../../services/models/paths');
+const { expect } = require('chai');
 require('dotenv').config();
-const Sequelize = require('sequelize');
-const { expect } = chai;
 
 describe('paths model and services tests:', async () => {
   before(async function () {

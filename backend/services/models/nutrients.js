@@ -1,4 +1,4 @@
-import { db } from '../../models';
+const { db } = require('../../models');
 
 export function updateNutrients(nutrientsList) {
   // nutrientsList should be an array of objects.

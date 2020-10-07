@@ -1,5 +1,5 @@
-import { db } from '../../models';
-import { differenceOfTwoArrays } from '../../utils/common';
+const { db } = require('../../models');
+const { differenceOfTwoArrays } = require('../../utils/common');
 
 export async function updateBenefitNutrients(benefitId, nutrientIdsList) {
   const savedNutrientIdsList = await db.NutrientBenefit.findAll({

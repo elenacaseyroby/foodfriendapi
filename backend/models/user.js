@@ -1,5 +1,5 @@
 'use strict';
-import { differenceOfTwoArrays } from '../utils/common';
+const { differenceOfTwoArrays } = require('../utils/common');
 const crypto = require('crypto');
 
 module.exports = (sequelize, DataTypes) => {

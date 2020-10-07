@@ -1,6 +1,6 @@
-import jwt from 'jsonwebtoken';
-import { generateJWT } from '../../services/auth/tokens';
-import chai from 'chai';
+const jwt = require('jsonwebtoken');
+const { generateJWT } = require('../../services/auth/tokens');
+const chai = require('chai');
 require('dotenv').config();
 const should = chai.should();
 

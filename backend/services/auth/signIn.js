@@ -1,6 +1,9 @@
-import { generateJWT } from './tokens';
-import { db } from '../../models';
-import { validateEmail, validatePassword } from '../../utils/formValidation';
+const { generateJWT } = require('./tokens');
+const { db } = require('../../models');
+const {
+  validateEmail,
+  validatePassword,
+} = require('../../utils/formValidation');
 
 export async function signIn(email, password) {
   // input email, password

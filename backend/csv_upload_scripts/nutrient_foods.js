@@ -1,5 +1,5 @@
-import { db } from '../models';
-import { cleanString } from '../utils/common';
+const { db } = require('../models');
+const { cleanString } = require('../utils/common');
 const fs = require('fs');
 const csv = require('csv-parser');
 

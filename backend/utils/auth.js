@@ -1,4 +1,4 @@
-import { decodeToken } from '../services/auth/tokens';
+const { decodeToken } = require('../services/auth/tokens');
 
 // FUNCTIONS TO CHECK PERMISSIONS OF A REQUEST
 

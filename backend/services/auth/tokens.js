@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+const jwt = require('jsonwebtoken');
 
 export function generateJWT(user) {
   const tokenData = { email: user.email, id: user.id };

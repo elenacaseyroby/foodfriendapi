@@ -6,8 +6,6 @@
   "dependencies": {
     "@babel/core": "^7.9.6",
     "@sendgrid/mail": "^7.2.1",
-    "babel-core": "^6.26.3",
-    "babel-loader": "^8.1.0",
     "body-parser": "^1.19.0",
     "core-js": "^3.6.5",
     "csv-parser": "^2.3.2",
@@ -18,19 +16,16 @@
     "mysql2": "^2.1.0",
     "sequelize": "^5.21.11",
     "sequelize-cli": "^5.5.1",
-    "sequelize-noupdate-attributes": "^1.0.0",
-    "webpack": "^4.43.0"
+    "sequelize-noupdate-attributes": "^1.0.0"
   },
   "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-preset-env": "^1.7.0",
     "chai": "^4.2.0",
     "mocha": "^8.1.1",
     "nodemon": "^2.0.4"
   },
   "scripts": {
     "test": "export NODE_ENV=test && mocha --require babel-register __tests__/*.js __tests__/*/*.js --exit",
-    "start": "nodemon server.js --exec babel-node --presets babel-preset-env"
+    "start": "nodemon server.js"
   },
   "author": "",
   "license": "ISC"

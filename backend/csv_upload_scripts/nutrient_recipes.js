@@ -1,6 +1,6 @@
-import { db } from '../models';
-import { cleanString } from '../utils/common';
-import { differenceOfTwoArrays } from '../utils/common';
+const { db } = require('../models');
+const { cleanString } = require('../utils/common');
+const { differenceOfTwoArrays } = require('../utils/common');
 const fs = require('fs');
 const csv = require('csv-parser');
 

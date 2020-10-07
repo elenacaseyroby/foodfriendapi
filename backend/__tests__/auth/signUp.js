@@ -1,10 +1,8 @@
-import { checkUserSignedIn } from '../../utils/auth';
-import { signUp } from '../../services/auth/signUp';
-import chai from 'chai';
-import { db } from '../../models';
-
+const { checkUserSignedIn } = require('../../utils/auth');
+const { signUp } = require('../../services/auth/signUp');
+const { expect } = require('chai');
+const { db } = require('../../models');
 require('dotenv').config();
-const { expect } = chai;
 
 describe('sign up tests:', async () => {
   before(async function () {

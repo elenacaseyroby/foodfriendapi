@@ -1,10 +1,10 @@
-import { db } from '../../models';
-import {
+const { db } = require('../../models');
+const {
   validateEmail,
   validatePassword,
   validateName,
-} from '../../utils/formValidation';
-import { generateJWT } from './tokens';
+} = require('../../utils/formValidation');
+const { generateJWT } = require('./tokens');
 
 export async function signUp(firstName, lastName, email, password) {
   // input email, password, first name, laste name

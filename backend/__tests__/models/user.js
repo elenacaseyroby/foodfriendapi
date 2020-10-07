@@ -1,9 +1,6 @@
-import chai from 'chai';
-import { db } from '../../models';
-
+const { expect } = require('chai');
+const { db } = require('../../models');
 require('dotenv').config();
-const Sequelize = require('sequelize');
-const { expect } = chai;
 
 describe('user model tests:', async () => {
   before(async function () {

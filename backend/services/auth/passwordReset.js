@@ -1,6 +1,9 @@
-import { db } from '../../models';
-import { validateEmail, validatePassword } from '../../utils/formValidation';
-import { generateJWT } from './tokens';
+const { db } = require('../../models');
+const {
+  validateEmail,
+  validatePassword,
+} = require('../../utils/formValidation');
+const { generateJWT } = require('./tokens');
 
 // Config sendGrid.
 const sgMail = require('@sendgrid/mail');

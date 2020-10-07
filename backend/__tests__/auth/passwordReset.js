@@ -1,14 +1,11 @@
-import {
+const {
   sendPasswordResetEmail,
   resetPassword,
-} from '../../services/auth/passwordReset';
-import chai from 'chai';
-import { db } from '../../models';
-
-require('dotenv').config();
-const Sequelize = require('sequelize');
-const Op = Sequelize.Op;
+} = require('../../services/auth/passwordReset');
+const chai = require('chai');
+const { db } = require('../../models');
 const { expect } = chai;
+require('dotenv').config();
 
 describe('password reset tests:', async () => {
   before(async function () {
