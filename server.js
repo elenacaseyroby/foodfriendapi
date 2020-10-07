@@ -40,7 +40,7 @@ console.log(process.env.NODE_ENV);
 
 // Start app.
 const app = express();
-const port = process.env.PORT || process.env.PORT;
+const port = process.env.PORT || 5000;
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, 'frontend/public')));
