@@ -1,7 +1,7 @@
 {
-  "name": "backend",
+  "name": "FoodFriend",
   "version": "1.0.0",
-  "description": "",
+  "description": "Eat your way to better health",
   "main": "server.js",
   "dependencies": {
     "@babel/core": "^7.9.6",
@@ -28,6 +28,9 @@
     "start": "nodemon server.js",
     "heroku-postbuild": "cd frontend && npm install && npm run build"
   },
-  "author": "",
+  "engines": {
+    "node": "12.16.1"
+  },
+  "author": "Casey Roby",
   "license": "ISC"
 }
