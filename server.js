@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const path = require('path');
 const { db } = require('./models');
 const { Op } = require('sequelize');
 const multer = require('multer');
