@@ -24,7 +24,7 @@ function nutrientPropertiesUpdated(oldNutrient, newNutrient) {
   return true;
 }
 
-export async function uploadNutrients(file) {
+async function uploadNutrients(file) {
   // csv required columns:
   // name, dvInMg (must be integer value w/ no ","), dvSource
   // csv optional columns:
@@ -86,3 +86,5 @@ export async function uploadNutrients(file) {
       // because of bad or missing data.
     });
 }
+
+module.exports = { uploadNutrients };

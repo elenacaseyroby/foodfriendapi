@@ -1,7 +1,7 @@
 const { db } = require('../../models');
 const { differenceOfTwoArrays } = require('../../utils/common');
 
-export async function updateBenefitNutrients(benefitId, nutrientIdsList) {
+async function updateBenefitNutrients(benefitId, nutrientIdsList) {
   const savedNutrientIdsList = await db.NutrientBenefit.findAll({
     where: {
       benefitId: benefitId,
@@ -53,3 +53,5 @@ export async function updateBenefitNutrients(benefitId, nutrientIdsList) {
   }
   return newNutrientBenefits;
 }
+
+module.exports = { updateBenefitNutrients };

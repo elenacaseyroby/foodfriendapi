@@ -3,7 +3,7 @@ const { cleanString } = require('../utils/common');
 const fs = require('fs');
 const csv = require('csv-parser');
 
-export async function uploadNutrientFoods(file) {
+async function uploadNutrientFoods(file) {
   // WARNING: must upload nutrients before uploading nutrientFoods.
   // this will add/update/delete nutrientFood records.
   // will fully sync all the records in the csv to the db: adding/updating
@@ -209,3 +209,5 @@ export async function uploadNutrientFoods(file) {
       // because of bad or missing data.
     });
 }
+
+module.exports = { uploadNutrientFoods };

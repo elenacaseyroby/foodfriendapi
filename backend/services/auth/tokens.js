@@ -1,11 +1,11 @@
 const jwt = require('jsonwebtoken');
 
-export function generateJWT(user) {
+function generateJWT(user) {
   const tokenData = { email: user.email, id: user.id };
   return jwt.sign({ user: tokenData }, process.env.JWT_SECRET);
 }
 
-export function decodeToken(req) {
+function decodeToken(req) {
   const token = req.headers.authorization || req.headers['authorization'];
 
   if (!token) {
@@ -18,3 +18,5 @@ export function decodeToken(req) {
     return null;
   }
 }
+
+module.exports = { generateJWT, decodeToken };

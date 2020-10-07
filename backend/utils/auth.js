@@ -2,7 +2,7 @@ const { decodeToken } = require('../services/auth/tokens');
 
 // FUNCTIONS TO CHECK PERMISSIONS OF A REQUEST
 
-export function checkUserSignedIn(req) {
+function checkUserSignedIn(req) {
   // input: req data
   // output:
   // userId if logged in
@@ -19,7 +19,7 @@ export function checkUserSignedIn(req) {
   return loggedInUserId;
 }
 
-export function checkIfAdmin(req) {
+function checkIfAdmin(req) {
   // input: req data
   // output:
   // true if admin
@@ -31,3 +31,5 @@ export function checkIfAdmin(req) {
   if (adminToken !== process.env.ADMIN_ACCESS_TOKEN) return;
   return true;
 }
+
+module.exports = { checkUserSignedIn, checkIfAdmin };

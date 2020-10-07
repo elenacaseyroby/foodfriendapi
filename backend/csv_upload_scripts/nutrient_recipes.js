@@ -4,7 +4,7 @@ const { differenceOfTwoArrays } = require('../utils/common');
 const fs = require('fs');
 const csv = require('csv-parser');
 
-export async function uploadNutrientRecipes(file) {
+async function uploadNutrientRecipes(file) {
   // WARNING: must upload nutrients before uploading nutrientBenefits.
   // this will only add/update nutrientRecipes and recipes records.
 
@@ -158,3 +158,5 @@ export async function uploadNutrientRecipes(file) {
       // because of bad or missing data.
     });
 }
+
+module.exports = { uploadNutrientRecipes };

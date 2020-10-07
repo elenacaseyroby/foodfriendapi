@@ -1,6 +1,6 @@
 const { db } = require('../../models');
 
-export function updateNutrients(nutrientsList) {
+function updateNutrients(nutrientsList) {
   // nutrientsList should be an array of objects.
   // each object must include an id
   // and any other properties that should be updated.
@@ -23,7 +23,7 @@ export function updateNutrients(nutrientsList) {
   });
 }
 
-export function createNewNutrients(nutrientsList) {
+function createNewNutrients(nutrientsList) {
   // nutrientsList should be an array of objects.
   // each object must include any properties that
   // should be updated.
@@ -38,3 +38,5 @@ export function createNewNutrients(nutrientsList) {
     return nutrients;
   });
 }
+
+module.exports = { updateNutrients, createNewNutrients };

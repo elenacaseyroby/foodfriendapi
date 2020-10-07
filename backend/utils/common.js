@@ -1,4 +1,4 @@
-export function addToDateTime(units, unitOfTime, dateTime = new Date()) {
+function addToDateTime(units, unitOfTime, dateTime = new Date()) {
   const hour = 60 * 60 * 1000;
   const day = 24 * hour;
   const week = 7 * day;
@@ -11,8 +11,7 @@ export function addToDateTime(units, unitOfTime, dateTime = new Date()) {
   const newDateTime = dateTime.getTime() + units * multiplier;
   return new Date(newDateTime);
 }
-
-export function subtractFromDateTime(units, unitOfTime, dateTime = new Date()) {
+function subtractFromDateTime(units, unitOfTime, dateTime = new Date()) {
   const hour = 60 * 60 * 1000;
   const day = 24 * hour;
   const week = 7 * day;
@@ -25,21 +24,18 @@ export function subtractFromDateTime(units, unitOfTime, dateTime = new Date()) {
   const newDateTime = dateTime.getTime() - units * multiplier;
   return new Date(newDateTime);
 }
-
-export function convertStringToDate(dateStr) {
+function convertStringToDate(dateStr) {
   // input is string like 'MM/DD/YYYY'
   const date = Date.parse(dateStr);
   const sequelizeSafeDate = new Date(date);
   return sequelizeSafeDate;
 }
-
-export function getTodaysDateInUtc() {
+function getTodaysDateInUtc() {
   // always in utc
   const today = new Date();
   return today;
 }
-
-export function getRelativeDateTimeInUtc(operation, units, unitOfTime, time) {
+function getRelativeDateTimeInUtc(operation, units, unitOfTime, time) {
   // units = integer value
   if (typeof units !== 'number') return;
   // operation = 'subtract', 'add'
@@ -65,8 +61,7 @@ export function getRelativeDateTimeInUtc(operation, units, unitOfTime, time) {
   }
   return new Date(processedDate);
 }
-
-export function cleanString(string) {
+function cleanString(string) {
   // Make lowercase & trim whitespace.
   let cleanString = string.toLowerCase().trim();
   // If last letter is 's' remove it.
@@ -77,18 +72,26 @@ export function cleanString(string) {
   }
   return cleanString;
 }
-
-export function unionOfTwoArrays(a, b) {
+function unionOfTwoArrays(a, b) {
   // contains the elements of both set a and set b.
   return Array.from(new Set([...a, ...b]));
 }
-
-export function intersectionOfTwoArrays(a, b) {
+function intersectionOfTwoArrays(a, b) {
   // contains those elements of set a that are also in set b.
   return a.filter((x) => b.includes(x));
 }
-
-export function differenceOfTwoArrays(a, b) {
+function differenceOfTwoArrays(a, b) {
   // contains those elements of set a that are not in set b.
   return a.filter((x) => !b.includes(x));
 }
+
+module.exports = {
+  addToDateTime,
+  subtractFromDateTime,
+  convertStringToDate,
+  getRelativeDateTimeInUtc,
+  cleanString,
+  unionOfTwoArrays,
+  intersectionOfTwoArrays,
+  differenceOfTwoArrays,
+};

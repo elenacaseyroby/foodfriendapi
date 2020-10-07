@@ -4,7 +4,7 @@ const { updateBenefitNutrients } = require('../services/models/benefits');
 const fs = require('fs');
 const csv = require('csv-parser');
 
-export async function uploadNutrientBenefits(file) {
+async function uploadNutrientBenefits(file) {
   // WARNING: must upload nutrients before uploading nutrientBenefits.
 
   // Adds/Updates nutrientBenefits and benefits records.
@@ -127,3 +127,5 @@ export async function uploadNutrientBenefits(file) {
       // because of bad or missing data.
     });
 }
+
+module.exports = { uploadNutrientBenefits };

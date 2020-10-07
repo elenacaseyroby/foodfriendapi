@@ -4,7 +4,7 @@ const { updatePathNutrients } = require('../services/models/paths');
 const fs = require('fs');
 const csv = require('csv-parser');
 
-export async function uploadPathNutrients(file) {
+async function uploadPathNutrients(file) {
   // WARNING: must upload nutrients before uploading nutrientBenefits.
 
   // Adds/Updates nutrientPaths and paths records.
@@ -169,3 +169,4 @@ export async function uploadPathNutrients(file) {
       // because of bad or missing data.
     });
 }
+module.exports = { uploadPathNutrients };

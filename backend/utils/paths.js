@@ -1,6 +1,6 @@
 const { db } = require('../models');
 
-export function getVeganPaths(allPaths) {
+function getVeganPaths(allPaths) {
   let pathsByName = {};
   allPaths.map((path) => {
     pathsByName[path.name.toLowerCase().trim()] = path;
@@ -17,7 +17,7 @@ export function getVeganPaths(allPaths) {
   return veganPaths;
 }
 
-export function getMenstruationPaths(allPaths) {
+function getMenstruationPaths(allPaths) {
   let pathsByName = {};
   allPaths.map((path) => {
     pathsByName[path.name.toLowerCase().trim()] = path;
@@ -34,7 +34,7 @@ export function getMenstruationPaths(allPaths) {
   return menstruationPaths;
 }
 
-export function getDefaultPaths(allPaths) {
+function getDefaultPaths(allPaths) {
   let defaultPaths = [];
   allPaths.map((path) => {
     // add path if name is one word (default path)
@@ -45,7 +45,7 @@ export function getDefaultPaths(allPaths) {
   return defaultPaths;
 }
 
-export async function generateActivePath(menstruates, isVegan, pathName) {
+async function generateActivePath(menstruates, isVegan, pathName) {
   const admin = await db.User.findOne({
     where: {
       email: 'admin@foodfriend.io',
@@ -87,3 +87,4 @@ export async function generateActivePath(menstruates, isVegan, pathName) {
   });
   return activePath;
 }
+module.exports = { getVeganPaths, getMenstruationPaths, getDefaultPaths };

@@ -5,7 +5,7 @@ const {
   validatePassword,
 } = require('../../utils/formValidation');
 
-export async function signIn(email, password) {
+async function signIn(email, password) {
   // input email, password
   // output response
 
@@ -50,3 +50,5 @@ export async function signIn(email, password) {
   response.userId = user.id;
   return response;
 }
+
+module.exports = { signIn };

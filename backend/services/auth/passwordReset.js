@@ -9,7 +9,7 @@ const { generateJWT } = require('./tokens');
 const sgMail = require('@sendgrid/mail');
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-export async function sendPasswordResetEmail(emailAddress) {
+async function sendPasswordResetEmail(emailAddress) {
   // input email
   // output response
   const response = {
@@ -93,7 +93,7 @@ export async function sendPasswordResetEmail(emailAddress) {
   return response;
 }
 
-export async function resetPassword(userId, passwordResetToken, newPassword) {
+async function resetPassword(userId, passwordResetToken, newPassword) {
   // input userId, passwordResetToken, newPassword
   // output response
   const response = {
@@ -159,3 +159,5 @@ export async function resetPassword(userId, passwordResetToken, newPassword) {
     return response;
   }
 }
+
+module.exports = { sendPasswordResetEmail, resetPassword };

@@ -6,7 +6,7 @@ const {
 } = require('../../utils/formValidation');
 const { generateJWT } = require('./tokens');
 
-export async function signUp(firstName, lastName, email, password) {
+async function signUp(firstName, lastName, email, password) {
   // input email, password, first name, laste name
   // output response
 
@@ -73,3 +73,5 @@ export async function signUp(firstName, lastName, email, password) {
   response.userId = user.id;
   return response;
 }
+
+module.exports = { signUp };

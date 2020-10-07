@@ -1,7 +1,7 @@
 const { db } = require('../../models');
 const { differenceOfTwoArrays } = require('../../utils/common');
 
-export async function updatePathNutrients(pathId, nutrientIdsList) {
+async function updatePathNutrients(pathId, nutrientIdsList) {
   const savedNutrientIdsList = await db.PathNutrient.findAll({
     where: {
       pathId: pathId,
@@ -53,7 +53,7 @@ export async function updatePathNutrients(pathId, nutrientIdsList) {
   }
   return newPathNutrients;
 }
-export function getVeganPaths(allPaths) {
+function getVeganPaths(allPaths) {
   let pathsByName = {};
   allPaths.map((path) => {
     pathsByName[path.name.toLowerCase().trim()] = path;
@@ -69,7 +69,7 @@ export function getVeganPaths(allPaths) {
   });
   return veganPaths;
 }
-export function getMenstruationPaths(allPaths) {
+function getMenstruationPaths(allPaths) {
   let pathsByName = {};
   allPaths.map((path) => {
     pathsByName[path.name.toLowerCase().trim()] = path;
@@ -85,7 +85,7 @@ export function getMenstruationPaths(allPaths) {
   });
   return menstruationPaths;
 }
-export function getDefaultPaths(allPaths) {
+function getDefaultPaths(allPaths) {
   let defaultPaths = [];
   allPaths.map((path) => {
     // add path if name is one word (default path)
@@ -95,8 +95,7 @@ export function getDefaultPaths(allPaths) {
   });
   return defaultPaths;
 }
-
-export async function generateActivePath(menstruates, isVegan, pathName) {
+async function generateActivePath(menstruates, isVegan, pathName) {
   // Filter paths based on user properties (isVegan and menstruates).
   const userPaths = await filterUserPaths(isVegan, menstruates);
   let activePath;
@@ -109,8 +108,7 @@ export async function generateActivePath(menstruates, isVegan, pathName) {
   });
   return activePath;
 }
-
-export async function filterUserPaths(isVegan, menstruates) {
+async function filterUserPaths(isVegan, menstruates) {
   // This function filters paths based on user properties (isVegan and menstruates).
   // Will always return a list with one path for each theme:
   // mood, energy, beauty, cognition, immunity, etc.
@@ -166,7 +164,7 @@ export async function filterUserPaths(isVegan, menstruates) {
 // // querying for a path, we don't want the path foods.
 // // COULD MEMOIZE WITH EXTRA FUNC THAT TAKES IN LIST OF NUTRIENT IDS
 // // SO IT WILL ONLY RUN AGAIN IF NUTRIENT IDS CHANGE.
-// export async function getPathFoods(pathId) {
+// async function getPathFoods(pathId) {
 //   const path = await db.Path.findOne({
 //     where: {
 //       id: pathId,
@@ -205,7 +203,7 @@ export async function filterUserPaths(isVegan, menstruates) {
 // querying for a path, we don't want the path recommended foods.
 // COULD MEMOIZE WITH EXTRA FUNC THAT TAKES IN LIST OF NUTRIENT IDS
 // SO IT WILL ONLY RUN AGAIN IF NUTRIENT IDS CHANGE.
-export async function getPathHighPotencyFoods(pathId) {
+async function getPathHighPotencyFoods(pathId) {
   const path = await db.Path.findOne({
     where: {
       id: pathId,
@@ -243,3 +241,12 @@ export async function getPathHighPotencyFoods(pathId) {
   // Return foods with every nutrient in path.
   return foodsInAllPathNutrients;
 }
+
+module.exports = {
+  updatePathNutrients,
+  getVeganPaths,
+  getMenstruationPaths,
+  getDefaultPaths,
+  getPathHighPotencyFoods,
+  filterUserPaths,
+};

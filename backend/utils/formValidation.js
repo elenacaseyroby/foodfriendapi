@@ -1,4 +1,4 @@
-export function validateEmail(email) {
+function validateEmail(email) {
   // input string
   // output error message or undefined
   if (!email || '') {
@@ -15,7 +15,7 @@ export function validateEmail(email) {
   }
   return;
 }
-export function validatePassword(password) {
+function validatePassword(password) {
   // input string
   // output error message or undefined
   if (!password || '') {
@@ -29,7 +29,7 @@ export function validatePassword(password) {
   }
   return;
 }
-export function validateName(name) {
+function validateName(name) {
   // input string
   // output error message or undefined
   if (!name || name === '') {
@@ -40,3 +40,5 @@ export function validateName(name) {
   }
   return;
 }
+
+module.exports = { validateEmail, validatePassword, validateName };

@@ -1,7 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const { db } = require('./models');
-const { Op } = require('./sequelize');
+const { Op } = require('sequelize');
 const multer = require('multer');
 const { checkUserSignedIn, checkIfAdmin } = require('./utils/auth');
 const {
