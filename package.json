@@ -26,7 +26,7 @@
   "scripts": {
     "test": "export NODE_ENV=test && mocha --require babel-register __tests__/*.js __tests__/*/*.js --exit",
     "start": "nodemon server.js",
-    "heroku-postbuild": "cd frontend && npm install && npm run build"
+    "heroku-postbuild": "cd frontend && npm install && npm run build && npm start"
   },
   "engines": {
     "node": "12.16.1",
