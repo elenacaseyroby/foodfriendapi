@@ -1,9 +1,9 @@
 .env
-frontend/node_modules/
-node_modules/
+frontend/node_modules
 tmp
 # npm-debug.log
 # .nyc_output/
 # coverage/
 # test/*.lognode_modules
 npm-debug.log
+node_modules
