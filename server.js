@@ -58,7 +58,7 @@ app.use(bodyParser.json());
 // https://docs.google.com/document/d/1PEyAj9p4K4B_t7z1s74qUhJlAi_ZARgdmRbOBfTS0RE/edit?usp=sharing
 
 // API ENDPOINTS:
-app.get('/diets', async (req, res) => {
+app.get('/api/diets', async (req, res) => {
   try {
     const diets = await db.Diet.findAll({});
     return res.status(200).json(diets);
@@ -70,7 +70,7 @@ app.get('/diets', async (req, res) => {
   }
 });
 
-app.get('/nutrients', async (req, res) => {
+app.get('/api/nutrients', async (req, res) => {
   // could move this logic into a middleware function in router.
   const loggedInUserId = await checkUserSignedIn(req);
   if (!loggedInUserId) {
@@ -105,7 +105,7 @@ app.get('/nutrients', async (req, res) => {
 });
 
 // unused endpoint.
-// app.get('/paths/', async (req, res) => {
+// app.get('/api/paths/', async (req, res) => {
 //   // Input: userId as a query string and authorization (token) in the body.
 //   // Output: filterd paths based on user (menstruates & isVegan).
 
@@ -137,7 +137,7 @@ app.get('/nutrients', async (req, res) => {
 //   }
 // });
 
-app.get('/privacypolicy', async (req, res) => {
+app.get('/api/privacypolicy', async (req, res) => {
   // Gets most recently published by default.
   try {
     const pp = await db.PrivacyPolicy.findOne({
@@ -152,7 +152,7 @@ app.get('/privacypolicy', async (req, res) => {
   }
 });
 
-app.put('/recipes/:recipeId/reportlink', async (req, res) => {
+app.put('/api/recipes/:recipeId/reportlink', async (req, res) => {
   // Input: recipeId in params, authorization (token) and userId in the body.
   // Output: success/failure
 
@@ -204,7 +204,7 @@ app.put('/recipes/:recipeId/reportlink', async (req, res) => {
   }
 });
 
-app.get('/termsandconditions', async (req, res) => {
+app.get('/api/termsandconditions', async (req, res) => {
   // Gets most recently published by default.
   try {
     const terms = await db.TermsAndConditions.findOne({
@@ -219,7 +219,7 @@ app.get('/termsandconditions', async (req, res) => {
   }
 });
 
-app.get('/users/:userId', async (req, res) => {
+app.get('/api/users/:userId', async (req, res) => {
   // Input: userId as a param and authorization (token) and utcOffsetInHours in the body.
   // Output: user object.
   // NOTE: object includes paths and active path since those are dependent
@@ -320,7 +320,7 @@ app.get('/users/:userId', async (req, res) => {
   }
 });
 
-app.put('/users/:userId', async (req, res) => {
+app.put('/api/users/:userId', async (req, res) => {
   // Input: userId in params, authorization (token) and properties to update in the body.
   // Output: updated user object.
   // body should only include properties
@@ -429,7 +429,7 @@ app.put('/users/:userId', async (req, res) => {
   }
 });
 
-app.get('/users/:userId/activePath/recipes/', async (req, res) => {
+app.get('/api/users/:userId/activePath/recipes/', async (req, res) => {
   // Gets activePath including recipes for a given user.
   // Input: userId in params, authorization (token) in body
   // Output: foods JSON object.
@@ -563,7 +563,7 @@ app.get('/users/:userId/activePath/recipes/', async (req, res) => {
 });
 
 // unused endpoint.
-// app.get('/users/:userId/custompath', async (req, res) => {
+// app.get('/api/users/:userId/custompath', async (req, res) => {
 //   // Input: userId as a param and authorization (token) in the body.
 //   // Output: user's custom path object or 404.
 //   const userId = req.params.userId;
@@ -605,7 +605,7 @@ app.get('/users/:userId/activePath/recipes/', async (req, res) => {
 //   }
 // });
 
-app.put('/users/:userId/custompath', async (req, res) => {
+app.put('/api/users/:userId/custompath', async (req, res) => {
   // Input: userId as a param and authorization (token), pathName, nutrientIds in the body.
   // Output: user's active path object.
   // Ex “nutrientIds”: [ 1, 5, 7]
@@ -691,7 +691,7 @@ app.put('/users/:userId/custompath', async (req, res) => {
     });
   }
 });
-app.get('/users/:userId/diets', async (req, res) => {
+app.get('/api/users/:userId/diets', async (req, res) => {
   // Gets all diets for a given user.
   // Input: userId in params, authorization (token) in body
   // Output: diets json object
@@ -729,7 +729,7 @@ app.get('/users/:userId/diets', async (req, res) => {
       .json({ message: 'Server error: failed to retrieve user diets.' });
   }
 });
-app.put('/users/:userId/diets', async (req, res) => {
+app.put('/api/users/:userId/diets', async (req, res) => {
   // Updates all diets for a given user to match provided dietIds.
   // Input: userId in params, authorization (token) and dietIds (json objs) in the body.
   // Output: 200
@@ -767,7 +767,7 @@ app.put('/users/:userId/diets', async (req, res) => {
   }
 });
 
-app.get('/users/:userId/foods/', async (req, res) => {
+app.get('/api/users/:userId/foods/', async (req, res) => {
   // Gets all foods eaten by a given user.
   // Input: userId in params, authorization (token) in body
   // Optional input: limit, dateRange in query string
@@ -862,7 +862,7 @@ app.get('/users/:userId/foods/', async (req, res) => {
   }
 });
 
-app.post('/users/:userId/recipes/', async (req, res) => {
+app.post('/api/users/:userId/recipes/', async (req, res) => {
   // Adds user recipe record.
   // Input: userId in params, authorization (token), recipeId in body
   // Output: http success/failure status.
@@ -924,7 +924,7 @@ app.post('/users/:userId/recipes/', async (req, res) => {
   }
 });
 
-app.delete('/users/:userId/recipes/', async (req, res) => {
+app.delete('/api/users/:userId/recipes/', async (req, res) => {
   // Deletes user recipe record.
   // Input: userId in params, authorization (token) and recipeId in body
   // Output: http success/failure status.
@@ -977,7 +977,7 @@ app.delete('/users/:userId/recipes/', async (req, res) => {
   }
 });
 
-app.get('/users/:userId/recipes/', async (req, res) => {
+app.get('/api/users/:userId/recipes/', async (req, res) => {
   // Gets all favorited recipes for a given user.
   // Input: userId in params, authorization (token) in body
   // Output: foods JSON object.
@@ -1031,7 +1031,7 @@ app.get('/users/:userId/recipes/', async (req, res) => {
   }
 });
 
-app.get('/users/:userId/userfoods/', async (req, res) => {
+app.get('/api/users/:userId/userfoods/', async (req, res) => {
   // Gets all UserFood (meal) records for a given user.
   // Input: userId in params, authorization (token) in body
   // Optional input: limit, dateRange in query string
@@ -1107,7 +1107,7 @@ app.get('/users/:userId/userfoods/', async (req, res) => {
   }
 });
 
-app.post('/users/:userId/userfoods/', async (req, res) => {
+app.post('/api/users/:userId/userfoods/', async (req, res) => {
   // Adds user food record.
   // Input: userId in params, authorization (token), foodId and servingsCount in body
   // Output: http success/failure status.
@@ -1161,7 +1161,7 @@ app.post('/users/:userId/userfoods/', async (req, res) => {
   }
 });
 
-app.delete('/users/:userId/userfoods/', async (req, res) => {
+app.delete('/api/users/:userId/userfoods/', async (req, res) => {
   // Deletes user food record.
   // Input: userId in params, authorization (token) and userFoodId in body
   // Output: http success/failure status.
@@ -1210,7 +1210,7 @@ app.delete('/users/:userId/userfoods/', async (req, res) => {
   }
 });
 
-app.get('/users/:userId/progressreport/daily', async (req, res) => {
+app.get('/api/users/:userId/progressreport/daily', async (req, res) => {
   // Gets report of user's intake of each nutrient in their path.
   // Input: userId in params, authorization (token) and utcoffsetinhours in headers
   // Output: report JSON object.
@@ -1390,7 +1390,7 @@ app.get('/users/:userId/progressreport/daily', async (req, res) => {
 });
 
 // ENDPOINTS TO PERFORM SPECIFIC FUNCTIONS
-app.get('/generateUserActivePath/', async (req, res) => {
+app.get('/api/generateUserActivePath/', async (req, res) => {
   // Input: authorization (token) and menstruates, isVegan, pathName in query string.
   // Output: path based on menstruates, isVegan and pathName.
   try {
@@ -1406,7 +1406,7 @@ app.get('/generateUserActivePath/', async (req, res) => {
 });
 
 // AUTHENTICATION
-app.post('/signin', async (req, res) => {
+app.post('/api/signin', async (req, res) => {
   const response = await signIn(req.body.email, req.body.password);
   return res.status(response.status).json({
     messsage: response.message,
@@ -1429,12 +1429,12 @@ app.post('/signup', async (req, res) => {
   });
 });
 
-app.post('/sendpasswordresetemail', async (req, res) => {
+app.post('/api/sendpasswordresetemail', async (req, res) => {
   const response = await sendPasswordResetEmail(req.body.email);
   return res.status(response.status).json({ message: response.message });
 });
 
-app.post('/resetpassword', async (req, res) => {
+app.post('/api/resetpassword', async (req, res) => {
   const response = await resetPassword(
     req.body.userId,
     req.body.passwordResetToken,
@@ -1448,7 +1448,7 @@ app.post('/resetpassword', async (req, res) => {
 });
 
 // ADMIN TOOLS
-app.put('/users/changePassword', async (req, res) => {
+app.put('/api/users/changePassword', async (req, res) => {
   // Must pass headers.adminauthorization with request.
   const isAdmin = await checkIfAdmin(req);
   if (!isAdmin) {
