@@ -1409,7 +1409,7 @@ app.post('/api/signin', async (req, res) => {
   });
 });
 
-app.post('/signup', async (req, res) => {
+app.post('/api/signup', async (req, res) => {
   const response = await signUp(
     req.body.firstName,
     req.body.lastName,
