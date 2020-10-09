@@ -38,39 +38,49 @@ async function signUp(firstName, lastName, email, password) {
         'There is already an account under the email that you entered.');
     return response;
   }
-  // If not, create new user.
-  const user = await db.User.create({
-    email: email.toLowerCase().trim(),
-    firstName: firstName.trim(),
-    lastName: lastName.trim(),
-  });
-  if (!user) {
-    response.status = 500;
-    response.message = "Server error: couldn't create user.";
-    return response;
+  try {
+    // If not, create new user.
+    const user = await db.User.create({
+      email: email.toLowerCase().trim(),
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+    });
+    if (!user) {
+      response.status = 500;
+      response.message = "Server error: couldn't create user.";
+      return response;
+    }
+    const passwordSet = await user.setPassword(password);
+    if (!passwordSet) {
+      response.status = 500;
+      response.message = "Server error: couldn't save password.";
+      return response;
+    }
+    // Get latest version of user
+    const userWithId = await db.User.findOne({
+      email: email.toLowerCase().trim()
+    });
+    // Agree to Privacy Policy and Terms and Conditions.
+    const latestTerms = await db.TermsAndConditions.findOne({
+      order: [['datePublished', 'DESC']],
+    });
+    const agreedTerms = await userWithId.agreeToTerms(latestTerms);
+    const latestPolicy = await db.PrivacyPolicy.findOne({
+      order: [['datePublished', 'DESC']],
+    });
+    const agreedPolicy = await userWithId.agreeToPrivacyPolicy(latestPolicy);
+    if (!(agreedTerms && agreedPolicy)) {
+      response.status = 500;
+      response.message = "Server error: couldn't agree to terms.";
+      return response;
+    }
+    response.accessToken = generateJWT(user);
+    response.userId = userWithId.id;
+    
+  } catch (error) {
+    response.status = 500,
+    response.message = `An error has occured and we were not able to sign up the given user. Error: ${error}`;
   }
-  const passwordSet = await user.setPassword(password);
-  if (!passwordSet) {
-    response.status = 500;
-    response.message = "Server error: couldn't save password.";
-    return response;
-  }
-  // Agree to Privacy Policy and Terms and Conditions.
-  const latestTerms = await db.TermsAndConditions.findOne({
-    order: [['datePublished', 'DESC']],
-  });
-  const agreedTerms = await user.agreeToTerms(latestTerms);
-  const latestPolicy = await db.PrivacyPolicy.findOne({
-    order: [['datePublished', 'DESC']],
-  });
-  const agreedPolicy = await user.agreeToPrivacyPolicy(latestPolicy);
-  if (!(agreedTerms && agreedPolicy)) {
-    response.status = 500;
-    response.message = "Server error: couldn't agree to terms.";
-    return response;
-  }
-  response.accessToken = generateJWT(user);
-  response.userId = user.id;
   return response;
 }
 
