@@ -90,6 +90,7 @@ module.exports = {
   subtractFromDateTime,
   convertStringToDate,
   getRelativeDateTimeInUtc,
+  getTodaysDateInUtc,
   cleanString,
   unionOfTwoArrays,
   intersectionOfTwoArrays,

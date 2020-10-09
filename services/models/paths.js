@@ -248,5 +248,6 @@ module.exports = {
   getMenstruationPaths,
   getDefaultPaths,
   getPathHighPotencyFoods,
+  generateActivePath,
   filterUserPaths,
 };
