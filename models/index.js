@@ -5,14 +5,17 @@ const Sequelize = require('sequelize');
 const basename = path.basename(__filename);
 require('dotenv').config();
 
+const env = process.env.NODE_ENV || 'development';	
+const config = require(__dirname + '/../config/config.js')[env];	
+console.log(JSON.stringify(config.DIALECT));
 // Connect to db.
 const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USERNAME,
-  process.env.DB_PASSWORD,
+  config.database,
+  config.username,
+  config.password,
   {
-    host: process.env.DB_HOST,
-    dialect: 'mysql',
+    host: config.host,
+    dialect: config.dialect,
   }
 );
 

@@ -354,6 +354,11 @@ app.put('/api/users/:userId', async (req, res) => {
   // FYI The list of paths a user is allowed to choose from is also determined by
   // these user properties.
 
+  // (Can't use !!isVegan because if it's false it will read the same as being undefined.)
+  const isVeganUpdated = req.body.isVegan !== undefined;
+  const menstruatesUpdated = req.body.menstruates !== undefined;
+  const activePathUpdated = !!req.body.activePathId;
+
   let activePath;
   // If user is updating path, find new active path.
   if (activePathUpdated) {
@@ -371,12 +376,9 @@ app.put('/api/users/:userId', async (req, res) => {
       },
     });
   }
-  // (Can't user !!isVegan because if it's false it will read the same as being undefined.)
-  const isVeganUpdated = req.body.isVegan !== undefined;
-  const menstruatesUpdated = req.body.menstruates !== undefined;
-  const activePathUpdated = !!req.body.activePathId;
   const activePathIsCustom = activePath && activePath.ownerId === user.id;
   const activePathExists = !!activePath;
+  
   // If user.activePathId, user.isVegan, or user.activePathId are
   // updated AND the path is not a custom path, make sure the path
   // is generated using the most up to date user data (path might not
