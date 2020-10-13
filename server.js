@@ -133,17 +133,19 @@ app.get('/api/nutrients', async (req, res) => {
 
 app.get('/api/privacypolicy', async (req, res) => {
   // Gets most recently published by default.
+  let response;
   try {
     const pp = await db.PrivacyPolicy.findOne({
       order: [['datePublished', 'DESC']],
     });
-    return res.status(200).json(pp);
+    response = res.status(200).json(pp);
   } catch (error) {
     console.log(`error from /privacypolicy endpoint: ${error}`);
-    return res.status(500).json({
+    response = res.status(500).json({
       message: 'Server error.  Could not query PrivacyPolicy from db.',
     });
   }
+  return response;
 });
 
 app.put('/api/recipes/:recipeId/reportlink', async (req, res) => {
