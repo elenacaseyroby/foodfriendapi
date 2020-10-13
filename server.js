@@ -221,20 +221,21 @@ app.get('/api/users/:userId', async (req, res) => {
   // If they stop being dependent on user properties, they can be moved into their
   // own endpoints.
   if (!req.params.userId)
-    return res.status(401).json({ message: 'Must pass user id.' });
+    return res.status(200).json({ status: 401, message: 'Must pass user id.' });
   // could move this logic into a middleware function in router:
   // User can only get data of user they are signed in as:
   const loggedInUserId = checkUserSignedIn(req);
   if (!loggedInUserId || parseInt(req.params.userId) !== loggedInUserId) {
-    return res.status(401).json({
+    return res.status(200).json({
+      status: 401,
       message: 'You must be logged in to complete this request.',
     });
   }
   const utcOffsetInHours = req.headers.utcoffsetinhours;
   if (!utcOffsetInHours)
     return res
-      .status(401)
-      .json({ message: 'Must pass utcOffsetInHours in request header.' });
+      .status(200)
+      .json({ status: 401, message: 'Must pass utcOffsetInHours in request header.' });
 
   const user = await db.User.findOne({
     where: {
@@ -257,7 +258,7 @@ app.get('/api/users/:userId', async (req, res) => {
       ],
     },
   });
-  if (!user) return res.status(404).json({ message: 'User not found.' });
+  if (!user) return res.status(200).json({status:404, message: 'User not found.' });
   try {
     // track user activity:
     const today = getTodaysDateInUtc();
@@ -306,11 +307,11 @@ app.get('/api/users/:userId', async (req, res) => {
       // would be way too much data.
       returnUser.activePath.highPotencyFoods = highPotencyFoods;
     }
-    return res.status(200).json(returnUser);
+    return res.status(200).json({status: 200, ...returnUser});
   } catch (error) {
     return res
-      .status(500)
-      .json({ message: `Failed to retrieve user data: ${error}` });
+      .status(200)
+      .json({ status: 500, message: `Failed to retrieve user data: ${error}` });
   }
 });
 
