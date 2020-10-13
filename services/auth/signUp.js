@@ -56,26 +56,22 @@ async function signUp(firstName, lastName, email, password) {
       response.message = "Server error: couldn't save password.";
       return response;
     }
-    // Get latest version of user
-    const userWithId = await db.User.findOne({
-      email: email.toLowerCase().trim()
-    });
     // Agree to Privacy Policy and Terms and Conditions.
     const latestTerms = await db.TermsAndConditions.findOne({
       order: [['datePublished', 'DESC']],
     });
-    const agreedTerms = await userWithId.agreeToTerms(latestTerms);
+    const agreedTerms = await user.agreeToTerms(latestTerms);
     const latestPolicy = await db.PrivacyPolicy.findOne({
       order: [['datePublished', 'DESC']],
     });
-    const agreedPolicy = await userWithId.agreeToPrivacyPolicy(latestPolicy);
+    const agreedPolicy = await user.agreeToPrivacyPolicy(latestPolicy);
     if (!(agreedTerms && agreedPolicy)) {
       response.status = 500;
       response.message = "Server error: couldn't agree to terms.";
       return response;
     }
     response.accessToken = generateJWT(user);
-    response.userId = userWithId.id;
+    response.userId = user.id;
     
   } catch (error) {
     response.status = 500,
