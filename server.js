@@ -45,6 +45,9 @@ const port = process.env.PORT || 5000;
 // Config bodyparser for handling api request data.
 app.use(bodyParser.json());
 
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, 'frontend/build')));
+
 // FoodFriend API style guide:
 // https://docs.google.com/document/d/1PEyAj9p4K4B_t7z1s74qUhJlAi_ZARgdmRbOBfTS0RE/edit?usp=sharing
 
@@ -1560,9 +1563,6 @@ app.post(
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname + '/frontend/build/index.html'));
 });
-
-// Serve static files from the React app
-app.use(express.static(path.join(__dirname, 'frontend/build')));
 
 // Start server & listen for api requests.
 app.listen(port, () => console.log(`listening on port ${port}`));
