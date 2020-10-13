@@ -1560,9 +1560,9 @@ app.post(
 
 // The "catchall" handler: for any request that doesn't
 // match one above send back React's index.html file.
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname + '/frontend/build/index.html'));
-});
+// app.get('*', (req, res) => {
+//   res.sendFile(path.join(__dirname + '/frontend/build/index.html'));
+// });
 
 // Start server & listen for api requests.
 app.listen(port, () => console.log(`listening on port ${port}`));
