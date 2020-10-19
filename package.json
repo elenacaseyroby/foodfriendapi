@@ -19,6 +19,8 @@
     "sequelize-noupdate-attributes": "^1.0.0"
   },
   "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-loader": "^8.1.0",
     "chai": "^4.2.0",
     "mocha": "^8.1.1",
     "nodemon": "^2.0.4"
