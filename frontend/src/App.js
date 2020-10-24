@@ -53,9 +53,11 @@ class App extends Component {
   //   return body;
   // };
   render() {
+    const {windowWidth, device, normalizer} = this.state;
     const media = {};
-    media.windowWidth = this.state.windowWidth;
-    media.device = this.state.device;
+    media.windowWidth = windowWidth;
+    media.device = device;
+    media.normalizer = normalizer;
     return (
       <Router>
         <Route exact path="/" media={media} component={AboutUs} />
