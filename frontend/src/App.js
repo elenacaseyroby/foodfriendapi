@@ -8,6 +8,7 @@ class App extends Component {
     super(props);
     this.state = {
       windowWidth: 0,
+      windowHeight: 0,
       device: '',
       normalizer: 1,
     };
@@ -28,6 +29,7 @@ class App extends Component {
   }
   updateDimensions = () => {
     let windowWidth = typeof window !== "undefined" ? window.innerWidth : 0;
+    let windowHeight = typeof window !== "undefined" ? window.innerHeight : 0;
     let device = 'mobile';
     if (windowWidth > 400) {
       device = 'tablet';
@@ -38,6 +40,7 @@ class App extends Component {
     const normalizer = this.calculateNormalizerCoeffient(windowWidth);
     this.setState({ 
       windowWidth: windowWidth, 
+      windowHeight: windowHeight, 
       device: device,
       normalizer: normalizer,
      });
@@ -53,9 +56,10 @@ class App extends Component {
   //   return body;
   // };
   render() {
-    const {windowWidth, device, normalizer} = this.state;
+    const {windowWidth, windowHeight, device, normalizer} = this.state;
     const media = {
       windowWidth: windowWidth,
+      windowHeight: windowHeight,
       device: device,
       normalizer: normalizer,
     };

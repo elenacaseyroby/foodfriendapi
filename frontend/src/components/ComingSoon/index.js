@@ -1,16 +1,15 @@
 import React, { Component } from 'react';
+import header from './assets/header.svg';
 
 class AboutUs extends Component {
   render() {
     const {media} = this.props;
     const styles = getStyles(media);
-    console.log(media.device);
     return (
-      <div style={styles.aboutUsPage}>
-        <div style={styles.contentContainer}>
-          <div style={styles.logoContainer}>
-          </div>
-          <div style={styles.comingSoonText}>...coming soon!</div>
+      <div style={styles.comingSoonPage}>
+        <div style={styles.header} />
+        <div style={styles.footer} >
+          {/* <img src={bottomElipse} style={styles.footerImg} /> */}
         </div>
       </div>
     );
@@ -18,34 +17,36 @@ class AboutUs extends Component {
 }
 
 const getStyles = (media) => {
+  const {windowHeight, device} = media;
   let styles = {
-    aboutUsPage: {
+    comingSoonPage: {
       display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
       width: '100%',
       minHeight: '100vh',
-      backgroundColor: '#266407',
+      height: '100%',
+      flexDirection: 'column',
+      backgroundColor: '#ffffff',
+      postion: 'relative',
     },
-    contentContainer: {
-      width: '30%',
+    header: {
+      width: '100%',
+      height: windowHeight / 2,
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      backgroundSize: 'cover',
+      backgroundImage: `url(${header})`,
+      postion: 'absolute',
     },
-    logoContainer: {
-      width: '90%',
-    },
-    comingSoonText: {
-      marginTop: '5%',
-      fontFamily: 'Cabin',
-      color: '#ffffff',
-      fontSize: '2.5vw',
-      fontStyle: 'italic',
-      textAlign: 'right', 
+    footer: {
+      height: windowHeight / 2,
+      width: '150%',
+      alignSelf: 'center',
+      backgroundColor: '#ffe3b8',
+      borderRadius: '50%',
+      position: 'absolute',
+      bottom: - (windowHeight / 4),
     },
   };
-
-  if (media.device === 'desktop') {
-    // header & bottom elipse should cover entire width
-  }
   return styles;
 }
 
