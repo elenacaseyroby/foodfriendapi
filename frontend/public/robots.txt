@@ -1,3 +1,6 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
 Disallow:
+# This file is used to guide crawlers and tell them what resources they shouldn’t access. 
+# It should be located at http://www.foodfriend.io/robots.txt
+# https://vonkunesnewton.medium.com/setting-up-your-react-app-for-googles-seo-crawlers-d16b102b0103
