@@ -4,18 +4,18 @@
   "icons": [
     {
       "src": "foodfriend-icon-small.png",
-      "sizes": "64x64 32x32 24x24 16x16",
+      "sizes": "60x60",
       "type": "image/png"
     },
     {
       "src": "foodfriend-icon-med.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "180x180"
     },
     {
       "src": "foodfriend-icon-large.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "1024x1024"
     }
   ],
   "start_url": ".",

@@ -15,6 +15,7 @@ class App extends Component {
     this.calculateNormalizerCoeffient = this.calculateNormalizerCoeffient.bind(this);
   }
   componentDidMount() {
+    console.log("COMPONENT DID MOUNT");
     this.updateDimensions();
     window.addEventListener("resize", this.updateDimensions);
   }
@@ -27,6 +28,7 @@ class App extends Component {
     return normalizer;
   }
   updateDimensions = () => {
+    console.log("MADE IT");
     let windowWidth = typeof window !== "undefined" ? window.innerWidth : 0;
     let device = 'mobile';
     if (windowWidth > 400) {
@@ -54,10 +56,12 @@ class App extends Component {
   // };
   render() {
     const {windowWidth, device, normalizer} = this.state;
-    const media = {};
-    media.windowWidth = windowWidth;
-    media.device = device;
-    media.normalizer = normalizer;
+    const media = {
+      windowWidth: windowWidth,
+      device: device,
+      normalizer: normalizer,
+    };
+    console.log(media)
     return (
       <Router>
         <Route exact path="/" media={media} component={AboutUs} />
