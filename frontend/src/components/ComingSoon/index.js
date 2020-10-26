@@ -2,8 +2,9 @@ import React, { Component } from 'react';
 
 class AboutUs extends Component {
   render() {
-    console.log(this.props);
-    const styles = getStyles(this.props.media);
+    const {media} = this.props;
+    const styles = getStyles(media);
+    console.log(media.device);
     return (
       <div style={styles.aboutUsPage}>
         <div style={styles.contentContainer}>
@@ -42,9 +43,9 @@ const getStyles = (media) => {
     },
   };
 
-  // if (media.device === 'desktop') {
-  //   // header & bottom elipse should cover entire width
-  // }
+  if (media.device === 'desktop') {
+    // header & bottom elipse should cover entire width
+  }
   return styles;
 }
 

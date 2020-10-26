@@ -15,7 +15,6 @@ class App extends Component {
     this.calculateNormalizerCoeffient = this.calculateNormalizerCoeffient.bind(this);
   }
   componentDidMount() {
-    console.log("COMPONENT DID MOUNT");
     this.updateDimensions();
     window.addEventListener("resize", this.updateDimensions);
   }
@@ -28,7 +27,6 @@ class App extends Component {
     return normalizer;
   }
   updateDimensions = () => {
-    console.log("MADE IT");
     let windowWidth = typeof window !== "undefined" ? window.innerWidth : 0;
     let device = 'mobile';
     if (windowWidth > 400) {
@@ -61,11 +59,20 @@ class App extends Component {
       device: device,
       normalizer: normalizer,
     };
-    console.log(media)
     return (
       <Router>
-        <Route exact path="/" media={media} component={AboutUs} />
-        <Route exact path="/about"  media={media} component={AboutUs} />
+        <Route 
+          exact path="/" 
+          render={(props) => (
+            <AboutUs {...props} media={media} />
+          )}
+        />
+        <Route 
+          exact path="/about"  
+          render={(props) => (
+            <AboutUs {...props} media={media} />
+          )}
+        />
         {/*mobile password reset route:*/}
         <Route
           exact
