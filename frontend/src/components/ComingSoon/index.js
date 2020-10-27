@@ -12,28 +12,23 @@ class AboutUs extends Component {
       <div style={styles.comingSoonPage}>
         <div style={styles.headerAndBennyContainer}>
           <div style={styles.header} />
-          <img src={benny} style={styles.benny}/>
+          <img src={benny} style={styles.benny} alt={'benny-with-food'}/>
         </div>
         <div style={styles.logoContainer}>
           <div style={styles.line} />
-          <img src={foodfriendLogo} style={styles.foodfriendLogo} />
+          <img src={foodfriendLogo} style={styles.foodfriendLogo} alt={'foodfriend-logo'}/>
         </div>
         <div style={styles.footerContainer}>
-          {/* <img src={bottomElipse} style={styles.elipse} /> */}
-          <div style={styles.elipse} />
+          <img src={bottomElipse} style={styles.elipse} alt={'bottom-elipse'}/>
+          <div style={styles.orangeFiller} />
         </div>
-
-          {/* <div style={styles.elipseContainer}>
-          <div style={styles.elipse} />
-          </div> */}
-
       </div>
     );
   }
 }
 
 const getStyles = (media) => {
-  const {windowHeight, windowWidth, normalizer, device} = media;
+  const {windowHeight, normalizer, device} = media;
   let styles = {
     comingSoonPage: {
       display: 'flex',
@@ -63,7 +58,6 @@ const getStyles = (media) => {
       postion: 'absolute',
       marginTop: - windowHeight/3,
       height: undefined,
-      // aspectRatio: width / height,
       aspectRatio: 604 / 418,
       alignSelf: 'center',
     },
@@ -92,42 +86,28 @@ const getStyles = (media) => {
       aspectRatio: 201 / 37,
     },
     footerContainer: {
+      marginTop: 45 * normalizer,
       display: 'flex',
       width: '100%',
       flexDirection: 'column',
-      // borderStyle: 'dotted',
       postion: 'absolute',
       bottom: 0,
+      flex: '1 1 auto',
     },
     elipse: {
       width: '100%',
-      height: windowHeight / 4,
-      backgroundPosition: 'center',
-      backgroundRepeat: 'no-repeat',
-      backgroundSize: 'cover',
-      backgroundImage: `url(${bottomElipse})`,
       postion: 'absolute',
       bottom: 0,
+      height: undefined,
+      aspectRatio: 1440 / 193,
     },
-    // elipseContainer: {
-    //   width: '90%',
-    //   position: 'relative',
-    //   overflow: 'hidden',
-    //   backgroundColor: 'green',
-    //   // alignItems: 'center',
-    //   // justifyContent: 'center',
-    // },
-    // elipse: {
-    //   height: windowHeight / 2,
-    //   width: windowWidth * 1.5,
-    //   backgroundColor: '#ffe3b8',
-    //   borderRadius: '50%',
-    //   marginRight: '50%',
-    //   marginLeft: '50%',
-    //   // alignSelf: 'center',
-    //   // position: 'absolute',
-    //   // bottom: - (windowHeight / 4),
-    // },
+    orangeFiller: {
+      marginTop: -2,
+      height: '100%',
+      width: '100%',
+      flex: '1 1 auto',
+      backgroundColor: '#ffe3b8',
+    },
   };
   if (device === 'mobile') {
     styles.benny.width = 300;
