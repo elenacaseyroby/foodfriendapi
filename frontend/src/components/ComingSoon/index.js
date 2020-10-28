@@ -3,6 +3,7 @@ import header from './assets/header.svg';
 import benny from './assets/benny-and-food.svg';
 import foodfriendLogo from './assets/foodfriend-type-logo.svg';
 import bottomElipse from './assets/bottom-elipse.svg';
+import banner from './assets/banner.svg';
 
 class AboutUs extends Component {
   render() {
@@ -18,7 +19,7 @@ class AboutUs extends Component {
           <div style={styles.line} />
           <img src={foodfriendLogo} style={styles.foodfriendLogo} alt={'foodfriend-logo'}/>
         </div>
-        <div style={styles.footerContainer}>
+        <div style={styles.elipseContainer}>
           <img src={bottomElipse} style={styles.elipse} alt={'bottom-elipse'}/>
           <div style={styles.orangeFiller} />
         </div>
@@ -56,7 +57,6 @@ const getStyles = (media) => {
     },
     benny: {
       postion: 'absolute',
-      marginTop: - windowHeight/3,
       height: undefined,
       aspectRatio: 604 / 418,
       alignSelf: 'center',
@@ -85,7 +85,7 @@ const getStyles = (media) => {
       // aspectRatio: width / height,
       aspectRatio: 201 / 37,
     },
-    footerContainer: {
+    elipseContainer: {
       marginTop: 45 * normalizer,
       display: 'flex',
       width: '100%',
@@ -96,7 +96,7 @@ const getStyles = (media) => {
     },
     elipse: {
       width: '100%',
-      postion: 'absolute',
+      postion: 'relative',
       bottom: 0,
       height: undefined,
       aspectRatio: 1440 / 193,
@@ -107,6 +107,7 @@ const getStyles = (media) => {
       width: '100%',
       flex: '1 1 auto',
       backgroundColor: '#ffe3b8',
+      position: 'relative',
     },
   };
   if (device === 'mobile') {
