@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 // import * as serviceWorker from './serviceWorker';
-import './fonts/Cabin/Cabin-Regular.ttf';
+import './assets/fonts/Cabin/Cabin-Regular.ttf';
 import './index.css';
 
 ReactDOM.render(
