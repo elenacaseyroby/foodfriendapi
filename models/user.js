@@ -25,7 +25,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(150),
       },
       password: {
-        type: DataTypes.STRING(70),
+        type: DataTypes.STRING(150),
       },
       salt: {
         type: DataTypes.STRING(100),
@@ -265,7 +265,9 @@ module.exports = (sequelize, DataTypes) => {
   return User;
 };
 function hashPassword(password, salt) {
+  // Make sure hashed password is no more than 150 characters so the whole 
+  // thing can be saved in the users.password column.
   return crypto
-    .pbkdf2Sync(password, salt, 10000, 100, 'sha512')
-    .toString('hex');
+    .pbkdf2Sync(password, salt, 10000, 60, 'sha512')
+    .toString('hex').slice(0, 149);
 }
