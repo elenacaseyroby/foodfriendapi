@@ -82,6 +82,6 @@ module.exports = {
     ('24', '2020-10-05 19:17:12', '15', '2020-10-05 19:17:12'); ");
   },
   down: (queryInterface, Sequelize) => {
-    return queryInterface.bulkDelete('paths', null, {});
+    return queryInterface.bulkDelete('nutrient_benefits', null, {});
   },
 };

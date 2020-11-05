@@ -23,6 +23,6 @@ module.exports = {
     ]);
   },
   down: (queryInterface, Sequelize) => {
-    return queryInterface.bulkDelete('paths', null, {});
+    return queryInterface.bulkDelete('diets', null, {});
   },
 };

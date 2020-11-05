@@ -37,6 +37,6 @@ module.exports = {
       ('2020-10-05 19:17:10', '27', 'Alzheimer`s', '2020-10-05 19:17:10'); ");
   },
   down: (queryInterface, Sequelize) => {
-    return queryInterface.bulkDelete('paths', null, {});
+    return queryInterface.bulkDelete('benefits', null, {});
   },
 };
