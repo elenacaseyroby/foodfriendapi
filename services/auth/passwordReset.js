@@ -56,7 +56,7 @@ async function sendPasswordResetEmail(emailAddress) {
     To reset your FoodFriend password, open this email from your smartphone or tablet and click on this ${link}. <br><br>
     If you did not request to reset your password, please ignore this email and your password will remain unchanged. <br><br>
     Thank you for using FoodFriend! We hope you're feeling great today! <br>
-    Casey <br>
+    Casey <br><br>
     FoodFriend Cofounder`;
   const mailOptions = {
     to: toEmail,
