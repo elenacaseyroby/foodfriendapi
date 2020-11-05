@@ -53,15 +53,21 @@ async function sendPasswordResetEmail(emailAddress) {
   const fromEmail = process.env.PASSWORD_RESET_FROM_EMAIL;
   const subject = 'Password reset request';
   const body = `<p>Hi ${user.firstName}, <br><br>
-    From your smartphone or tablet, you can click on this ${link} to reset your FoodFriend password. <br>
-    If you did not request this, please ignore this email and your password will remain unchanged.`;
+    To reset your FoodFriend password, open this email from your smartphone or tablet and click on this ${link}. <br><br>
+    If you did not request to reset your password, please ignore this email and your password will remain unchanged. <br><br>
+    Thank you for using FoodFriend! We hope you're feeling great today! <br>
+    Casey <br>
+    FoodFriend Cofounder`;
   const mailOptions = {
     to: toEmail,
     from: fromEmail,
     subject: subject,
     text: `Hi ${user.firstName},
-      From your smartphone or tablet, please visit this url: ${url} to reset your FoodFriend password.
-      If you did not request this, please ignore this email and your password will remain unchanged.`,
+    To reset your FoodFriend password, use your smartphone or tablet to visit this url: ${url}. 
+    If you did not request to reset your password, please ignore this email and your password will remain unchanged. 
+    Thank you for using FoodFriend! We hope you're feeling great today!
+    Casey
+    FoodFriend Cofounder`,
     html: body,
   };
   // Send email if not a test
