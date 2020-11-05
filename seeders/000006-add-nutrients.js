@@ -1,6 +1,7 @@
 module.exports = {
   // need for path page
   up: async (queryInterface, Sequelize) => {
+    // Only perform if the nutrients table is empty.
     const nutrient = await queryInterface.rawSelect('nutrients', {}, ['name']);
     if (nutrient) return 'success';
     return queryInterface.sequelize.query(

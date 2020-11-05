@@ -1,6 +1,7 @@
 module.exports = {
   // need for user sign up.
   up: async (queryInterface, Sequelize) => {
+    // Only perform if the path_themes table is empty.
     const themes = await queryInterface.rawSelect('path_themes', {}, ['id']);
     if (themes) return 'success';
     return queryInterface.bulkInsert('path_themes', [

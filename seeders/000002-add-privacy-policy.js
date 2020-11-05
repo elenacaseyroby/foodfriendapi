@@ -1,6 +1,7 @@
 module.exports = {
   // need for user sign up.
   up: async (queryInterface, Sequelize) => {
+    // Only create if no privacy policies exist.
     const policies = await queryInterface.rawSelect('privacy_policies', {}, [
       'id',
     ]);

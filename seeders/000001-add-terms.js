@@ -1,6 +1,7 @@
 module.exports = {
   // need for user sign up.
   up: async (queryInterface, Sequelize) => {
+    // Only create if no terms exist.
     const terms = await queryInterface.rawSelect('terms_and_conditions', {}, [
       'id',
     ]);

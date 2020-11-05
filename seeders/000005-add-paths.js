@@ -1,6 +1,7 @@
 module.exports = {
   // need for onboarding survey
   up: async (queryInterface, Sequelize) => {
+    // Only perform if the paths table is empty.
     const path = await queryInterface.rawSelect('paths', {}, ['name']);
     if (path) return 'success';
     return queryInterface.sequelize.query(

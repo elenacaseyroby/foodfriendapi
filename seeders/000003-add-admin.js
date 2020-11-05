@@ -1,16 +1,17 @@
 module.exports = {
   // need for onboarding survey
   up: async (queryInterface, Sequelize) => {
-    const user1 = await queryInterface.rawSelect(
+    // Only create admin if does not yet exist.
+    const admin = await queryInterface.rawSelect(
       'users',
       {
         where: {
-          id: 1,
+          email: 'admin@foodfriend.io',
         },
       },
       ['id']
     );
-    if (user1) return 'success';
+    if (admin) return 'success';
     return queryInterface.bulkInsert('users', [
       {
         email: 'admin@foodfriend.io',
