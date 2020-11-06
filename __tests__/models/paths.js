@@ -5,7 +5,7 @@ require('dotenv').config();
 
 describe('paths model and services tests:', async () => {
   before(async function () {
-    // runs before all tests in this file regardless where this line is defined.
+    // runs once before all tests in this file regardless where this line is defined.
 
     // Delete all PathNutrient records.
     const allPathNutrients = await db.PathNutrient.findAll({});
@@ -39,7 +39,7 @@ describe('paths model and services tests:', async () => {
     });
   });
   after(async function () {
-    // runs before all tests in this file regardless where this line is defined.
+    // runs once after all tests in this file regardless where this line is defined.
 
     // Delete all PathNutrient records.
     const allPathNutrients = await db.PathNutrient.findAll({});
@@ -90,16 +90,25 @@ describe('paths model and services tests:', async () => {
       name: 'nutrient1',
       dvInMg: 0.5,
       dvSource: 'kladf',
+      dvNote:'FDA database',
+      themeId: 1,
+      iconPath: 'icon-path.org',
     });
     const nutrient2 = await db.Nutrient.create({
       name: 'nutrient2',
       dvInMg: 0.5,
       dvSource: 'kladf',
+      dvNote:'FDA database',
+      themeId: 1,
+      iconPath: 'icon-path.org',
     });
     const nutrient3 = await db.Nutrient.create({
       name: 'nutrient3',
       dvInMg: 0.5,
       dvSource: 'kladf',
+      dvNote:'FDA database',
+      themeId: 1,
+      iconPath: 'icon-path.org',
     });
     // Create foods
     const foodWithAllNutrients = await db.Food.create({
