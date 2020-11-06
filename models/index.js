@@ -5,9 +5,10 @@ const Sequelize = require('sequelize');
 const basename = path.basename(__filename);
 require('dotenv').config();
 
-const env = process.env.NODE_ENV || 'development';	
+const env = process.env.NODE_ENV || 'development';
+// Only log sql to console if explicitly set to log in env vars.
+const logSqlToConsole = process.env.LOG_SQL_TO_CONSOLE === 'true';
 const config = require(__dirname + '/../config/config.js')[env];	
-console.log(JSON.stringify(config.DIALECT));
 // Connect to db.
 const sequelize = new Sequelize(
   config.database,
@@ -16,6 +17,7 @@ const sequelize = new Sequelize(
   {
     host: config.host,
     dialect: config.dialect,
+    logging: logSqlToConsole,
   }
 );
 
