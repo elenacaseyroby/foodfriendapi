@@ -216,7 +216,7 @@ app.get('/api/termsandconditions', async (req, res) => {
 });
 
 app.get('/api/users/:userId', async (req, res) => {
-  // Input: userId as a param and authorization (token) and utcOffsetInHours in the body.
+  // Input: userId as a param and authorization (token) and utcOffsetInHours in the header.
   // Output: user object.
   // NOTE: object includes paths and active path since those are dependent
   // on user properties isVegan and menstruates.
