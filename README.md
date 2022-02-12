@@ -3,7 +3,7 @@
 ## Run Migrations
 
 `npx sequelize-cli db:migrate`
-more migrations info here: https://docs.google.com/document/d/13pcDmpL_4E9p8kg74f2iCxOSaQpad7Gkacw3Z6AS-8A/edit?usp=sharing
+more migrations & general Sequelize info, here: https://docs.google.com/document/d/13pcDmpL_4E9p8kg74f2iCxOSaQpad7Gkacw3Z6AS-8A/edit?usp=sharing
 
 ## Uploading Data
 
