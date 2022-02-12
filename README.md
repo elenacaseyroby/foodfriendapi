@@ -1,4 +1,4 @@
-# foodfriend
+# FoodFriend API
 
 ## Run Migrations
 
